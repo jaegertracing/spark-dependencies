@@ -44,7 +44,7 @@ public class CassandraJobTest {
     @BeforeClass
     public static void beforeClass() throws TimeoutException {
         GenericContainer cassandra =
-                new GenericContainer<>("docker.io/cassandra:3.9")
+                new GenericContainer<>("cassandra:3.9")
                         .withCreateContainerCmdModifier(cmd -> cmd.withHostName("cassandra"))
                         .withExposedPorts(9042);
         cassandra.start();
@@ -52,7 +52,7 @@ public class CassandraJobTest {
         cassandraPort = cassandra.getMappedPort(9042);
 
         GenericContainer jaegerTestDriver =
-                new GenericContainer<>("docker.io/jaegertracing/test-driver:latest")
+                new GenericContainer<>("jaegertracing/test-driver:latest")
                         .withCreateContainerCmdModifier(cmd -> {
                             cmd.withLinks(new Link(cassandra.getContainerId(), "cassandra"));
                             cmd.withHostName("test_driver");
