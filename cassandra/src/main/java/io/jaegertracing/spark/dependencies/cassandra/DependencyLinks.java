@@ -13,7 +13,7 @@ import io.jaegertracing.spark.dependencies.cassandra.model.Span;
 /**
  * @author Pavol Loffay
  */
-public class DependenciesLink {
+public class DependencyLinks {
 
     public static Function<Iterable<Span>, Iterable<Dependency>> dependencyLinks() {
         return (Function<Iterable<Span>, Iterable<Dependency>>) spans -> {

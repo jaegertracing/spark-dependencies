@@ -149,7 +149,7 @@ public final class CassandraDependenciesJob {
     List<Dependency> dependencies = javaFunctions(sc).cassandraTable(keyspace, "traces", mapRowTo(Span.class))
             .where("start_time < ? AND start_time > ?", microsUpper, microsLower)
             .spanBy(Span::getTraceId, ByteBuffer.class)
-            .flatMapValues(DependenciesLink.dependencyLinks()).values()
+            .flatMapValues(DependencyLinks.dependencyLinks()).values()
             .mapToPair(dependency -> tuple2(tuple2(dependency.getParent(), dependency.getChild()), dependency))
             .reduceByKey((d1, d2) ->
                     new Dependency(d1.getParent(), d2.getChild(), d1.getCallCount() + d2.getCallCount()))

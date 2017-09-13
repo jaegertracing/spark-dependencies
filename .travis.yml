@@ -12,8 +12,6 @@ cache:
   directories:
   - $HOME/.m2
 
-before_install:
-
 install:
   # Override default travis to use the maven wrapper
   # Use quiet as shade plugin creates too many logs for Travis: The log length has exceeded the limit of 4 MB
