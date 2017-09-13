@@ -8,20 +8,20 @@ import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
 /**
- * The explicitly initializes log configuration for zipkin categories to a predefined level. This is
+ * The explicitly initializes log configuration for jaeger categories to a predefined level. This is
  * intended to be called directly before a transformation occurs.
  *
  * <p><em>Motivation</em>
  *
- * <p>If you don't use this, you might find that JUL statements from zipkin don't end up in console
+ * <p>If you don't use this, you might find that JUL statements from jaeger don't end up in console
  * of executors (usually stderr) even if it is in console output when in local mode.
  *
  * <p>Spark workers do not have the same classpath as local mode. For example, they have a different
  * log4j configuration (log4j-defaults.properties), and a classpath that doesn't load a JUL to log4J
- * bridge. This has two impacts: first, zipkin categories aren't defined, so would default to root.
- * Root logs at info level while zipkin libraries almost never log at info. Even if they did, unless
+ * bridge. This has two impacts: first, jaeger categories aren't defined, so would default to root.
+ * Root logs at info level while jaeger libraries almost never log at info. Even if they did, unless
  * a bridge is installed, the log level defined in log4j wouldn't propagate to JUL. This means only
- * zipkin libraries who use log4j will end up in console output.
+ * jaeger libraries who use log4j will end up in console output.
  *
  * <p><em>Manual fix</em>
  *

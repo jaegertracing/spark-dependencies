@@ -71,7 +71,7 @@ public final class CassandraDependenciesJob {
       return this;
     }
 
-    /** Keyspace to store dependency rowsToLinks. Defaults to "zipkin" */
+    /** Keyspace to store dependency rowsToLinks. Defaults to "jaeger_v1_test" */
     public Builder keyspace(String keyspace) {
       checkNoNull("keyspace", keyspace);
       this.keyspace = keyspace;

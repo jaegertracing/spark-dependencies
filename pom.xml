@@ -54,7 +54,7 @@
     <dependencies>
       <dependency>
         <groupId>${project.groupId}</groupId>
-        <artifactId>zipkin-dependencies-cassandra</artifactId>
+        <artifactId>jaeger-spark-dependencies-cassandra</artifactId>
         <version>${project.version}</version>
       </dependency>
 
