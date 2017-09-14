@@ -21,7 +21,7 @@
     <version.org.apache.spark>2.1.1</version.org.apache.spark>
     <version.junit>4.12</version.junit>
     <version.org.assertj>3.8.0</version.org.assertj>
-    <version.org.testcontainers>1.4.1</version.org.testcontainers>
+    <version.org.testcontainers>1.4.2</version.org.testcontainers>
     <version.com.squareup.okhttp3-okhttp>3.8.0</version.com.squareup.okhttp3-okhttp>
     <version.org.awaitility-awaitility>3.0.0</version.org.awaitility-awaitility>
 

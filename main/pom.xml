@@ -23,10 +23,8 @@
     <dependency>
       <groupId>org.testcontainers</groupId>
       <artifactId>testcontainers</artifactId>
-      <version>${version.org.testcontainers}</version>
       <scope>test</scope>
     </dependency>
-
     <dependency>
       <groupId>com.uber.jaeger</groupId>
       <artifactId>jaeger-core</artifactId>

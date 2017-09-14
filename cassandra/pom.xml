@@ -31,12 +31,6 @@
       <artifactId>spark-cassandra-connector-unshaded_${scala.binary.version}</artifactId>
       <version>${spark-cassandra-connector.version}</version>
     </dependency>
-
-    <dependency>
-      <groupId>org.testcontainers</groupId>
-      <artifactId>testcontainers</artifactId>
-      <scope>test</scope>
-    </dependency>
   </dependencies>
 
   <build>

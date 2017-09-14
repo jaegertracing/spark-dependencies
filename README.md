@@ -30,7 +30,8 @@ $ STORAGE_TYPE=cassandra java -jar zipkin-dependencies.jar `date -uv-1d +%F`
 $ STORAGE_TYPE=cassandra java -jar zipkin-dependencies.jar `date -u -d '1 day ago' +%F`
 ```
 
-## Environment Variables
+### Environment Variables
+
 `zipkin-dependencies` applies configuration parameters through environment variables. At the
 moment, separate binaries are made for each storage layer.
 
@@ -59,7 +60,7 @@ To build the job from source and run against a local cassandra, in Spark's stand
 
 ```bash
 # Build the spark jobs
-$ ./mvnw -DskipTests clean install
+$ ./mvnw clean install # if failed add SPARK_LOCAL_IP=127.0.0.1
 $ STORAGE_TYPE=cassandra java -jar ./main/target/zipkin-dependencies*.jar
 ```
 
