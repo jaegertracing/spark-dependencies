@@ -3,7 +3,6 @@ package io.jaegertracing.spark.dependencies;
 import static org.awaitility.Awaitility.await;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.testcontainers.containers.output.OutputFrame.OutputType.STDOUT;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
@@ -12,7 +11,6 @@ import java.util.concurrent.TimeoutException;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.output.WaitingConsumer;
 
 import com.github.dockerjava.api.model.Link;
 import com.uber.jaeger.Tracer;
@@ -43,32 +41,20 @@ public class CassandraJobTest {
 
     @BeforeClass
     public static void beforeClass() throws TimeoutException {
-        GenericContainer cassandra =
-                new GenericContainer<>("cassandra:3.9")
-                        .withCreateContainerCmdModifier(cmd -> cmd.withHostName("cassandra"))
+        GenericContainer cassandra = new CassandraContainer("cassandra:3.9")
                         .withExposedPorts(9042);
         cassandra.start();
-        waitForCassandra(cassandra);
         cassandraPort = cassandra.getMappedPort(9042);
 
-        GenericContainer jaegerTestDriver =
-                new GenericContainer<>("jaegertracing/test-driver:latest")
+        GenericContainer jaegerTestDriver = new JaegerTestDriverContainer("jaegertracing/test-driver:latest")
                         .withCreateContainerCmdModifier(cmd -> {
                             cmd.withLinks(new Link(cassandra.getContainerId(), "cassandra"));
                             cmd.withHostName("test_driver");
                         })
                     .withExposedPorts(14268, 16686, 8080);
         jaegerTestDriver.start();
-        new JaegerCrossdockWaitStrategy(8080).waitUntilReady(jaegerTestDriver);
         queryPort = jaegerTestDriver.getMappedPort(16686);
         collectorPort = jaegerTestDriver.getMappedPort(14268);
-    }
-
-    protected static void waitForCassandra(GenericContainer cassandra) throws TimeoutException {
-        WaitingConsumer consumer = new WaitingConsumer();
-        cassandra.followOutput(consumer, STDOUT);
-        consumer.waitUntil(frame ->
-                frame.getUtf8String().contains("Starting listening for CQL clients"), 1, TimeUnit.MINUTES);
     }
 
     @Test
