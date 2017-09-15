@@ -2,30 +2,26 @@ package io.jaegertracing.spark.dependencies;
 
 import static org.awaitility.Awaitility.await;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.dockerjava.api.model.Link;
+import io.jaegertracing.spark.dependencies.cassandra.CassandraDependenciesJob;
+import io.jaegertracing.spark.dependencies.rest.DependencyLink;
+import io.jaegertracing.spark.dependencies.rest.JsonHelper;
+import io.jaegertracing.spark.dependencies.rest.RestResult;
+import io.jaegertracing.spark.dependencies.tree.Node;
+import io.jaegertracing.spark.dependencies.tree.Traversals;
+import io.jaegertracing.spark.dependencies.tree.TreeGenerator;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.testcontainers.containers.GenericContainer;
-
-import com.github.dockerjava.api.model.Link;
-import com.uber.jaeger.Tracer;
-import com.uber.jaeger.metrics.Metrics;
-import com.uber.jaeger.metrics.NullStatsReporter;
-import com.uber.jaeger.metrics.StatsFactoryImpl;
-import com.uber.jaeger.reporters.RemoteReporter;
-import com.uber.jaeger.samplers.ConstSampler;
-import com.uber.jaeger.senders.HttpSender;
-
-import io.jaegertracing.spark.dependencies.cassandra.CassandraDependenciesJob;
-import io.opentracing.Span;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.testcontainers.containers.GenericContainer;
 
 /**
  * @author Pavol Loffay
@@ -35,9 +31,11 @@ public class CassandraJobTest {
     private static OkHttpClient okHttpClient = new OkHttpClient.Builder()
             .build();
 
-    private static int queryPort;
-    private static int collectorPort;
-    private static int cassandraPort;
+    private ObjectMapper objectMapper = JsonHelper.configure(new ObjectMapper());
+
+    protected static int cassandraPort;
+    protected static String queryUrl;
+    protected static String collectorUrl;
 
     @BeforeClass
     public static void beforeClass() throws TimeoutException {
@@ -53,30 +51,25 @@ public class CassandraJobTest {
                         })
                     .withExposedPorts(14268, 16686, 8080);
         jaegerTestDriver.start();
-        queryPort = jaegerTestDriver.getMappedPort(16686);
-        collectorPort = jaegerTestDriver.getMappedPort(14268);
+        queryUrl = String.format("http://localhost:%d", jaegerTestDriver.getMappedPort(16686));
+        collectorUrl = String.format("http://localhost:%d", jaegerTestDriver.getMappedPort(14268));
     }
 
     @Test
     public void testA() throws IOException {
-        Tracer t1 = createTracer("service1");
-        Span span1 = t1.buildSpan("foo").startManual();
-
-        Tracer t2 = createTracer("service2");
-        t2.buildSpan("foo").asChildOf(span1).startManual().finish();
-        t2.close();
-
-        span1.finish();
-        t1.close();
+        TreeGenerator treeGenerator = new TreeGenerator(TracersGenerator.generate(2, collectorUrl));
+        Node root = treeGenerator.generateTree(15, 3);
+        Traversals.inorder(root, (node, parent) -> node.getSpan().finish());
+        treeGenerator.getTracers().forEach(tracer -> tracer.close());
 
         Request request2 = new Request.Builder()
-                .url("http://localhost:"+queryPort+"/api/traces?service=service1")
+                .url(queryUrl+"/api/traces?service=" + root.getServiceName())
                 .get()
                 .build();
         await().atMost(2, TimeUnit.MINUTES).until(() -> {
             Response response = okHttpClient.newCall(request2).execute();
             String body = response.body().string();
-            return body.contains("foo");
+            return body.contains(root.getSpan().getOperationName());
         });
 
         CassandraDependenciesJob.builder()
@@ -88,29 +81,21 @@ public class CassandraJobTest {
                 .run();
 
         Request request = new Request.Builder()
-                .url("http://localhost:"+queryPort+"/api/dependencies?endTs=" + System.currentTimeMillis())
+                .url(queryUrl + "/api/dependencies?endTs=" + System.currentTimeMillis())
                 .get()
                 .build();
-
         await().until(() -> {
             Response response = okHttpClient.newCall(request).execute();
-            String body = response.body().string();
-            return body.contains("service1") && body.contains("service2");
+            RestResult restResult = objectMapper.readValue(response.body().string(), RestResult.class);
+            return restResult.getData() != null && restResult.getData().size() >= 1;
         });
 
+        DependenciesDerivator.serviceDependencies(root);
         try (Response response = okHttpClient.newCall(request).execute()) {
             assertEquals(200, response.code());
-            String body = response.body().string();
-            assertTrue(body.contains("service1"));
-            assertTrue(body.contains("service2"));
-            assertTrue(body.contains("\"callCount\":1"));
+            RestResult<DependencyLink> restResult = objectMapper.readValue(response.body().string(), new TypeReference<RestResult<DependencyLink>>() {});
+            assertEquals(null, restResult.getErrors());
+            assertEquals(DependenciesDerivator.serviceDependencies(root), DependenciesDerivator.serviceDependencies(restResult.getData()));
         }
-    }
-
-    protected com.uber.jaeger.Tracer createTracer(String serviceName) {
-        return new com.uber.jaeger.Tracer.Builder(serviceName,
-                new RemoteReporter(new HttpSender("http://localhost:"+collectorPort+"/api/traces", 65000), 1, 100,
-                        new Metrics(new StatsFactoryImpl(new NullStatsReporter()))), new ConstSampler(true))
-                .build();
     }
 }

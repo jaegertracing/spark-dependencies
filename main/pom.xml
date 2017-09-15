@@ -28,7 +28,7 @@
     <dependency>
       <groupId>com.uber.jaeger</groupId>
       <artifactId>jaeger-core</artifactId>
-      <version>0.20.6</version>
+      <version>${version.org.uber.jaeger-jaeger-core}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -42,6 +42,16 @@
       <artifactId>awaitility</artifactId>
       <version>${version.org.awaitility-awaitility}</version>
       <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.zipkin.brave</groupId>
+      <artifactId>brave</artifactId>
+      <version>${version.io.zipkin.brave-brave}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.zipkin.reporter</groupId>
+      <artifactId>zipkin-sender-okhttp3</artifactId>
+      <version>${version.io.zipkin.reporter-zipkin-sender-okhttp3}</version>
     </dependency>
   </dependencies>
 
@@ -160,10 +170,6 @@
             </configuration>
           </execution>
         </executions>
-      </plugin>
-      <plugin>
-        <groupId>net.orfjackal.retrolambda</groupId>
-        <artifactId>retrolambda-maven-plugin</artifactId>
       </plugin>
     </plugins>
   </build>
