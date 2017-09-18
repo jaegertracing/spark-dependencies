@@ -18,6 +18,7 @@ import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.spark.SparkConf;
+import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -146,20 +147,23 @@ public final class CassandraDependenciesJob {
         microsUpper);
 
     JavaSparkContext sc = new JavaSparkContext(conf);
-    List<Dependency> dependencies = javaFunctions(sc).cassandraTable(keyspace, "traces", mapRowTo(Span.class))
-            .where("start_time < ? AND start_time > ?", microsUpper, microsLower)
-            .spanBy(Span::getTraceId, ByteBuffer.class)
-            .flatMapValues(DependencyLinks.dependencyLinks()).values()
-            .mapToPair(dependency -> tuple2(tuple2(dependency.getParent(), dependency.getChild()), dependency))
-            .reduceByKey((d1, d2) ->
-                    new Dependency(d1.getParent(), d2.getChild(), d1.getCallCount() + d2.getCallCount()))
-            .values()
-            .collect();
+    JavaPairRDD<ByteBuffer, Iterable<Span>> traces = javaFunctions(sc)
+        .cassandraTable(keyspace, "traces", mapRowTo(Span.class))
+        .where("start_time < ? AND start_time > ?", microsUpper, microsLower)
+        .spanBy(Span::getTraceId, ByteBuffer.class);
 
-    save(sc, dependencies);
+    save(sc, deps(traces));
     sc.stop();
   }
 
+  public static List<Dependency> deps(JavaPairRDD<ByteBuffer, Iterable<Span>> traces) {
+        return traces.flatMapValues(DependencyLinks.dependencyLinks()).values()
+        .mapToPair(dependency -> tuple2(tuple2(dependency.getParent(), dependency.getChild()), dependency))
+        .reduceByKey((link1, link2) ->
+            new Dependency(link1.getParent(), link2.getChild(), link1.getCallCount() + link2.getCallCount()))
+        .values()
+        .collect();
+  }
 
   void save(JavaSparkContext sc, List<Dependency> links) {
     Dependencies dependencies = new Dependencies(links, System.currentTimeMillis());

@@ -13,12 +13,12 @@ public class Traversals {
      * @param node root node
      * @param fce <node, parent>
      */
-    public static void inorder(Node node, BiConsumer<Node, Node> fce) {
+    public static <T> void inorder(Node<T> node, BiConsumer<Node<T>, Node<T>> fce) {
         inorderRec(node, fce);
         fce.accept(node, null);
     }
 
-    private static void inorderRec(Node node, BiConsumer<Node, Node> fce) {
+    private static <T> void inorderRec(Node<T> node, BiConsumer<Node<T>, Node<T>> fce) {
         for (Node descendant: node.getDescendants()) {
             inorderRec(descendant, fce);
             fce.accept(descendant, node);

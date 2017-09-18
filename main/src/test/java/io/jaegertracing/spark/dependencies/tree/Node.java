@@ -4,25 +4,21 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import com.uber.jaeger.Span;
-import com.uber.jaeger.Tracer;
-
-
 /**
  * @author Pavol Loffay
  */
-public class Node {
-    private List<Node> descendants = new ArrayList<>();
-    private Span span;
-    private String serviceName;
+public class Node<T> {
+    private List<Node<T>> descendants = new ArrayList<>();
 
-    public Node(Tracer tracer, Node parent) {
-        this.serviceName = tracer.getServiceName();
-        this.span = createSpan(tracer, parent == null ? null : parent.getSpan());
+    private TracingWrapper<T> tracingWrapper;
+
+    public Node(TracingWrapper<T> tracingWrapper, Node parent) {
+        this.tracingWrapper = tracingWrapper;
+        tracingWrapper.createChildSpan(parent == null ? null : parent.getTracingWrapper());
     }
 
-    public Span getSpan() {
-        return span;
+    public TracingWrapper<T> getTracingWrapper() {
+        return tracingWrapper;
     }
 
     public void addDescendant(Node descendant) {
@@ -34,18 +30,6 @@ public class Node {
     }
 
     public String getServiceName() {
-        return serviceName;
-    }
-
-    private Span createSpan(Tracer tracer, Span parent) {
-        io.opentracing.Tracer.SpanBuilder spanBuilder = tracer.buildSpan(parent == null ? "|" :"->");
-        if (parent != null) {
-            spanBuilder.asChildOf(parent);
-        }
-        Span span = (Span)spanBuilder.startManual();
-        if (parent != null) {
-            span.setOperationName(parent.getOperationName() + "->");
-        }
-        return span;
+        return tracingWrapper.serviceName();
     }
 }

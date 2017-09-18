@@ -10,6 +10,7 @@
   <modules>
     <module>cassandra</module>
     <module>main</module>
+    <module>elasticsearch</module>
   </modules>
 
   <properties>

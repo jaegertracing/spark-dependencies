@@ -1,23 +1,22 @@
 package io.jaegertracing.spark.dependencies.tree;
 
+import io.jaegertracing.spark.dependencies.TracersGenerator.TracerServiceName;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 import java.util.Random;
 
-import com.uber.jaeger.Tracer;
-
 /**
  * @author Pavol Loffay
  */
-public class TreeGenerator {
+public class TreeGenerator<Tracer> {
 
     private Random descendantsRandom = new Random();
     private Random tracersRandom = new Random();
-    private List<Tracer> tracers;
+    private List<TracerServiceName<Tracer>> tracers;
 
-    public TreeGenerator(List<Tracer> tracers) {
+    public TreeGenerator(List<TracerServiceName<Tracer>> tracers) {
         this.tracers = tracers;
     }
 
@@ -26,7 +25,7 @@ public class TreeGenerator {
             throw new IllegalArgumentException();
         }
 
-        Node root = new Node(tracers.get(0), null);
+        Node root = new Node(tracers.get(0).tracingWrapper(), null);
         generateDescendants(new LinkedList<>(Collections.singletonList(root)), numOfNodes - 1, maxNumberOfDescendants);
         return root;
     }
@@ -39,7 +38,7 @@ public class TreeGenerator {
         // +1 to assure that we generate all exact number of nodes
         int numOfDescendants = descendantsRandom.nextInt(maxNumberOfDescendants) + 1;
         for (int i = 0; i < numOfDescendants; i++) {
-            Node descendant = new Node(tracers.get(tracersRandom.nextInt(tracers.size())), parent);
+            Node descendant = new Node(tracers.get(tracersRandom.nextInt(tracers.size())).tracingWrapper(), parent);
             queue.add(descendant);
             parent.addDescendant(descendant);
             if (--numOfNodes <= 0) {
@@ -49,7 +48,7 @@ public class TreeGenerator {
         generateDescendants(queue, numOfNodes, maxNumberOfDescendants);
     }
 
-    public List<Tracer> getTracers() {
+    public List<TracerServiceName<Tracer>> getTracers() {
         return Collections.unmodifiableList(tracers);
     }
 }
