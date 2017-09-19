@@ -1,18 +1,15 @@
-package io.jaegertracing.spark.dependencies;
-
-import static org.awaitility.Awaitility.await;
+package io.jaegertracing.spark.dependencies.common;
 
 import java.net.ConnectException;
 import java.time.Duration;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
-
-import org.testcontainers.containers.ContainerLaunchException;
-import org.testcontainers.containers.GenericContainer;
-
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
+import org.awaitility.Awaitility;
+import org.testcontainers.containers.ContainerLaunchException;
+import org.testcontainers.containers.GenericContainer;
 
 /**
  * @author Pavol Loffay
@@ -33,7 +30,7 @@ public class JaegerTestDriverContainer extends GenericContainer<JaegerTestDriver
     @Override
     protected void waitUntilContainerStarted() {
        String statusUrl = String.format("http://localhost:%d/", this.getMappedPort(8080));
-        await().atMost(waitUntilReady.toMillis(), TimeUnit.MILLISECONDS)
+        Awaitility.await().atMost(waitUntilReady.toMillis(), TimeUnit.MILLISECONDS)
                 .pollInterval(org.awaitility.Duration.TWO_SECONDS)
                 .until(containerStartedCondition(statusUrl));
     }

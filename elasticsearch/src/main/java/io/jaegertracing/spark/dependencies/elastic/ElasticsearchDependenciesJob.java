@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jaegertracing.spark.dependencies.DependencyLinks;
-import io.jaegertracing.spark.dependencies.model.Dependencies;
 import io.jaegertracing.spark.dependencies.model.Dependency;
 import io.jaegertracing.spark.dependencies.model.Span;
 import java.net.URI;
@@ -210,7 +209,7 @@ public class ElasticsearchDependenciesJob {
     ObjectMapper objectMapper = new ObjectMapper();
     String json;
     try {
-      json =objectMapper.writeValueAsString(new Dependencies(dependencyLinks, System.currentTimeMillis()));
+      json = objectMapper.writeValueAsString(new ElasticsearchDependencies(dependencyLinks, System.currentTimeMillis()));
     } catch (JsonProcessingException e) {
       throw new IllegalArgumentException("Could not serialize dependencies", e);
     }
@@ -262,5 +261,27 @@ public class ElasticsearchDependenciesJob {
       }
     }
     return to.toString();
+  }
+
+  public static class ElasticsearchDependencies {
+    private static final long serialVersionUID = 0L;
+
+    private List<Dependency> dependencies;
+    private long ts;
+
+    public ElasticsearchDependencies(List<Dependency> dependencies, long ts) {
+      this.dependencies = dependencies;
+      this.ts = ts;
+    }
+
+    public List<Dependency> getDependencies() {
+      return dependencies;
+    }
+
+    public String getTimestamp() {
+      // Jaeger ES dependency storage uses RFC3339Nano for timestamp
+        return new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX")
+            .format(new Date(ts)).toString();
+    }
   }
 }

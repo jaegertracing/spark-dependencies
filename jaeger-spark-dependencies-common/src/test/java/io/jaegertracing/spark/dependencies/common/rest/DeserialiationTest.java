@@ -1,4 +1,4 @@
-package io.jaegertracing.spark.dependencies.rest;
+package io.jaegertracing.spark.dependencies.common.rest;
 
 import static org.junit.Assert.assertEquals;
 

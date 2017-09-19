@@ -1,4 +1,4 @@
-package io.jaegertracing.spark.dependencies.rest;
+package io.jaegertracing.spark.dependencies.common.rest;
 
 /**
  * @author Pavol Loffay

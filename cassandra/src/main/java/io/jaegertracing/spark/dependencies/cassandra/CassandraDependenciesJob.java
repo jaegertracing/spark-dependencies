@@ -4,11 +4,16 @@ import static com.datastax.spark.connector.japi.CassandraJavaUtil.javaFunctions;
 import static com.datastax.spark.connector.japi.CassandraJavaUtil.mapRowTo;
 import static com.datastax.spark.connector.japi.CassandraJavaUtil.mapToRow;
 
+import com.google.common.base.Joiner;
+import com.google.common.collect.Sets;
+import com.google.common.net.HostAndPort;
 import io.jaegertracing.spark.dependencies.DependencyLinks;
-import java.nio.ByteBuffer;
+import io.jaegertracing.spark.dependencies.model.Dependency;
+import io.jaegertracing.spark.dependencies.model.Span;
+import java.io.Serializable;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -17,20 +22,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
-
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.common.base.Joiner;
-import com.google.common.collect.Sets;
-import com.google.common.net.HostAndPort;
-
-import io.jaegertracing.spark.dependencies.model.Dependencies;
-import io.jaegertracing.spark.dependencies.model.Dependency;
-import io.jaegertracing.spark.dependencies.model.Span;
 import scala.Tuple2;
 
 public final class CassandraDependenciesJob {
@@ -148,16 +144,16 @@ public final class CassandraDependenciesJob {
         microsUpper);
 
     JavaSparkContext sc = new JavaSparkContext(conf);
-    JavaPairRDD<ByteBuffer, Iterable<Span>> traces = javaFunctions(sc)
+    JavaPairRDD<String, Iterable<Span>> traces = javaFunctions(sc)
         .cassandraTable(keyspace, "traces", mapRowTo(Span.class))
         .where("start_time < ? AND start_time > ?", microsUpper, microsLower)
-        .spanBy(Span::getTraceId, ByteBuffer.class);
+        .spanBy(Span::getTraceId, String.class);
 
     save(sc, deps(traces));
     sc.stop();
   }
 
-  public static List<Dependency> deps(JavaPairRDD<ByteBuffer, Iterable<Span>> traces) {
+  public static List<Dependency> deps(JavaPairRDD<String, Iterable<Span>> traces) {
         return traces.flatMapValues(DependencyLinks.dependencyLinks()).values()
         .mapToPair(dependency -> tuple2(tuple2(dependency.getParent(), dependency.getChild()), dependency))
         .reduceByKey((link1, link2) ->
@@ -167,9 +163,10 @@ public final class CassandraDependenciesJob {
   }
 
   void save(JavaSparkContext sc, List<Dependency> links) {
-    Dependencies dependencies = new Dependencies(links, System.currentTimeMillis());
-    javaFunctions(sc.parallelize(Arrays.asList(dependencies))).writerBuilder(keyspace, "dependencies",
-            mapToRow(Dependencies.class)).saveToCassandra();
+    CassandraDependencies dependencies = new CassandraDependencies(links, System.currentTimeMillis());
+    javaFunctions(sc.parallelize(Collections.singletonList(dependencies)))
+        .writerBuilder(keyspace, "dependencies", mapToRow(CassandraDependencies.class))
+        .saveToCassandra();
   }
 
   static String parseHosts(String contactPoints) {
@@ -210,6 +207,33 @@ public final class CassandraDependenciesJob {
     day.set(Calendar.MINUTE, 0);
     day.set(Calendar.HOUR_OF_DAY, 0);
     return day.getTimeInMillis();
+  }
+
+  /**
+   * DTO object used to store dependencies to Cassandra, see {@link com.datastax.spark.connector.mapper.JavaBeanColumnMapper}
+   */
+  public final static class CassandraDependencies implements Serializable {
+    private static final long serialVersionUID = 0L;
+
+    private List<Dependency> dependencies;
+    private long ts;
+
+    public CassandraDependencies(List<Dependency> dependencies, long ts) {
+      this.dependencies = dependencies;
+      this.ts = ts;
+    }
+
+    public List<Dependency> getDependencies() {
+      return dependencies;
+    }
+
+    public Long getTs() {
+      return ts;
+    }
+
+    public Long getTsIndex() {
+      return ts;
+    }
   }
 }
 

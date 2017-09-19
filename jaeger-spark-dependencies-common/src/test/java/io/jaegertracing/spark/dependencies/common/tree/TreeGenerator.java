@@ -1,6 +1,6 @@
-package io.jaegertracing.spark.dependencies.tree;
+package io.jaegertracing.spark.dependencies.common.tree;
 
-import io.jaegertracing.spark.dependencies.TracersGenerator.TracerServiceName;
+import io.jaegertracing.spark.dependencies.common.TracersGenerator.TracerServiceName;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;

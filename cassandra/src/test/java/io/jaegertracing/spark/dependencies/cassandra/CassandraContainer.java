@@ -1,4 +1,4 @@
-package io.jaegertracing.spark.dependencies;
+package io.jaegertracing.spark.dependencies.cassandra;
 
 import java.net.InetSocketAddress;
 import java.util.concurrent.TimeUnit;
@@ -47,5 +47,4 @@ public class CassandraContainer extends GenericContainer<CassandraContainer> imp
                 .withPoolingOptions(new PoolingOptions().setMaxConnectionsPerHost(HostDistance.LOCAL, 1))
                 .build();
     }
-
 }

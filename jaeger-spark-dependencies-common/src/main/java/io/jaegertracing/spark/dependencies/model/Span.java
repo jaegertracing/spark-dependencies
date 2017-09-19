@@ -2,7 +2,6 @@ package io.jaegertracing.spark.dependencies.model;
 
 import java.io.Serializable;
 import java.math.BigInteger;
-import java.nio.ByteBuffer;
 
 /**
  * @author Pavol Loffay
@@ -10,20 +9,18 @@ import java.nio.ByteBuffer;
 public class Span implements Serializable {
     private static final long serialVersionUID = 0L;
 
-    private ByteBuffer traceId;
+    private String traceId;
     private Long spanId;
     private Long parentId;
-
-    private String traceIdArr;
 
     private long startTime;
     private Process process;
 
-    public ByteBuffer getTraceId() {
+    public String getTraceId() {
         return traceId;
     }
 
-    public void setTraceId(ByteBuffer traceId) {
+    public void setTraceId(String traceId) {
         this.traceId = traceId;
     }
 
@@ -62,17 +59,17 @@ public class Span implements Serializable {
     // TODO for elasticsearch
     public void setSpanID(String hex) {
         BigInteger value = new BigInteger(hex, 16);
-        this.spanId = value.longValue();
+//        this.spanId = value.longValue();
     }
     public void setTraceID(String hex) {
-        this.traceIdArr = hex;
+//        this.traceIdArr = hex;
     }
     public void setParentSpanID(String hex) {
         BigInteger value = new BigInteger(hex, 16);
-        this.parentId = value.longValue();
+//        this.parentId = value.longValue();
     }
     public String getTraceIdArr() {
-        return traceIdArr;
+        return null;
     }
 }
 

@@ -1,4 +1,4 @@
-package io.jaegertracing.spark.dependencies.tree;
+package io.jaegertracing.spark.dependencies.common.tree;
 
 import java.util.ArrayList;
 import java.util.Collections;
