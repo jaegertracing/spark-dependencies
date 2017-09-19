@@ -1,9 +1,9 @@
 package io.jaegertracing.spark.dependencies.elastic;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jaegertracing.spark.dependencies.DependencyLinks;
+import io.jaegertracing.spark.dependencies.elastic.json.JsonHelper;
 import io.jaegertracing.spark.dependencies.model.Dependency;
 import io.jaegertracing.spark.dependencies.model.Span;
 import java.net.URI;
@@ -167,8 +167,7 @@ public class ElasticsearchDependenciesJob {
     JavaSparkContext sc = new JavaSparkContext(conf);
 
     ObjectMapper objectMapper = new ObjectMapper();
-    objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-
+    JsonHelper.configure(objectMapper);
 
     try {
       JavaPairRDD<String, Iterable<Span>> traces = JavaEsSpark
@@ -177,12 +176,11 @@ public class ElasticsearchDependenciesJob {
             System.out.println(tuple._1());
             System.out.println(tuple._2());
             Span span = objectMapper.readValue(tuple._2(), Span.class);
-            System.out.println("TraceId >> " + span.getTraceIdArr().toString());
+            System.out.println("TraceId >> " + span.getTraceId());
             System.out.println("SpanId >> " + span.getSpanId());
             return span;
-          }).groupBy(v1 -> {
-            return v1.getTraceIdArr();
-          });
+          })
+          .groupBy(Span::getTraceId);
 
       List<Dependency> dependencyLinks = traces.flatMapValues(DependencyLinks.dependencyLinks()).values()
           .mapToPair(dependency -> tuple2(tuple2(dependency.getParent(), dependency.getChild()),

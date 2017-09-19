@@ -1,7 +1,6 @@
 package io.jaegertracing.spark.dependencies.model;
 
 import java.io.Serializable;
-import java.math.BigInteger;
 
 /**
  * @author Pavol Loffay
@@ -13,7 +12,7 @@ public class Span implements Serializable {
     private Long spanId;
     private Long parentId;
 
-    private long startTime;
+    private Long startTime;
     private Process process;
 
     public String getTraceId() {
@@ -44,7 +43,7 @@ public class Span implements Serializable {
         return startTime;
     }
 
-    public void setStartTime(long startTime) {
+    public void setStartTime(Long startTime) {
         this.startTime = startTime;
     }
 
@@ -54,22 +53,6 @@ public class Span implements Serializable {
 
     public void setProcess(Process process) {
         this.process = process;
-    }
-
-    // TODO for elasticsearch
-    public void setSpanID(String hex) {
-        BigInteger value = new BigInteger(hex, 16);
-//        this.spanId = value.longValue();
-    }
-    public void setTraceID(String hex) {
-//        this.traceIdArr = hex;
-    }
-    public void setParentSpanID(String hex) {
-        BigInteger value = new BigInteger(hex, 16);
-//        this.parentId = value.longValue();
-    }
-    public String getTraceIdArr() {
-        return null;
     }
 }
 
