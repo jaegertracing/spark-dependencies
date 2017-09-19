@@ -1,5 +1,6 @@
 package io.jaegertracing.spark.dependencies;
 
+import io.jaegertracing.spark.dependencies.elastic.ElasticsearchDependenciesJob;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.net.URLDecoder;
@@ -20,12 +21,21 @@ public final class DependenciesSparkJob {
     Runnable logInitializer = LogInitializer.create(jaegerLogLevel);
     logInitializer.run(); // Ensures local log commands emit
 
-    CassandraDependenciesJob.builder()
-        .logInitializer(logInitializer)
-        .jars(jarPath)
-        .day(day)
-        .build()
-        .run();
+    if (System.getenv("STORAGE").equalsIgnoreCase("elasticsearch")) {
+      ElasticsearchDependenciesJob.builder()
+          .logInitializer(logInitializer)
+          .jars(jarPath)
+          .day(day)
+          .build()
+          .run();
+    } else {
+      CassandraDependenciesJob.builder()
+          .logInitializer(logInitializer)
+          .jars(jarPath)
+          .day(day)
+          .build()
+          .run();
+    }
   }
 
   static String pathToUberJar() throws UnsupportedEncodingException {

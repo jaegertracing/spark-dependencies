@@ -1,4 +1,4 @@
-package io.jaegertracing.spark.dependencies.cassandra;
+package io.jaegertracing.spark.dependencies;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -7,8 +7,8 @@ import java.util.Map;
 
 import org.apache.spark.api.java.function.Function;
 
-import io.jaegertracing.spark.dependencies.cassandra.model.Dependency;
-import io.jaegertracing.spark.dependencies.cassandra.model.Span;
+import io.jaegertracing.spark.dependencies.model.Dependency;
+import io.jaegertracing.spark.dependencies.model.Span;
 
 /**
  * @author Pavol Loffay

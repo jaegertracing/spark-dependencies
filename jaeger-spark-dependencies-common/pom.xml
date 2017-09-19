@@ -9,19 +9,10 @@
     <version>0.0.1-SNAPSHOT</version>
   </parent>
 
-  <artifactId>jaeger-spark-dependencies-elasticsearch</artifactId>
+  <artifactId>jaeger-spark-dependencies-common</artifactId>
 
   <dependencies>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>jaeger-spark-dependencies-common</artifactId>
-      <version>${project.version}</version>
-    </dependency>
 
-    <dependency>
-      <groupId>org.elasticsearch</groupId>
-      <artifactId>elasticsearch-spark-20_${scala.binary.version}</artifactId>
-      <version>6.0.0-beta2</version>
-    </dependency>
   </dependencies>
+
 </project>

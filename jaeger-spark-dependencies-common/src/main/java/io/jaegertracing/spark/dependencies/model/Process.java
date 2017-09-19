@@ -1,4 +1,4 @@
-package io.jaegertracing.spark.dependencies.cassandra.model;
+package io.jaegertracing.spark.dependencies.model;
 
 import java.io.Serializable;
 

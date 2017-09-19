@@ -1,6 +1,7 @@
-package io.jaegertracing.spark.dependencies.cassandra.model;
+package io.jaegertracing.spark.dependencies.model;
 
 import java.io.Serializable;
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 
 /**
@@ -12,6 +13,8 @@ public class Span implements Serializable {
     private ByteBuffer traceId;
     private Long spanId;
     private Long parentId;
+
+    private String traceIdArr;
 
     private long startTime;
     private Process process;
@@ -54,6 +57,22 @@ public class Span implements Serializable {
 
     public void setProcess(Process process) {
         this.process = process;
+    }
+
+    // TODO for elasticsearch
+    public void setSpanID(String hex) {
+        BigInteger value = new BigInteger(hex, 16);
+        this.spanId = value.longValue();
+    }
+    public void setTraceID(String hex) {
+        this.traceIdArr = hex;
+    }
+    public void setParentSpanID(String hex) {
+        BigInteger value = new BigInteger(hex, 16);
+        this.parentId = value.longValue();
+    }
+    public String getTraceIdArr() {
+        return traceIdArr;
     }
 }
 

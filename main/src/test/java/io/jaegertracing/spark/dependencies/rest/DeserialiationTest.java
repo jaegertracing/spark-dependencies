@@ -5,6 +5,8 @@ import static org.junit.Assert.assertEquals;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import org.junit.Test;
 
 /**
@@ -24,5 +26,11 @@ public class DeserialiationTest {
         assertEquals("service1", restResult.getData().get(0).getParent());
         assertEquals("service2", restResult.getData().get(0).getChild());
         assertEquals(1L, restResult.getData().get(0).getCallCount());
+    }
+
+    @Test
+    public void test() {
+        System.out.println(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX")
+            .format(new Date()).toString());
     }
 }

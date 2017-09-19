@@ -8,9 +8,10 @@
   <packaging>pom</packaging>
 
   <modules>
+    <module>jaeger-spark-dependencies-common</module>
     <module>cassandra</module>
-    <module>main</module>
     <module>elasticsearch</module>
+    <module>main</module>
   </modules>
 
   <properties>

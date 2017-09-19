@@ -1,6 +1,8 @@
-package io.jaegertracing.spark.dependencies.cassandra.model;
+package io.jaegertracing.spark.dependencies.model;
 
 import java.io.Serializable;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -17,15 +19,22 @@ public class Dependencies implements Serializable {
         this.ts = ts;
     }
 
+    public String getTimestamp() {
+        // Jaeger ES dependency storage uses RFC3339Nano for timestamp
+        return new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX")
+            .format(new Date(ts)).toString();
+    }
+
     public List<Dependency> getDependencies() {
         return dependencies;
     }
 
-    public long getTsIndex() {
-        return ts;
-    }
 
-    public long getTs() {
-        return ts;
-    }
+//    public long getTsIndex() {
+//        return ts;
+//    }
+//
+//    public long getTs() {
+//        return ts;
+//    }
 }

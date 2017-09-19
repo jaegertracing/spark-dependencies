@@ -4,6 +4,7 @@ import static com.datastax.spark.connector.japi.CassandraJavaUtil.javaFunctions;
 import static com.datastax.spark.connector.japi.CassandraJavaUtil.mapRowTo;
 import static com.datastax.spark.connector.japi.CassandraJavaUtil.mapToRow;
 
+import io.jaegertracing.spark.dependencies.DependencyLinks;
 import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
@@ -27,9 +28,9 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.Sets;
 import com.google.common.net.HostAndPort;
 
-import io.jaegertracing.spark.dependencies.cassandra.model.Dependencies;
-import io.jaegertracing.spark.dependencies.cassandra.model.Dependency;
-import io.jaegertracing.spark.dependencies.cassandra.model.Span;
+import io.jaegertracing.spark.dependencies.model.Dependencies;
+import io.jaegertracing.spark.dependencies.model.Dependency;
+import io.jaegertracing.spark.dependencies.model.Span;
 import scala.Tuple2;
 
 public final class CassandraDependenciesJob {

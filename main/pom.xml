@@ -19,6 +19,11 @@
       <artifactId>jaeger-spark-dependencies-cassandra</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>jaeger-spark-dependencies-elasticsearch</artifactId>
+      <version>${project.version}</version>
+    </dependency>
 
     <dependency>
       <groupId>org.testcontainers</groupId>
@@ -47,11 +52,13 @@
       <groupId>io.zipkin.brave</groupId>
       <artifactId>brave</artifactId>
       <version>${version.io.zipkin.brave-brave}</version>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>io.zipkin.reporter</groupId>
       <artifactId>zipkin-sender-okhttp3</artifactId>
       <version>${version.io.zipkin.reporter-zipkin-sender-okhttp3}</version>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 
