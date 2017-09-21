@@ -40,9 +40,8 @@
 
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>jaeger-spark-dependencies-common</artifactId>
+      <artifactId>jaegertracing-spark-dependencies-test</artifactId>
       <version>${project.version}</version>
-      <type>test-jar</type>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -50,44 +49,5 @@
       <artifactId>testcontainers</artifactId>
       <scope>test</scope>
     </dependency>
-    <dependency>
-      <groupId>com.uber.jaeger</groupId>
-      <artifactId>jaeger-core</artifactId>
-      <version>${version.org.uber.jaeger-jaeger-core}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.squareup.okhttp3</groupId>
-      <artifactId>okhttp</artifactId>
-      <version>${version.com.squareup.okhttp3-okhttp}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.awaitility</groupId>
-      <artifactId>awaitility</artifactId>
-      <version>${version.org.awaitility-awaitility}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>io.zipkin.brave</groupId>
-      <artifactId>brave</artifactId>
-      <version>${version.io.zipkin.brave-brave}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>io.zipkin.reporter</groupId>
-      <artifactId>zipkin-sender-okhttp3</artifactId>
-      <version>${version.io.zipkin.reporter-zipkin-sender-okhttp3}</version>
-      <scope>test</scope>
-    </dependency>
   </dependencies>
-
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>net.orfjackal.retrolambda</groupId>
-        <artifactId>retrolambda-maven-plugin</artifactId>
-      </plugin>
-    </plugins>
-  </build>
 </project>

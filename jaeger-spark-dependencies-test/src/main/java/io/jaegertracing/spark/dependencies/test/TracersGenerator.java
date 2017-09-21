@@ -1,4 +1,4 @@
-package io.jaegertracing.spark.dependencies.common;
+package io.jaegertracing.spark.dependencies.test;
 
 import brave.Tracing;
 import brave.sampler.Sampler;
@@ -9,9 +9,9 @@ import com.uber.jaeger.metrics.StatsFactoryImpl;
 import com.uber.jaeger.reporters.RemoteReporter;
 import com.uber.jaeger.samplers.ConstSampler;
 import com.uber.jaeger.senders.HttpSender;
-import io.jaegertracing.spark.dependencies.common.tree.TracingWrapper;
-import io.jaegertracing.spark.dependencies.common.tree.TracingWrapper.JaegerWrapper;
-import io.jaegertracing.spark.dependencies.common.tree.TracingWrapper.ZipkinWrapper;
+import io.jaegertracing.spark.dependencies.test.tree.TracingWrapper;
+import io.jaegertracing.spark.dependencies.test.tree.TracingWrapper.JaegerWrapper;
+import io.jaegertracing.spark.dependencies.test.tree.TracingWrapper.ZipkinWrapper;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;

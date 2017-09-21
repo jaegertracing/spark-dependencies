@@ -1,8 +1,8 @@
-package io.jaegertracing.spark.dependencies.common.tree;
+package io.jaegertracing.spark.dependencies.test.tree;
 
-import io.jaegertracing.spark.dependencies.common.TracersGenerator;
-import io.jaegertracing.spark.dependencies.common.tree.TracingWrapper.JaegerWrapper;
-import io.jaegertracing.spark.dependencies.common.tree.TracingWrapper.ZipkinWrapper;
+import io.jaegertracing.spark.dependencies.test.TracersGenerator;
+import io.jaegertracing.spark.dependencies.test.tree.TracingWrapper.JaegerWrapper;
+import io.jaegertracing.spark.dependencies.test.tree.TracingWrapper.ZipkinWrapper;
 import org.junit.Test;
 
 /**
@@ -25,7 +25,8 @@ public class TreeGeneratorTest {
 
     @Test
     public void testZipkin() {
-        Node<ZipkinWrapper> root = new TreeGenerator(TracersGenerator.generateZipkin(20, "http://localhost:9411/api/traces"))
+        Node<ZipkinWrapper> root = new TreeGenerator(
+            TracersGenerator.generateZipkin(20, "http://localhost:9411/api/traces"))
             .generateTree(10, 3);
 
         new Traversals().inorder(root, (node, parent) -> {

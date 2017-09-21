@@ -1,8 +1,8 @@
-package io.jaegertracing.spark.dependencies.common;
+package io.jaegertracing.spark.dependencies.test;
 
-import io.jaegertracing.spark.dependencies.common.rest.DependencyLink;
-import io.jaegertracing.spark.dependencies.common.tree.Node;
-import io.jaegertracing.spark.dependencies.common.tree.Traversals;
+import io.jaegertracing.spark.dependencies.test.rest.DependencyLink;
+import io.jaegertracing.spark.dependencies.test.tree.Node;
+import io.jaegertracing.spark.dependencies.test.tree.Traversals;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;

@@ -1,4 +1,4 @@
-package io.jaegertracing.spark.dependencies.common;
+package io.jaegertracing.spark.dependencies.test;
 
 import java.net.ConnectException;
 import java.time.Duration;

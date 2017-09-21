@@ -8,6 +8,7 @@
   <packaging>pom</packaging>
 
   <modules>
+    <module>jaeger-spark-dependencies-test</module>
     <module>jaeger-spark-dependencies-common</module>
     <module>cassandra</module>
     <module>elasticsearch</module>

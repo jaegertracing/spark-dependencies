@@ -1,4 +1,4 @@
-package io.jaegertracing.spark.dependencies.common.rest;
+package io.jaegertracing.spark.dependencies.test.rest;
 
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
