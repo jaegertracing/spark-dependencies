@@ -26,7 +26,6 @@ public class SpanDeserializer extends StdDeserializer<Span> implements Serializa
 
   @Override
   public Span deserialize(JsonParser jp, DeserializationContext ctxt) throws IOException, JsonProcessingException {
-    // TODO Spark incorrectly serializes object mapper, therefore reinitializing here
     JsonNode node = objectMapper.getFactory().setCodec(objectMapper).getCodec().readTree(jp);
 
     String spanIdHex = node.get("spanID").asText();

@@ -7,21 +7,26 @@ import java.util.function.BiConsumer;
  */
 public class Traversals {
 
-    /**
-     * Traverse tree inorder
-     *
-     * @param node root node
-     * @param fce <node, parent>
-     */
-    public static <T> void inorder(Node<T> node, BiConsumer<Node<T>, Node<T>> fce) {
-        inorderRec(node, fce);
-        fce.accept(node, null);
-    }
+  /**
+   * Traverse tree inorder
+   *
+   * @param node root node
+   * @param fce <node, parent>
+   */
+  public static <T> void inorder(Node<T> node, BiConsumer<Node<T>, Node<T>> fce) {
+    inorderRec(node, fce);
+    fce.accept(node, null);
+  }
 
-    private static <T> void inorderRec(Node<T> node, BiConsumer<Node<T>, Node<T>> fce) {
-        for (Node descendant: node.getDescendants()) {
-            inorderRec(descendant, fce);
-            fce.accept(descendant, node);
-        }
+  /**
+   *
+   * @param node node
+   * @param fce <node, parent>
+   */
+  private static <T> void inorderRec(Node<T> node, BiConsumer<Node<T>, Node<T>> fce) {
+    for (Node descendant: node.getDescendants()) {
+      inorderRec(descendant, fce);
+      fce.accept(descendant, node);
     }
+  }
 }

@@ -2,8 +2,8 @@ package io.jaegertracing.spark.dependencies.elastic;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.jaegertracing.spark.dependencies.DependencyLinks;
-import io.jaegertracing.spark.dependencies.elastic.json.JsonHelper;
+import com.google.common.collect.Lists;
+import io.jaegertracing.spark.dependencies.DepenencyLinksSparkJob;
 import io.jaegertracing.spark.dependencies.model.Dependency;
 import io.jaegertracing.spark.dependencies.model.Span;
 import java.net.URI;
@@ -20,7 +20,6 @@ import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.elasticsearch.spark.rdd.api.java.JavaEsSpark;
-import scala.Tuple2;
 
 /**
  * @author Pavol Loffay
@@ -121,11 +120,11 @@ public class ElasticsearchDependenciesJob {
     return prop != null && !prop.isEmpty() ? "file:" + prop : prop;
   }
 
-  final String index;
-  final long day;
-  final String dateStamp;
-  final SparkConf conf;
-  final Runnable logInitializer;
+  private final String index;
+  private final long day;
+  private final String dateStamp;
+  private final SparkConf conf;
+  private final Runnable logInitializer;
 
   ElasticsearchDependenciesJob(Builder builder) {
     this.index = builder.index;
@@ -155,70 +154,42 @@ public class ElasticsearchDependenciesJob {
   }
 
   public void run() {
-    run( // multi-type index
-        "jaeger-span-" + dateStamp,
-        "jaeger-dependencies-" + dateStamp + "/dependencies"
-    );
-
+    run("jaeger-span-" + dateStamp,"jaeger-dependencies-" + dateStamp + "/dependencies");
     log.info("Done");
   }
 
   void run(String spanResource, String depResource) {
     JavaSparkContext sc = new JavaSparkContext(conf);
-
-    ObjectMapper objectMapper = new ObjectMapper();
-    JsonHelper.configure(objectMapper);
-
     try {
-      JavaPairRDD<String, Iterable<Span>> traces = JavaEsSpark
-          .esJsonRDD(sc, spanResource)
-          .map(tuple -> {
-            System.out.println(tuple._1());
-            System.out.println(tuple._2());
-            Span span = objectMapper.readValue(tuple._2(), Span.class);
-            System.out.println("TraceId >> " + span.getTraceId());
-            System.out.println("SpanId >> " + span.getSpanId());
-            return span;
-          })
+      JavaPairRDD<String, Iterable<Span>> traces = JavaEsSpark.esJsonRDD(sc, spanResource)
+          .map(new ElasticTupleToSpan())
           .groupBy(Span::getTraceId);
 
-      List<Dependency> dependencyLinks = traces.flatMapValues(DependencyLinks.dependencyLinks()).values()
-          .mapToPair(dependency -> tuple2(tuple2(dependency.getParent(), dependency.getChild()),
-              dependency))
-          .reduceByKey((link1, link2) ->
-              new Dependency(link1.getParent(), link2.getChild(),
-                  link1.getCallCount() + link2.getCallCount()))
-          .values()
-          .collect();
+      traces.foreach(stringIterableTuple2 -> {
+        System.out.println(stringIterableTuple2._1() +"  ->  " +  Lists.newArrayList(stringIterableTuple2._2()).size());
+      });
 
-      System.out.println(dependencyLinks);
+      List<Dependency> dependencyLinks = DepenencyLinksSparkJob.derive(traces);
       store(sc, dependencyLinks, depResource);
     } finally {
       sc.stop();
     }
   }
 
-  private void store(JavaSparkContext javaSparkContext, List<Dependency> dependencyLinks,
-      String resource) {
+  private void store(JavaSparkContext javaSparkContext, List<Dependency> dependencyLinks, String resource) {
     if (dependencyLinks.isEmpty()) {
       return;
     }
 
-    ObjectMapper objectMapper = new ObjectMapper();
     String json;
     try {
+      ObjectMapper objectMapper = new ObjectMapper();
       json = objectMapper.writeValueAsString(new ElasticsearchDependencies(dependencyLinks, System.currentTimeMillis()));
     } catch (JsonProcessingException e) {
       throw new IllegalArgumentException("Could not serialize dependencies", e);
     }
 
-    System.out.println(json);
     JavaEsSpark.saveJsonToEs(javaSparkContext.parallelize(Collections.singletonList(json)), resource);
-  }
-
-  /** Added so the code is compilable against scala 2.10 (used in spark 1.6.2) */
-  private static <T1, T2> Tuple2<T1, T2> tuple2(T1 v1, T2 v2) {
-    return new Tuple2<>(v1, v2); // in scala 2.11+ Tuple.apply works naturally
   }
 
   static void checkNoTNull(String msg, Object object) {

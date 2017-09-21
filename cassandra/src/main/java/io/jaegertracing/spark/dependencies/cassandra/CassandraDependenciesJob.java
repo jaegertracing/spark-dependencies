@@ -5,9 +5,10 @@ import static com.datastax.spark.connector.japi.CassandraJavaUtil.mapRowTo;
 import static com.datastax.spark.connector.japi.CassandraJavaUtil.mapToRow;
 
 import com.google.common.base.Joiner;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.net.HostAndPort;
-import io.jaegertracing.spark.dependencies.DependencyLinks;
+import io.jaegertracing.spark.dependencies.DepenencyLinksSparkJob;
 import io.jaegertracing.spark.dependencies.model.Dependency;
 import io.jaegertracing.spark.dependencies.model.Span;
 import java.io.Serializable;
@@ -144,25 +145,28 @@ public final class CassandraDependenciesJob {
         microsUpper);
 
     JavaSparkContext sc = new JavaSparkContext(conf);
-    JavaPairRDD<String, Iterable<Span>> traces = javaFunctions(sc)
-        .cassandraTable(keyspace, "traces", mapRowTo(Span.class))
-        .where("start_time < ? AND start_time > ?", microsUpper, microsLower)
-        .spanBy(Span::getTraceId, String.class);
+    try {
+      JavaPairRDD<String, Iterable<Span>> traces = javaFunctions(sc)
+          .cassandraTable(keyspace, "traces", mapRowTo(Span.class))
+          .where("start_time < ? AND start_time > ?", microsUpper, microsLower)
+          .mapToPair(span -> new Tuple2<>(span.getTraceId(), span))
+          .groupByKey();
 
-    save(sc, deps(traces));
-    sc.stop();
+      // TODO remove for debug purposes
+      traces.foreach(stringIterableTuple2 -> {
+        System.out.println(
+            stringIterableTuple2._1() + "  ->  " + Lists.newArrayList(stringIterableTuple2._2())
+                .size());
+      });
+
+      List<Dependency> dependencyLinks = DepenencyLinksSparkJob.derive(traces);
+      store(sc, dependencyLinks);
+    } finally {
+      sc.stop();
+    }
   }
 
-  public static List<Dependency> deps(JavaPairRDD<String, Iterable<Span>> traces) {
-        return traces.flatMapValues(DependencyLinks.dependencyLinks()).values()
-        .mapToPair(dependency -> tuple2(tuple2(dependency.getParent(), dependency.getChild()), dependency))
-        .reduceByKey((link1, link2) ->
-            new Dependency(link1.getParent(), link2.getChild(), link1.getCallCount() + link2.getCallCount()))
-        .values()
-        .collect();
-  }
-
-  void save(JavaSparkContext sc, List<Dependency> links) {
+  private void store(JavaSparkContext sc, List<Dependency> links) {
     CassandraDependencies dependencies = new CassandraDependencies(links, System.currentTimeMillis());
     javaFunctions(sc.parallelize(Collections.singletonList(dependencies)))
         .writerBuilder(keyspace, "dependencies", mapToRow(CassandraDependencies.class))
@@ -186,11 +190,6 @@ public final class CassandraDependenciesJob {
       ports.add(parsed.getPortOrDefault(9042));
     }
     return ports.size() == 1 ? String.valueOf(ports.iterator().next()) : "9042";
-  }
-
-  /** Added so the code is compilable against scala 2.10 (used in spark 1.6.2) */
-  private static <T1, T2> Tuple2<T1, T2> tuple2(T1 v1, T2 v2) {
-    return new Tuple2<>(v1, v2); // in scala 2.11+ Tuple.apply works naturally
   }
 
   static void checkNoNull(String msg, Object object) {

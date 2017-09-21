@@ -7,5 +7,4 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
  */
 @JsonDeserialize(using = SpanDeserializer.class)
 public class SpanMixin {
-
 }

@@ -4,31 +4,31 @@ package io.jaegertracing.spark.dependencies.test.rest;
  * @author Pavol Loffay
  */
 public class DependencyLink {
-    private String parent;
-    private String child;
-    private long callCount;
+  private String parent;
+  private String child;
+  private long callCount;
 
-    public String getParent() {
-        return parent;
-    }
+  public String getParent() {
+    return parent;
+  }
 
-    public void setParent(String parent) {
-        this.parent = parent;
-    }
+  public void setParent(String parent) {
+    this.parent = parent;
+  }
 
-    public String getChild() {
-        return child;
-    }
+  public String getChild() {
+    return child;
+  }
 
-    public void setChild(String child) {
-        this.child = child;
-    }
+  public void setChild(String child) {
+    this.child = child;
+  }
 
-    public long getCallCount() {
-        return callCount;
-    }
+  public long getCallCount() {
+    return callCount;
+  }
 
-    public void setCallCount(long callCount) {
-        this.callCount = callCount;
-    }
+  public void setCallCount(long callCount) {
+    this.callCount = callCount;
+  }
 }

@@ -25,62 +25,62 @@ import zipkin.reporter.okhttp3.OkHttpSender;
  */
 public class TracersGenerator {
 
-    public static class TracerServiceName<T> {
-        private T tracer;
-        private String serviceName;
+  public static class TracerServiceName<T> {
+    private T tracer;
+    private String serviceName;
 
-        public TracerServiceName(T tracer, String serviceName) {
-            this.tracer = tracer;
-            this.serviceName = serviceName;
-        }
-
-        public T getTracer() {
-            return tracer;
-        }
-
-        public TracingWrapper tracingWrapper() {
-            if (tracer instanceof Tracing) {
-                return new ZipkinWrapper((brave.Tracing)tracer, serviceName);
-            }
-            return new JaegerWrapper((com.uber.jaeger.Tracer)tracer);
-        }
+    public TracerServiceName(T tracer, String serviceName) {
+      this.tracer = tracer;
+      this.serviceName = serviceName;
     }
 
-    public static List<TracerServiceName<Tracer>> generateJaeger(int number, String collectorUrl) {
-        List<TracerServiceName<Tracer>> tracers = new ArrayList<>(number);
-        for (int i = 0; i < number; i++) {
-            String serviceName = UUID.randomUUID().toString().replace("-", "");
-            tracers.add(new TracerServiceName<>(createJaeger(serviceName, collectorUrl), serviceName));
-        }
-        return tracers;
+    public T getTracer() {
+      return tracer;
     }
 
-    public static Tracer createJaeger(String serviceName, String collectorUrl) {
-        return new com.uber.jaeger.Tracer.Builder(serviceName,
-                new RemoteReporter(new HttpSender(collectorUrl + "/api/traces", 65000), 1, 100,
-                        new Metrics(new StatsFactoryImpl(new NullStatsReporter()))), new ConstSampler(true))
-                .build();
+    public TracingWrapper tracingWrapper() {
+      if (tracer instanceof Tracing) {
+        return new ZipkinWrapper((brave.Tracing)tracer, serviceName);
+      }
+      return new JaegerWrapper((com.uber.jaeger.Tracer)tracer);
     }
+  }
 
-    public static List<TracerServiceName<Tracing>> generateZipkin(int number, String collectorUrl) {
-        List<TracerServiceName<Tracing>> tracers = new ArrayList<>(number);
-        for (int i = 0; i < number; i++) {
-            String serviceName = UUID.randomUUID().toString().replace("-", "");
-            tracers.add(new TracerServiceName<>(createZipkin(serviceName, collectorUrl), serviceName));
-        }
-        return tracers;
+  public static List<TracerServiceName<Tracer>> generateJaeger(int number, String collectorUrl) {
+    List<TracerServiceName<Tracer>> tracers = new ArrayList<>(number);
+    for (int i = 0; i < number; i++) {
+      String serviceName = UUID.randomUUID().toString().replace("-", "");
+      tracers.add(new TracerServiceName<>(createJaeger(serviceName, collectorUrl), serviceName));
     }
+    return tracers;
+  }
 
-    public static Tracing createZipkin(String serviceName, String collectorUrl) {
-        Sender sender = OkHttpSender.builder()
-            .endpoint(collectorUrl + "/api/v1/spans")
-            .encoding(Encoding.JSON)
-            .build();
-        return Tracing.newBuilder()
-            .localServiceName(serviceName)
-            .sampler(Sampler.ALWAYS_SAMPLE)
-            .traceId128Bit(true)
-            .reporter(AsyncReporter.builder(sender).build())
-            .build();
+  public static Tracer createJaeger(String serviceName, String collectorUrl) {
+    return new com.uber.jaeger.Tracer.Builder(serviceName,
+        new RemoteReporter(new HttpSender(collectorUrl + "/api/traces", 65000), 1, 100000,
+            new Metrics(new StatsFactoryImpl(new NullStatsReporter()))), new ConstSampler(true))
+        .build();
+  }
+
+  public static List<TracerServiceName<Tracing>> generateZipkin(int number, String collectorUrl) {
+    List<TracerServiceName<Tracing>> tracers = new ArrayList<>(number);
+    for (int i = 0; i < number; i++) {
+      String serviceName = UUID.randomUUID().toString().replace("-", "");
+      tracers.add(new TracerServiceName<>(createZipkin(serviceName, collectorUrl), serviceName));
     }
+    return tracers;
+  }
+
+  public static Tracing createZipkin(String serviceName, String collectorUrl) {
+    Sender sender = OkHttpSender.builder()
+      .endpoint(collectorUrl + "/api/v1/spans")
+      .encoding(Encoding.JSON)
+      .build();
+    return Tracing.newBuilder()
+        .localServiceName(serviceName)
+        .sampler(Sampler.ALWAYS_SAMPLE)
+        .traceId128Bit(true)
+        .reporter(AsyncReporter.builder(sender).queuedMaxSpans(100000).build())
+        .build();
+  }
 }

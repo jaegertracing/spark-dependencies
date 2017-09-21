@@ -6,31 +6,63 @@ import java.io.Serializable;
  * @author Pavol Loffay
  */
 public class Dependency implements Serializable {
-    private static final long serialVersionUID = 0L;
+  private static final long serialVersionUID = 0L;
 
-    private String parent;
-    private String child;
-    private int callCount;
+  private final String parent;
+  private final String child;
+  private final long callCount;
 
-    public Dependency(String parent, String child) {
-        this(parent, child, 1);
+  public Dependency(String parent, String child) {
+    this(parent, child, 1);
+  }
+
+  public Dependency(String parent, String child, long callCount) {
+    this.parent = parent;
+    this.child = child;
+    this.callCount = callCount;
+  }
+
+  public String getParent() {
+    return parent;
+  }
+
+  public String getChild() {
+    return child;
+  }
+
+  public long getCallCount() {
+    return callCount;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof Dependency)) {
+      return false;
     }
 
-    public Dependency(String parent, String child, int callCount) {
-        this.parent = parent;
-        this.child = child;
-        this.callCount = callCount;
-    }
+    Dependency that = (Dependency) o;
 
-    public String getParent() {
-        return parent;
+    if (!parent.equals(that.parent)) {
+      return false;
     }
+    return (this.parent.equals(that.parent))
+        && (this.child.equals(that.child))
+        && this.callCount == that.callCount;
+  }
 
-    public String getChild() {
-        return child;
-    }
-
-    public int getCallCount() {
-        return callCount;
-    }
+  @Override
+  public int hashCode() {
+    int h = 1;
+    h *= 1000003;
+    h ^= parent.hashCode();
+    h *= 1000003;
+    h ^= child.hashCode();
+    h *= 1000003;
+    h ^= (int) (h ^ ((callCount >>> 32) ^ callCount));
+    h *= 1000003;
+    return h;
+  }
 }

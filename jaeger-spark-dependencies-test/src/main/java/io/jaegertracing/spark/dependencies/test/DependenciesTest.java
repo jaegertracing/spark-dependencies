@@ -1,0 +1,139 @@
+package io.jaegertracing.spark.dependencies.test;
+
+import static org.awaitility.Awaitility.await;
+import static org.junit.Assert.assertEquals;
+
+import brave.Tracing;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.uber.jaeger.Tracer;
+import io.jaegertracing.spark.dependencies.test.rest.DependencyLink;
+import io.jaegertracing.spark.dependencies.test.rest.JsonHelper;
+import io.jaegertracing.spark.dependencies.test.rest.RestResult;
+import io.jaegertracing.spark.dependencies.test.tree.Node;
+import io.jaegertracing.spark.dependencies.test.tree.TracingWrapper.JaegerWrapper;
+import io.jaegertracing.spark.dependencies.test.tree.TracingWrapper.ZipkinWrapper;
+import io.jaegertracing.spark.dependencies.test.tree.Traversals;
+import io.jaegertracing.spark.dependencies.test.tree.TreeGenerator;
+import java.io.IOException;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+import org.junit.Test;
+
+/**
+ * @author Pavol Loffay
+ */
+public abstract class DependenciesTest {
+
+  protected OkHttpClient okHttpClient = new OkHttpClient.Builder().build();
+  protected ObjectMapper objectMapper = JsonHelper.configure(new ObjectMapper());
+
+  /**
+   * Set these in subclasses
+   */
+  protected static String queryUrl;
+  protected static String collectorUrl;
+  protected static String zipkinCollectorUrl;
+
+  /**
+   * Override this and run spark job
+   */
+  protected abstract void deriveDependencies() throws Exception;
+
+  @Test
+  public void testJaegerOneTrace() throws Exception {
+    TreeGenerator<Tracer> treeGenerator = new TreeGenerator(
+        TracersGenerator.generateJaeger(2, collectorUrl));
+    Node<JaegerWrapper> root = treeGenerator.generateTree(200, 3);
+    Traversals.inorder(root, (node, parent) -> node.getTracingWrapper().get().getSpan().finish());
+    treeGenerator.getTracers().forEach(tracer -> tracer.getTracer().close());
+    waitRestTracesContains(root.getServiceName(), root.getTracingWrapper().operationName());
+
+    Thread.sleep(1000);
+    deriveDependencies();
+    assertDependencies(DependencyLinkDerivator.serviceDependencies(root));
+  }
+
+  @Test
+  public void testJaegerMultipleTraces() throws Exception {
+    TreeGenerator<Tracer> treeGenerator = new TreeGenerator(
+        TracersGenerator.generateJaeger(50, collectorUrl));
+    Node<JaegerWrapper> root = null;
+    Map<String, Map<String, Long>> expectedDependencies = new LinkedHashMap<>();
+    for (int i = 0; i < 20; i++) {
+      root = treeGenerator.generateTree(150, 15);
+      DependencyLinkDerivator.serviceDependencies(root, expectedDependencies);
+      Traversals.inorder(root, (node, parent) -> node.getTracingWrapper().get().getSpan().finish());
+      Thread.sleep(1000);
+    }
+    // flush and wait for reported data
+    treeGenerator.getTracers().forEach(tracer -> tracer.getTracer().close());
+    waitRestTracesContains(root.getServiceName(), root.getTracingWrapper().operationName());
+
+    Thread.sleep(3000);
+    deriveDependencies();
+    assertDependencies(expectedDependencies);
+  }
+
+  @Test
+  public void testZipkinOneTrace() throws Exception {
+    TreeGenerator<Tracing> treeGenerator = new TreeGenerator(TracersGenerator.generateZipkin(5, zipkinCollectorUrl));
+    Node<ZipkinWrapper> root = treeGenerator.generateTree(150, 3);
+    Traversals.inorder(root, (node, parent) -> node.getTracingWrapper().get().getSpan().finish());
+    treeGenerator.getTracers().forEach(tracer -> tracer.getTracer().close());
+    waitRestTracesContains(root.getServiceName(), root.getTracingWrapper().operationName());
+    Thread.sleep(3000);
+
+    deriveDependencies();
+    assertDependencies(DependencyLinkDerivator.serviceDependencies(root));
+  }
+
+  @Test
+  public void testZipkinMultipleTraces() throws Exception {
+    TreeGenerator<Tracing> treeGenerator = new TreeGenerator(TracersGenerator.generateZipkin(5, zipkinCollectorUrl));
+    Map<String, Map<String, Long>> expectedDependencies = new LinkedHashMap<>();
+    Node<ZipkinWrapper> root = null;
+    for (int i = 0; i < 20; i++) {
+       root = treeGenerator.generateTree(150, 3);
+       DependencyLinkDerivator.serviceDependencies(root, expectedDependencies);
+      Traversals.inorder(root, (node, parent) -> node.getTracingWrapper().get().getSpan().finish());
+      Thread.sleep(1000);
+    }
+    // flush and wait for reported data
+    treeGenerator.getTracers().forEach(tracer -> tracer.getTracer().close());
+    waitRestTracesContains(root.getServiceName(), root.getTracingWrapper().operationName());
+    Thread.sleep(3000);
+
+    deriveDependencies();
+    assertDependencies(expectedDependencies);
+  }
+
+  protected void assertDependencies(Map<String, Map<String, Long>> expectedDependencies) throws IOException {
+    Request request = new Request.Builder()
+        .url(queryUrl + "/api/dependencies?endTs=" + System.currentTimeMillis())
+        .get()
+        .build();
+    try (Response response = okHttpClient.newCall(request).execute()) {
+      assertEquals(200, response.code());
+      RestResult<DependencyLink> restResult = objectMapper.readValue(response.body().string(), new TypeReference<RestResult<DependencyLink>>() {});
+      assertEquals(null, restResult.getErrors());
+      assertEquals(expectedDependencies, DependencyLinkDerivator.serviceDependencies(restResult.getData()));
+    }
+  }
+
+  protected void waitRestTracesContains(String service, String spanContainsThis) {
+    Request request2 = new Request.Builder()
+        .url(String.format("%s/api/traces?service=%s", queryUrl, service))
+        .get()
+        .build();
+    await().atMost(1, TimeUnit.MINUTES).until(() -> {
+      Response response = okHttpClient.newCall(request2).execute();
+      String body = response.body().string();
+      return body.contains(spanContainsThis);
+    });
+  }
+}
