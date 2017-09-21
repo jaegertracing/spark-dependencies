@@ -1,4 +1,4 @@
-package io.jaegertracing.spark.dependencies;
+package io.jaegertracing.spark.dependencies.cassandra;
 
 import static org.awaitility.Awaitility.await;
 import static org.junit.Assert.assertEquals;
@@ -8,8 +8,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.dockerjava.api.model.Link;
 import com.uber.jaeger.Tracer;
-import io.jaegertracing.spark.dependencies.cassandra.CassandraContainer;
-import io.jaegertracing.spark.dependencies.cassandra.CassandraDependenciesJob;
+import io.jaegertracing.spark.dependencies.LogInitializer;
 import io.jaegertracing.spark.dependencies.test.DependenciesDerivator;
 import io.jaegertracing.spark.dependencies.test.JaegerTestDriverContainer;
 import io.jaegertracing.spark.dependencies.test.TracersGenerator;
@@ -37,9 +36,7 @@ import org.testcontainers.containers.GenericContainer;
  */
 public class CassandraDependenciesJobTest {
 
-    private static OkHttpClient okHttpClient = new OkHttpClient.Builder()
-            .build();
-
+    private OkHttpClient okHttpClient = new OkHttpClient.Builder().build();
     private ObjectMapper objectMapper = JsonHelper.configure(new ObjectMapper());
 
     protected static int cassandraPort;

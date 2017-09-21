@@ -46,7 +46,7 @@ public final class LogInitializer implements Serializable, Runnable {
   /**
    * Call this prior to any phase to ensure Jaeger logging is setup
    */
-  static Runnable create(String jaegerLogLevel) {
+  public static Runnable create(String jaegerLogLevel) {
     Level log4Jlevel = Level.toLevel(jaegerLogLevel);
     java.util.logging.Level julLevel = toJul(log4Jlevel);
     return new LogInitializer(log4Jlevel, julLevel);
