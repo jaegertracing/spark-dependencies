@@ -4,11 +4,12 @@ import brave.Span.Kind;
 import brave.Tracing;
 import com.uber.jaeger.Span;
 import com.uber.jaeger.Tracer;
+import java.util.UUID;
 
 /**
  * @author Pavol Loffay
  */
-public interface TracingWrapper<T> {
+public interface TracingWrapper<T extends TracingWrapper> {
   T get();
   String serviceName();
   String operationName();
@@ -40,7 +41,7 @@ public interface TracingWrapper<T> {
 
     @Override
     public void createChildSpan(TracingWrapper<JaegerWrapper> parent) {
-      io.opentracing.Tracer.SpanBuilder spanBuilder = tracer.buildSpan(parent == null ? "|" : parent.get().operationName() + "->");
+      io.opentracing.Tracer.SpanBuilder spanBuilder = tracer.buildSpan(UUID.randomUUID().toString().replace("-", ""));
       if (parent != null) {
         spanBuilder.asChildOf(parent.get().span);
       }
@@ -80,13 +81,12 @@ public interface TracingWrapper<T> {
 
     @Override
     public void createChildSpan(TracingWrapper<ZipkinWrapper> parent) {
+      operationName = UUID.randomUUID().toString().replace("-","");
       if (parent == null) {
-        operationName = "|";
         span = tracing.tracer().newTrace().name(operationName)
             .kind(Kind.CLIENT)
             .start();
       } else {
-        operationName = parent.get().operationName() + "->";
         brave.Span spanJoinedServer = tracing.tracer().joinSpan(parent.get().span.context())
             .kind(Kind.SERVER)
             .name(operationName)

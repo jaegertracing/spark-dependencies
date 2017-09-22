@@ -55,4 +55,9 @@ public class CassandraDependenciesJobTest extends DependenciesTest {
         .build()
         .run();
   }
+
+  @Override
+  protected void waitBetweenTraces() throws InterruptedException {
+//    TimeUnit.SECONDS.sleep(2);
+  }
 }

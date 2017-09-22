@@ -44,16 +44,23 @@ public abstract class DependenciesTest {
    */
   protected abstract void deriveDependencies() throws Exception;
 
+  /**
+   * Wait between submitting different traces
+   */
+  protected abstract void waitBetweenTraces() throws InterruptedException;
+
   @Test
   public void testJaegerOneTrace() throws Exception {
     TreeGenerator<Tracer> treeGenerator = new TreeGenerator(
-        TracersGenerator.generateJaeger(2, collectorUrl));
+        TracersGenerator.generateJaeger(5, collectorUrl));
     Node<JaegerWrapper> root = treeGenerator.generateTree(200, 3);
     Traversals.inorder(root, (node, parent) -> node.getTracingWrapper().get().getSpan().finish());
-    treeGenerator.getTracers().forEach(tracer -> tracer.getTracer().close());
-    waitRestTracesContains(root.getServiceName(), root.getTracingWrapper().operationName());
+    waitBetweenTraces();
+    treeGenerator.getTracers().forEach(tracer -> {
+      tracer.getTracer().close();
+    });
+    waitJaegerQueryContains(root.getServiceName(), root.getTracingWrapper().operationName());
 
-    Thread.sleep(1000);
     deriveDependencies();
     assertDependencies(DependencyLinkDerivator.serviceDependencies(root));
   }
@@ -62,19 +69,17 @@ public abstract class DependenciesTest {
   public void testJaegerMultipleTraces() throws Exception {
     TreeGenerator<Tracer> treeGenerator = new TreeGenerator(
         TracersGenerator.generateJaeger(50, collectorUrl));
-    Node<JaegerWrapper> root = null;
     Map<String, Map<String, Long>> expectedDependencies = new LinkedHashMap<>();
     for (int i = 0; i < 20; i++) {
-      root = treeGenerator.generateTree(150, 15);
+      Node<JaegerWrapper> root = treeGenerator.generateTree(150, 15);
       DependencyLinkDerivator.serviceDependencies(root, expectedDependencies);
       Traversals.inorder(root, (node, parent) -> node.getTracingWrapper().get().getSpan().finish());
-      Thread.sleep(1000);
+      waitBetweenTraces();
+      waitJaegerQueryContains(root.getServiceName(), root.getTracingWrapper().operationName());
     }
     // flush and wait for reported data
     treeGenerator.getTracers().forEach(tracer -> tracer.getTracer().close());
-    waitRestTracesContains(root.getServiceName(), root.getTracingWrapper().operationName());
 
-    Thread.sleep(3000);
     deriveDependencies();
     assertDependencies(expectedDependencies);
   }
@@ -84,10 +89,14 @@ public abstract class DependenciesTest {
     TreeGenerator<Tracing> treeGenerator = new TreeGenerator(TracersGenerator.generateZipkin(5, zipkinCollectorUrl));
     Node<ZipkinWrapper> root = treeGenerator.generateTree(150, 3);
     Traversals.inorder(root, (node, parent) -> node.getTracingWrapper().get().getSpan().finish());
-    treeGenerator.getTracers().forEach(tracer -> tracer.getTracer().close());
-    waitRestTracesContains(root.getServiceName(), root.getTracingWrapper().operationName());
-    Thread.sleep(3000);
+    waitBetweenTraces();
+    treeGenerator.getTracers().forEach(tracer -> {
+      tracer.getTracer().close();
+      // tracer.close does not seem to flush all data
+      tracer.flushable().flush();
+    });
 
+    waitJaegerQueryContains(root.getServiceName(), root.getTracingWrapper().operationName());
     deriveDependencies();
     assertDependencies(DependencyLinkDerivator.serviceDependencies(root));
   }
@@ -96,17 +105,17 @@ public abstract class DependenciesTest {
   public void testZipkinMultipleTraces() throws Exception {
     TreeGenerator<Tracing> treeGenerator = new TreeGenerator(TracersGenerator.generateZipkin(5, zipkinCollectorUrl));
     Map<String, Map<String, Long>> expectedDependencies = new LinkedHashMap<>();
-    Node<ZipkinWrapper> root = null;
     for (int i = 0; i < 20; i++) {
-       root = treeGenerator.generateTree(150, 3);
-       DependencyLinkDerivator.serviceDependencies(root, expectedDependencies);
+      Node<ZipkinWrapper> root = treeGenerator.generateTree(150, 3);
+      DependencyLinkDerivator.serviceDependencies(root, expectedDependencies);
       Traversals.inorder(root, (node, parent) -> node.getTracingWrapper().get().getSpan().finish());
-      Thread.sleep(1000);
+      waitBetweenTraces();
+      waitJaegerQueryContains(root.getServiceName(), root.getTracingWrapper().operationName());
     }
-    // flush and wait for reported data
-    treeGenerator.getTracers().forEach(tracer -> tracer.getTracer().close());
-    waitRestTracesContains(root.getServiceName(), root.getTracingWrapper().operationName());
-    Thread.sleep(3000);
+    treeGenerator.getTracers().forEach(tracer -> {
+      tracer.getTracer().close();
+      tracer.flushable().flush();
+    });
 
     deriveDependencies();
     assertDependencies(expectedDependencies);
@@ -125,13 +134,13 @@ public abstract class DependenciesTest {
     }
   }
 
-  protected void waitRestTracesContains(String service, String spanContainsThis) {
-    Request request2 = new Request.Builder()
+  protected void waitJaegerQueryContains(String service, String spanContainsThis) {
+    Request request = new Request.Builder()
         .url(String.format("%s/api/traces?service=%s", queryUrl, service))
         .get()
         .build();
-    await().atMost(1, TimeUnit.MINUTES).until(() -> {
-      Response response = okHttpClient.newCall(request2).execute();
+    await().atMost(30, TimeUnit.SECONDS).until(() -> {
+      Response response = okHttpClient.newCall(request).execute();
       String body = response.body().string();
       return body.contains(spanContainsThis);
     });

@@ -7,7 +7,7 @@ import java.util.List;
 /**
  * @author Pavol Loffay
  */
-public class Node<T> {
+public class Node<T extends TracingWrapper> {
   private List<Node<T>> descendants = new ArrayList<>();
 
   private TracingWrapper<T> tracingWrapper;

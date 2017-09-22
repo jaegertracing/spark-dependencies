@@ -1,6 +1,6 @@
 package io.jaegertracing.spark.dependencies.test.tree;
 
-import io.jaegertracing.spark.dependencies.test.TracersGenerator.TracerServiceName;
+import io.jaegertracing.spark.dependencies.test.TracersGenerator.TracerHolder;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -14,9 +14,9 @@ public class TreeGenerator<Tracer> {
 
   private Random descendantsRandom = new Random();
   private Random tracersRandom = new Random();
-  private List<TracerServiceName<Tracer>> tracers;
+  private List<TracerHolder<Tracer>> tracers;
 
-  public TreeGenerator(List<TracerServiceName<Tracer>> tracers) {
+  public TreeGenerator(List<TracerHolder<Tracer>> tracers) {
     this.tracers = tracers;
   }
 
@@ -48,7 +48,7 @@ public class TreeGenerator<Tracer> {
     generateDescendants(queue, numOfNodes, maxNumberOfDescendants);
   }
 
-  public List<TracerServiceName<Tracer>> getTracers() {
+  public List<TracerHolder<Tracer>> getTracers() {
     return Collections.unmodifiableList(tracers);
   }
 }
