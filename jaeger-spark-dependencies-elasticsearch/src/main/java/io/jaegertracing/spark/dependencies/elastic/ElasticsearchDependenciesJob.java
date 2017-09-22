@@ -1,5 +1,6 @@
 /**
  * Copyright 2017 The Jaeger Authors
+ * Copyright 2016-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -17,11 +18,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import io.jaegertracing.spark.dependencies.DepenencyLinksSparkJob;
+import io.jaegertracing.spark.dependencies.Utils;
 import io.jaegertracing.spark.dependencies.model.Dependency;
 import io.jaegertracing.spark.dependencies.model.Span;
 import java.net.URI;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedHashMap;
@@ -47,10 +48,10 @@ public class ElasticsearchDependenciesJob {
 
   public static final class Builder {
 
-    String index = getEnv("ES_INDEX", "jaeger");
-    String hosts = getEnv("ES_HOSTS", "127.0.0.1");
-    String username = getEnv("ES_USERNAME", null);
-    String password = getEnv("ES_PASSWORD", null);
+    String index = Utils.getEnv("ES_INDEX", "jaeger");
+    String hosts = Utils.getEnv("ES_HOSTS", "127.0.0.1");
+    String username = Utils.getEnv("ES_USERNAME", null);
+    String password = Utils.getEnv("ES_PASSWORD", null);
 
     final Map<String, String> sparkProperties = new LinkedHashMap<>();
 
@@ -58,7 +59,7 @@ public class ElasticsearchDependenciesJob {
       sparkProperties.put("spark.ui.enabled", "false");
       // don't die if there are no spans
       sparkProperties.put("es.index.read.missing.as.empty", "true");
-      sparkProperties.put("es.nodes.wan.only", getEnv("ES_NODES_WAN_ONLY", "false"));
+      sparkProperties.put("es.nodes.wan.only", Utils.getEnv("ES_NODES_WAN_ONLY", "false"));
       sparkProperties.put("es.net.ssl.keystore.location",
           getSystemPropertyAsFileResource("javax.net.ssl.keyStore"));
       sparkProperties.put("es.net.ssl.keystore.pass",
@@ -70,13 +71,12 @@ public class ElasticsearchDependenciesJob {
     }
 
     // local[*] master lets us run & test the job locally without setting a Spark cluster
-    String sparkMaster = getEnv("SPARK_MASTER", "local[*]");
+    String sparkMaster = Utils.getEnv("SPARK_MASTER", "local[*]");
     // needed when not in local mode
     String[] jars;
-    Runnable logInitializer;
 
     // By default the job only works on traces whose first timestamp is today
-    long day = midnightUTC(System.currentTimeMillis());
+    long day = Utils.midnightUTC(System.currentTimeMillis());
 
     /** When set, this indicates which jars to distribute to the cluster. */
     public Builder jars(String... jars) {
@@ -86,13 +86,13 @@ public class ElasticsearchDependenciesJob {
 
     /** The index prefix to use when generating daily index names. Defaults to "zipkin" */
     public Builder index(String index) {
-      checkNoTNull("index", index);
+      Utils.checkNoTNull("index", index);
       this.index = index;
       return this;
     }
 
     public Builder hosts(String hosts) {
-      checkNoTNull(hosts, "hosts");
+      Utils.checkNoTNull(hosts, "hosts");
       this.hosts = hosts;
       sparkProperties.put("es.nodes.wan.only", "true");
       return this;
@@ -112,14 +112,7 @@ public class ElasticsearchDependenciesJob {
 
     /** Day (in epoch milliseconds) to process dependencies for. Defaults to today. */
     public Builder day(long day) {
-      this.day = midnightUTC(day);
-      return this;
-    }
-
-    /** Ensures that logging is setup. Particularly important when in cluster mode. */
-    public Builder logInitializer(Runnable logInitializer) {
-      checkNoTNull("logInitializer", logInitializer);
-      this.logInitializer = logInitializer;
+      this.day = Utils.midnightUTC(day);
       return this;
     }
 
@@ -137,13 +130,11 @@ public class ElasticsearchDependenciesJob {
   private final long day;
   private final String dateStamp;
   private final SparkConf conf;
-  private final Runnable logInitializer;
 
   ElasticsearchDependenciesJob(Builder builder) {
     this.index = builder.index;
     this.day = builder.day;
-    String dateSeparator = getEnv("ES_DATE_SEPARATOR", "-");
-    SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd".replace("-", dateSeparator));
+    SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
     df.setTimeZone(TimeZone.getTimeZone("UTC"));
     this.dateStamp = df.format(new Date(builder.day));
     this.conf = new SparkConf(true).setMaster(builder.sparkMaster).setAppName(getClass().getName());
@@ -163,11 +154,10 @@ public class ElasticsearchDependenciesJob {
     for (Map.Entry<String, String> entry : builder.sparkProperties.entrySet()) {
       conf.set(entry.getKey(), entry.getValue());
     }
-    this.logInitializer = builder.logInitializer;
   }
 
   public void run() {
-    run("jaeger-span-" + dateStamp,"jaeger-dependencies-" + dateStamp + "/dependencies");
+    run(index + "-span-" + dateStamp,"jaeger-dependencies-" + dateStamp + "/dependencies");
     log.info("Done");
   }
 
@@ -197,32 +187,14 @@ public class ElasticsearchDependenciesJob {
     String json;
     try {
       ObjectMapper objectMapper = new ObjectMapper();
-      json = objectMapper.writeValueAsString(new ElasticsearchDependencies(dependencyLinks, System.currentTimeMillis()));
+      json = objectMapper.writeValueAsString(new ElasticsearchDependencies(dependencyLinks, day));
     } catch (JsonProcessingException e) {
-      throw new IllegalArgumentException("Could not serialize dependencies", e);
+      throw new IllegalStateException("Could not serialize dependencies", e);
     }
 
     JavaEsSpark.saveJsonToEs(javaSparkContext.parallelize(Collections.singletonList(json)), resource);
   }
 
-  static void checkNoTNull(String msg, Object object) {
-    if (object == null) {
-      throw new NullPointerException(String.format("%s is null", msg));
-    }
-  }
-  private static String getEnv(String key, String defaultValue) {
-    String result = System.getenv(key);
-    return result != null && !result.isEmpty() ? result : defaultValue;
-  }
-  public static long midnightUTC(long epochMillis) {
-    Calendar day = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
-    day.setTimeInMillis(epochMillis);
-    day.set(Calendar.MILLISECOND, 0);
-    day.set(Calendar.SECOND, 0);
-    day.set(Calendar.MINUTE, 0);
-    day.set(Calendar.HOUR_OF_DAY, 0);
-    return day.getTimeInMillis();
-  }
   static String parseHosts(String hosts) {
     StringBuilder to = new StringBuilder();
     String[] hostParts = hosts.split(",");
@@ -245,9 +217,10 @@ public class ElasticsearchDependenciesJob {
     return to.toString();
   }
 
-  public static class ElasticsearchDependencies {
-    private static final long serialVersionUID = 0L;
-
+  /**
+   * Helper class used to serialize dependencies to JSON.
+   */
+  public static final class ElasticsearchDependencies {
     private List<Dependency> dependencies;
     private long ts;
 

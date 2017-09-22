@@ -13,6 +13,7 @@
  */
 package io.jaegertracing.spark.dependencies;
 
+import io.jaegertracing.spark.dependencies.cassandra.CassandraDependenciesJob;
 import io.jaegertracing.spark.dependencies.elastic.ElasticsearchDependenciesJob;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
@@ -21,33 +22,37 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.TimeZone;
 
-import io.jaegertracing.spark.dependencies.cassandra.CassandraDependenciesJob;
-
 public final class DependenciesSparkJob {
-  /** Runs with defaults, starting today */
+
   public static void main(String[] args) throws UnsupportedEncodingException {
+    if (args.length != 1) {
+      throw new IllegalArgumentException("");
+    }
+
+    String storage = System.getenv("STORAGE");
+    if (storage == null) {
+      throw new IllegalArgumentException("Missing environmental variable STORAGE");
+    }
+
+    run(storage, args.length == 1 ? parseDay(args[0]) : System.currentTimeMillis());
+  }
+
+  private static void run(String storage, long day) throws UnsupportedEncodingException {
     String jarPath = pathToUberJar();
-    long day = args.length == 1 ? parseDay(args[0]) : System.currentTimeMillis();
-
-    String jaegerLogLevel = System.getenv("JAEGER_LOG_LEVEL");
-    if (jaegerLogLevel == null) jaegerLogLevel = "INFO";
-    Runnable logInitializer = LogInitializer.create(jaegerLogLevel);
-    logInitializer.run(); // Ensures local log commands emit
-
-    if (System.getenv("STORAGE").equalsIgnoreCase("elasticsearch")) {
+    if ("elasticsearch".equalsIgnoreCase(storage)) {
       ElasticsearchDependenciesJob.builder()
-          .logInitializer(logInitializer)
+          .jars(jarPath)
+          .day(day)
+          .build()
+          .run();
+    } else if ("cassandra".equalsIgnoreCase(storage)) {
+      CassandraDependenciesJob.builder()
           .jars(jarPath)
           .day(day)
           .build()
           .run();
     } else {
-      CassandraDependenciesJob.builder()
-          .logInitializer(logInitializer)
-          .jars(jarPath)
-          .day(day)
-          .build()
-          .run();
+      throw new IllegalArgumentException("Unsupported storage: " + storage);
     }
   }
 

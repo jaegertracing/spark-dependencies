@@ -32,12 +32,11 @@
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>jaeger-spark-dependencies-common</artifactId>
-      <version>${project.version}</version>
     </dependency>
 
     <dependency>
       <groupId>org.apache.spark</groupId>
-      <artifactId>spark-core_${scala.binary.version}</artifactId>
+      <artifactId>spark-core_${version.scala.binary}</artifactId>
       <exclusions>
         <!-- exclude netty-all as it interferes with cassandra's netty -->
         <exclusion>
@@ -49,14 +48,13 @@
 
     <dependency>
       <groupId>com.datastax.spark</groupId>
-      <artifactId>spark-cassandra-connector-unshaded_${scala.binary.version}</artifactId>
+      <artifactId>spark-cassandra-connector-unshaded_${version.scala.binary}</artifactId>
       <version>${spark-cassandra-connector.version}</version>
     </dependency>
 
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>jaeger-spark-dependencies-test</artifactId>
-      <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>

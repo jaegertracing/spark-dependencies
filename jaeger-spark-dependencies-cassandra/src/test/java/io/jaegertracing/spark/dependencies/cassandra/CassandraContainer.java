@@ -1,5 +1,6 @@
 /**
  * Copyright 2017 The Jaeger Authors
+ * Copyright 2016-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,19 +14,17 @@
  */
 package io.jaegertracing.spark.dependencies.cassandra;
 
+import com.datastax.driver.core.Cluster;
+import com.datastax.driver.core.HostDistance;
+import com.datastax.driver.core.PoolingOptions;
+import com.datastax.driver.core.Session;
 import java.net.InetSocketAddress;
 import java.util.concurrent.TimeUnit;
-
 import org.rnorth.ducttape.unreliables.Unreliables;
 import org.testcontainers.containers.ContainerLaunchException;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.traits.LinkableContainer;
 import org.testcontainers.shaded.com.google.common.net.HostAndPort;
-
-import com.datastax.driver.core.Cluster;
-import com.datastax.driver.core.HostDistance;
-import com.datastax.driver.core.PoolingOptions;
-import com.datastax.driver.core.Session;
 
 /**
  * @author Pavol Loffay

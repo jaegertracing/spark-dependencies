@@ -14,7 +14,6 @@
 package io.jaegertracing.spark.dependencies.cassandra;
 
 import com.github.dockerjava.api.model.Link;
-import io.jaegertracing.spark.dependencies.LogInitializer;
 import io.jaegertracing.spark.dependencies.test.DependenciesTest;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -62,7 +61,6 @@ public class CassandraDependenciesJobTest extends DependenciesTest {
     cassandra.execInContainer("nodetool", "flush", "jaeger");
 
     CassandraDependenciesJob.builder()
-        .logInitializer(LogInitializer.create("INFO"))
         .contactPoints("localhost:" + cassandraPort)
         .day(System.currentTimeMillis())
         .keyspace("jaeger")
@@ -72,6 +70,7 @@ public class CassandraDependenciesJobTest extends DependenciesTest {
 
   @Override
   protected void waitBetweenTraces() throws InterruptedException {
-    TimeUnit.MILLISECONDS.sleep(500);
+    // TODO otherwise it sometimes fails
+    TimeUnit.SECONDS.sleep(1);
   }
 }

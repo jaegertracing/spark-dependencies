@@ -16,7 +16,6 @@ package io.opentracing.spark.dependencies.elastic;
 
 import com.github.dockerjava.api.model.Link;
 import com.uber.jaeger.Tracer;
-import io.jaegertracing.spark.dependencies.LogInitializer;
 import io.jaegertracing.spark.dependencies.elastic.ElasticsearchDependenciesJob;
 import io.jaegertracing.spark.dependencies.test.DependenciesTest;
 import io.jaegertracing.spark.dependencies.test.TracersGenerator;
@@ -30,7 +29,7 @@ import org.testcontainers.containers.wait.Wait;
 /**
  * @author Pavol Loffay
  */
-public class ElasticSearchDependenciesJobTest extends DependenciesTest {
+public class ElasticsearchDependenciesJobTest extends DependenciesTest {
 
   private GenericContainer elasticsearch;
   private GenericContainer jaegerCollector;
@@ -93,7 +92,6 @@ public class ElasticSearchDependenciesJobTest extends DependenciesTest {
   @Override
   protected void deriveDependencies() {
     ElasticsearchDependenciesJob.builder()
-        .logInitializer(LogInitializer.create("INFO"))
         .hosts("http://localhost:" + elasticsearch.getMappedPort(9200))
         .day(System.currentTimeMillis())
         .build()
@@ -102,7 +100,7 @@ public class ElasticSearchDependenciesJobTest extends DependenciesTest {
 
   @Override
   protected void waitBetweenTraces() throws InterruptedException {
-    //otherwise elastic drops some spans
+    // TODO otherwise elastic drops some spans
     TimeUnit.SECONDS.sleep(1);
   }
 }

@@ -1,5 +1,6 @@
 /**
  * Copyright 2017 The Jaeger Authors
+ * Copyright 2016-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -19,16 +20,16 @@ import static com.datastax.spark.connector.japi.CassandraJavaUtil.mapToRow;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 import com.google.common.net.HostAndPort;
 import io.jaegertracing.spark.dependencies.DepenencyLinksSparkJob;
+import io.jaegertracing.spark.dependencies.Utils;
 import io.jaegertracing.spark.dependencies.model.Dependency;
 import io.jaegertracing.spark.dependencies.model.Span;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -51,30 +52,29 @@ public final class CassandraDependenciesJob {
   }
 
   public static final class Builder {
-    String keyspace = getEnv("CASSANDRA_KEYSPACE", "jaeger_v1_test");
-    String contactPoints = getEnv("CASSANDRA_CONTACT_POINTS", "localhost");
-    String localDc = getEnv("CASSANDRA_LOCAL_DC", null);
+    String keyspace = Utils.getEnv("CASSANDRA_KEYSPACE", "jaeger_v1_test");
+    String contactPoints = Utils.getEnv("CASSANDRA_CONTACT_POINTS", "localhost");
+    String localDc = Utils.getEnv("CASSANDRA_LOCAL_DC", null);
     // local[*] master lets us run & test the job locally without setting a Spark cluster
-    String sparkMaster = getEnv("SPARK_MASTER", "local[*]");
+    String sparkMaster = Utils.getEnv("SPARK_MASTER", "local[*]");
     // needed when not in local mode
     String[] jars;
-    Runnable logInitializer;
 
     // By default the job only works on traces whose first timestamp is today
-    long day = midnightUTC(System.currentTimeMillis());
+    long day = Utils.midnightUTC(System.currentTimeMillis());
 
     final Map<String, String> sparkProperties = new LinkedHashMap<>();
 
     Builder() {
       sparkProperties.put("spark.ui.enabled", "false");
       sparkProperties.put("spark.cassandra.connection.ssl.enabled",
-          getEnv("CASSANDRA_USE_SSL", "false"));
+          Utils.getEnv("CASSANDRA_USE_SSL", "false"));
       sparkProperties.put("spark.cassandra.connection.ssl.trustStore.password",
           System.getProperty("javax.net.ssl.trustStorePassword", ""));
       sparkProperties.put("spark.cassandra.connection.ssl.trustStore.path",
           System.getProperty("javax.net.ssl.trustStore", ""));
-      sparkProperties.put("spark.cassandra.auth.username", getEnv("CASSANDRA_USERNAME", ""));
-      sparkProperties.put("spark.cassandra.auth.password", getEnv("CASSANDRA_PASSWORD", ""));
+      sparkProperties.put("spark.cassandra.auth.username", Utils.getEnv("CASSANDRA_USERNAME", ""));
+      sparkProperties.put("spark.cassandra.auth.password", Utils.getEnv("CASSANDRA_PASSWORD", ""));
     }
 
     /** When set, this indicates which jars to distribute to the cluster. */
@@ -85,21 +85,14 @@ public final class CassandraDependenciesJob {
 
     /** Keyspace to store dependency rowsToLinks. Defaults to "jaeger_v1_test" */
     public Builder keyspace(String keyspace) {
-      checkNoNull("keyspace", keyspace);
+      Utils.checkNoTNull("keyspace", keyspace);
       this.keyspace = keyspace;
       return this;
     }
 
     /** Day (in epoch milliseconds) to process dependencies for. Defaults to today. */
     public Builder day(long day) {
-      this.day = midnightUTC(day);
-      return this;
-    }
-
-    /** Ensures that logging is setup. Particularly important when in cluster mode. */
-    public Builder logInitializer(Runnable logInitializer) {
-      checkNoNull("logInitializer", logInitializer);
-      this.logInitializer = logInitializer;
+      this.day = Utils.midnightUTC(day);
       return this;
     }
 
@@ -120,16 +113,10 @@ public final class CassandraDependenciesJob {
     }
   }
 
-  private static String getEnv(String key, String defaultValue) {
-    String result = System.getenv(key);
-    return result != null ? result : defaultValue;
-  }
-
-  final String keyspace;
-  final long day;
-  final String dateStamp;
-  final SparkConf conf;
-  final Runnable logInitializer;
+  private final String keyspace;
+  private final long day;
+  private final String dateStamp;
+  private final SparkConf conf;
 
   CassandraDependenciesJob(Builder builder) {
     this.keyspace = builder.keyspace;
@@ -142,12 +129,15 @@ public final class CassandraDependenciesJob {
         .setAppName(getClass().getName());
     conf.set("spark.cassandra.connection.host", parseHosts(builder.contactPoints));
     conf.set("spark.cassandra.connection.port", parsePort(builder.contactPoints));
-    if (builder.localDc != null) conf.set("connection.local_dc", builder.localDc);
-    if (builder.jars != null) conf.setJars(builder.jars);
+    if (builder.localDc != null) {
+      conf.set("connection.local_dc", builder.localDc);
+    }
+    if (builder.jars != null) {
+      conf.setJars(builder.jars);
+    }
     for (Map.Entry<String, String> entry : builder.sparkProperties.entrySet()) {
       conf.set(entry.getKey(), entry.getValue());
     }
-    this.logInitializer = builder.logInitializer;
   }
 
   public void run() {
@@ -180,7 +170,7 @@ public final class CassandraDependenciesJob {
   }
 
   private void store(JavaSparkContext sc, List<Dependency> links) {
-    CassandraDependencies dependencies = new CassandraDependencies(links, System.currentTimeMillis());
+    CassandraDependencies dependencies = new CassandraDependencies(links, day);
     javaFunctions(sc.parallelize(Collections.singletonList(dependencies)))
         .writerBuilder(keyspace, "dependencies", mapToRow(CassandraDependencies.class))
         .saveToCassandra();
@@ -197,28 +187,12 @@ public final class CassandraDependenciesJob {
 
   /** Returns the consistent port across all contact points or 9042 */
   static String parsePort(String contactPoints) {
-    Set<Integer> ports = Sets.newLinkedHashSet();
-    for (String contactPoint : contactPoints.split(",")) {
+    Set<Integer> ports = new HashSet<>();
+    for (String contactPoint: contactPoints.split(",")) {
       HostAndPort parsed = HostAndPort.fromString(contactPoint);
       ports.add(parsed.getPortOrDefault(9042));
     }
     return ports.size() == 1 ? String.valueOf(ports.iterator().next()) : "9042";
-  }
-
-  static void checkNoNull(String msg, Object object) {
-    if (object == null) {
-      throw new NullPointerException(String.format("%s is null", msg));
-    }
-  }
-
-  public static long midnightUTC(long epochMillis) {
-    Calendar day = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
-    day.setTimeInMillis(epochMillis);
-    day.set(Calendar.MILLISECOND, 0);
-    day.set(Calendar.SECOND, 0);
-    day.set(Calendar.MINUTE, 0);
-    day.set(Calendar.HOUR_OF_DAY, 0);
-    return day.getTimeInMillis();
   }
 
   /**

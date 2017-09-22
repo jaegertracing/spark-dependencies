@@ -15,19 +15,12 @@ package io.jaegertracing.spark.dependencies;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import static io.jaegertracing.spark.dependencies.cassandra.CassandraDependenciesJob.midnightUTC;
-
 import java.text.ParseException;
 import java.util.Date;
 import java.util.TimeZone;
-
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 public class DependenciesSparkJobTest {
-  @Rule
-  public ExpectedException thrown = ExpectedException.none();
 
   @Test
   public void parseDate() throws ParseException {
@@ -42,16 +35,13 @@ public class DependenciesSparkJobTest {
   }
 
   @Test
-  public void parseDate_midnightUTC() throws ParseException {
+  public void parseDateMidnightUTC() throws ParseException {
     long date = DependenciesSparkJob.parseDay("2013-05-15");
-    assertThat(date)
-        .isEqualTo(midnightUTC(date));
+    assertThat(date).isEqualTo(Utils.midnightUTC(date));
   }
 
-  @Test
-  public void parseDate_malformed() throws ParseException {
-    thrown.expect(IllegalArgumentException.class);
-
+  @Test(expected = IllegalArgumentException.class)
+  public void parseDateMalformed() throws ParseException {
     DependenciesSparkJob.parseDay("2013/05/15");
   }
 }
