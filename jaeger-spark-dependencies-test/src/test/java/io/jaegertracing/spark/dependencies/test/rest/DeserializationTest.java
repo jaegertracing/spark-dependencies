@@ -14,7 +14,7 @@ public class DeserializationTest {
   private ObjectMapper objectMapper = JsonHelper.configure(new ObjectMapper());
 
   @Test
-  public void testDeserialization() throws IOException {
+  public void testDependencyLinkDeserialization() throws IOException {
     String json = "{\"data\":[{\"parent\":\"service1\",\"child\":\"service2\",\"callCount\":1}],\"total\":0," +
         "\"limit\":0,\"offset\":0,\"errors\":null}";
 

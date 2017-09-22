@@ -7,6 +7,11 @@ import com.uber.jaeger.Tracer;
 import java.util.UUID;
 
 /**
+ * Encapsulates tracing information about one node(service) in the graph.
+ * It allows to create one span for this node. Caller is responsible to
+ * call {@link #createChildSpan(TracingWrapper)} and finish the span. Node that different
+ * implementation might create different spans (e.g. zipkin shared span model)
+ *
  * @author Pavol Loffay
  */
 public interface TracingWrapper<T extends TracingWrapper> {
@@ -16,8 +21,7 @@ public interface TracingWrapper<T extends TracingWrapper> {
   void createChildSpan(TracingWrapper<T> parent);
 
   class JaegerWrapper implements TracingWrapper<JaegerWrapper> {
-
-    private Tracer tracer;
+    private final Tracer tracer;
     private Span span;
 
     public JaegerWrapper(Tracer tracer) {

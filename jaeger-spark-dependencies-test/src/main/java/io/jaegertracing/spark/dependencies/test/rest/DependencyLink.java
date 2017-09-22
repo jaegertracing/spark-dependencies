@@ -8,6 +8,15 @@ public class DependencyLink {
   private String child;
   private long callCount;
 
+  // for jackson
+  public DependencyLink() {}
+
+  public DependencyLink(String parent, String child, long callCount) {
+    this.parent = parent;
+    this.child = child;
+    this.callCount = callCount;
+  }
+
   public String getParent() {
     return parent;
   }

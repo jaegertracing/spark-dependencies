@@ -32,8 +32,7 @@ public class DependencyLinkDerivator {
       if (callCount == null) {
         callCount = 0L;
       }
-      callCount++;
-      childMap.put(child.getServiceName(), callCount);
+      childMap.put(child.getServiceName(), ++callCount);
     });
     return dependenciesMap;
   }

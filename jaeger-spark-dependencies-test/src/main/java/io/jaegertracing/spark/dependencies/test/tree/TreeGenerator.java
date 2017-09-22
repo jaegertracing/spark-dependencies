@@ -1,6 +1,7 @@
 package io.jaegertracing.spark.dependencies.test.tree;
 
 import io.jaegertracing.spark.dependencies.test.TracersGenerator.TracerHolder;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -17,11 +18,14 @@ public class TreeGenerator<Tracer> {
   private List<TracerHolder<Tracer>> tracers;
 
   public TreeGenerator(List<TracerHolder<Tracer>> tracers) {
-    this.tracers = tracers;
+    if (tracers == null || tracers.isEmpty()) {
+      throw new IllegalArgumentException();
+    }
+    this.tracers = new ArrayList<>(tracers);
   }
 
   public Node generateTree(int numOfNodes, int maxNumberOfDescendants) {
-    if (numOfNodes == 0 || maxNumberOfDescendants == 0 || tracers == null || tracers.isEmpty()) {
+    if (numOfNodes <= 0 || maxNumberOfDescendants == 0) {
       throw new IllegalArgumentException();
     }
 
@@ -31,6 +35,10 @@ public class TreeGenerator<Tracer> {
   }
 
   private void generateDescendants(Queue<Node> queue, int numOfNodes, int maxNumberOfDescendants) {
+    if (numOfNodes <= 0) {
+      return;
+    }
+
     Node parent = queue.poll();
     if (parent == null) {
       return;

@@ -5,6 +5,9 @@ import java.util.Collections;
 import java.util.List;
 
 /**
+ * Node in tree with N descendants. Node encapsulates
+ * {@link TracingWrapper} which holds tracing information e.g span/tracer.
+ *
  * @author Pavol Loffay
  */
 public class Node<T extends TracingWrapper> {

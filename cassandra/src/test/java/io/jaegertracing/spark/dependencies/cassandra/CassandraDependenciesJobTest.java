@@ -3,6 +3,7 @@ package io.jaegertracing.spark.dependencies.cassandra;
 import com.github.dockerjava.api.model.Link;
 import io.jaegertracing.spark.dependencies.LogInitializer;
 import io.jaegertracing.spark.dependencies.test.DependenciesTest;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.junit.After;
 import org.junit.Before;
@@ -58,6 +59,6 @@ public class CassandraDependenciesJobTest extends DependenciesTest {
 
   @Override
   protected void waitBetweenTraces() throws InterruptedException {
-//    TimeUnit.SECONDS.sleep(2);
+    TimeUnit.MILLISECONDS.sleep(500);
   }
 }

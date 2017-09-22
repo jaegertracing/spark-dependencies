@@ -19,7 +19,6 @@ public class Traversals {
   }
 
   /**
-   *
    * @param node node
    * @param fce <node, parent>
    */

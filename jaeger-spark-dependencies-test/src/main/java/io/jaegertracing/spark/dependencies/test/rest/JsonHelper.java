@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  * @author Pavol Loffay
  */
 public class JsonHelper {
+  private JsonHelper() {}
 
   public static ObjectMapper configure(ObjectMapper objectMapper) {
     objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
