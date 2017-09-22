@@ -101,6 +101,6 @@ public class ElasticsearchDependenciesJobTest extends DependenciesTest {
   @Override
   protected void waitBetweenTraces() throws InterruptedException {
     // TODO otherwise elastic drops some spans
-    TimeUnit.SECONDS.sleep(1);
+    TimeUnit.SECONDS.sleep(2);
   }
 }
