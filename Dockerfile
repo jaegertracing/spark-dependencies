@@ -19,12 +19,15 @@ MAINTAINER Pavol Loffay <ploffay@redhat.com>
 ENV APP_HOME /app/
 
 COPY pom.xml $APP_HOME
-COPY cassandra $APP_HOME/cassandra
-COPY main $APP_HOME/main
+COPY jaeger-spark-dependencies $APP_HOME/jaeger-spark-dependencies
+COPY jaeger-spark-dependencies-cassandra $APP_HOME/jaeger-spark-dependencies-cassandra
+COPY jaeger-spark-dependencies-elasticsearch $APP_HOME/jaeger-spark-dependencies-elasticsearch
+COPY jaeger-spark-dependencies-common $APP_HOME/jaeger-spark-dependencies-common
+COPY jaeger-spark-dependencies-test $APP_HOME/jaeger-spark-dependencies-test
 COPY .mvn $APP_HOME/.mvn
 COPY mvnw $APP_HOME
 
 WORKDIR $APP_HOME
-RUN ./mvnw package -Dlicense.skip=true && rm -rf ~/.m2
+RUN ./mvnw package -Dlicense.skip=true -DskipTests && rm -rf ~/.m2
 
-CMD java -jar main/target/jaeger-spark-dependencies-0.0.1-SNAPSHOT.jar
+CMD java -jar jaeger-spark-dependencies/target/jaeger-spark-dependencies-0.0.1-SNAPSHOT.jar

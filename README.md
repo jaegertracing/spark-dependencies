@@ -60,9 +60,12 @@ To build the job from source and run against a local cassandra, in Spark's stand
 
 ```bash
 # Build the spark jobs
-$ ./mvnw clean install # if failed add SPARK_LOCAL_IP=127.0.0.1
-$ STORAGE_TYPE=cassandra java -jar ./main/target/zipkin-dependencies*.jar
+./mvnw clean install # if failed add SPARK_LOCAL_IP=127.0.0.1
+STORAGE_TYPE=cassandra java -jar ./main/target/zipkin-dependencies*.jar
+docker build -t pavolloffay/jaeger-spark-dependencies:latest .
 ```
+
+
 
 ## Troubleshooting
 
