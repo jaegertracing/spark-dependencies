@@ -97,7 +97,7 @@ public abstract class DependenciesTest {
     assertDependencies(expectedDependencies);
   }
 
-  @Test
+//  @Test
   public void testZipkinOneTrace() throws Exception {
     TreeGenerator<Tracing> treeGenerator = new TreeGenerator(TracersGenerator.generateZipkin(5, zipkinCollectorUrl));
     Node<ZipkinWrapper> root = treeGenerator.generateTree(150, 3);
@@ -114,7 +114,7 @@ public abstract class DependenciesTest {
     assertDependencies(DependencyLinkDerivator.serviceDependencies(root));
   }
 
-  @Test
+//  @Test
   public void testZipkinMultipleTraces() throws Exception {
     TreeGenerator<Tracing> treeGenerator = new TreeGenerator(TracersGenerator.generateZipkin(5, zipkinCollectorUrl));
     Map<String, Map<String, Long>> expectedDependencies = new LinkedHashMap<>();
