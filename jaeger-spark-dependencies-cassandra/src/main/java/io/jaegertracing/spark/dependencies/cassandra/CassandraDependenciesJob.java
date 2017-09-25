@@ -20,7 +20,7 @@ import static com.datastax.spark.connector.japi.CassandraJavaUtil.mapToRow;
 
 import com.google.common.base.Joiner;
 import com.google.common.net.HostAndPort;
-import io.jaegertracing.spark.dependencies.DependencyLinksSparkJob;
+import io.jaegertracing.spark.dependencies.DependenciesSparkHelper;
 import io.jaegertracing.spark.dependencies.Utils;
 import io.jaegertracing.spark.dependencies.model.Dependency;
 import io.jaegertracing.spark.dependencies.model.Span;
@@ -158,7 +158,7 @@ public final class CassandraDependenciesJob {
           .mapToPair(span -> new Tuple2<>(span.getTraceId(), span))
           .groupByKey();
 
-      List<Dependency> dependencyLinks = DependencyLinksSparkJob.derive(traces);
+      List<Dependency> dependencyLinks = DependenciesSparkHelper.derive(traces);
       store(sc, dependencyLinks);
     } finally {
       sc.stop();

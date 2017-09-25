@@ -22,8 +22,8 @@ import scala.Tuple2;
 /**
  * @author Pavol Loffay
  */
-public class DependencyLinksSparkJob {
-  private DependencyLinksSparkJob() {}
+public class DependenciesSparkHelper {
+  private DependenciesSparkHelper() {}
 
   /**
    * Derives dependency links based on supplied spans (e.g. multiple traces). If there is a link A->B
