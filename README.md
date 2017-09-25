@@ -53,7 +53,7 @@ Cassandra is used when `STORAGE_TYPE=cassandra`.
 Example usage:
 
 ```bash
-$ STORAGE_TYPE=cassandra CASSANDRA_CONTACT_POINTS=localhost:9042 java -jar jaeger-dependencies.jar
+$ STORAGE_TYPE=cassandra CASSANDRA_CONTACT_POINTS=localhost:9042 java -jar jaeger-spark-dependencies.jar
 ```
 ### Elasticsearch
 Elasticsearch is used when `STORAGE_TYPE=elasticsearch`.
