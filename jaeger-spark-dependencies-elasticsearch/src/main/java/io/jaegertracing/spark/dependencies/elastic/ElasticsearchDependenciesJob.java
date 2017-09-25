@@ -85,7 +85,7 @@ public class ElasticsearchDependenciesJob {
       return this;
     }
 
-    /** The index prefix to use when generating daily index names. Defaults to "zipkin" */
+    /** The index prefix to use when generating daily index names. Defaults to "jaeger" */
     public Builder index(String index) {
       Utils.checkNoTNull("index", index);
       this.index = index;
