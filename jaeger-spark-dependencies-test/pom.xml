@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright 2017 The Jaeger Authors
+
+    Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+    in compliance with the License. You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software distributed under the License
+    is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+    or implied. See the License for the specific language governing permissions and limitations under
+    the License.
+
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <artifactId>jaeger-spark-dependencies-parent</artifactId>
+    <groupId>io.jaegertracing.dependencies</groupId>
+    <version>0.0.1-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>jaeger-spark-dependencies-test</artifactId>
+
+  <dependencies>
+    <dependency>
+      <groupId>io.opentracing</groupId>
+      <artifactId>opentracing-mock</artifactId>
+      <version>${version.io.opentracing}</version>
+    </dependency>
+    <dependency>
+      <artifactId>junit</artifactId>
+      <groupId>junit</groupId>
+      <version>${version.junit}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>testcontainers</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.uber.jaeger</groupId>
+      <artifactId>jaeger-core</artifactId>
+      <version>${version.org.uber.jaeger-jaeger-core}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.squareup.okhttp3</groupId>
+      <artifactId>okhttp</artifactId>
+      <version>${version.com.squareup.okhttp3-okhttp}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.awaitility</groupId>
+      <artifactId>awaitility</artifactId>
+      <version>${version.org.awaitility-awaitility}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.zipkin.brave</groupId>
+      <artifactId>brave</artifactId>
+      <version>${version.io.zipkin.brave-brave}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.zipkin.reporter</groupId>
+      <artifactId>zipkin-sender-okhttp3</artifactId>
+      <version>${version.io.zipkin.reporter-zipkin-sender-okhttp3}</version>
+    </dependency>
+  </dependencies>
+</project>
