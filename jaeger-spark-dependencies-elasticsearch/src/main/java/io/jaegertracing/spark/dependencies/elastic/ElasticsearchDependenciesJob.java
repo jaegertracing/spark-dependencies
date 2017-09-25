@@ -36,6 +36,7 @@ import org.apache.spark.api.java.JavaSparkContext;
 import org.elasticsearch.spark.rdd.api.java.JavaEsSpark;
 
 /**
+ * @author OpenZipkin authors
  * @author Pavol Loffay
  */
 public class ElasticsearchDependenciesJob {

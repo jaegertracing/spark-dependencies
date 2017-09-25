@@ -44,6 +44,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.Tuple2;
 
+/**
+ * @author OpenZipkin authors
+ * @author Pavol Loffay
+ */
 public final class CassandraDependenciesJob {
   private static final Logger log = LoggerFactory.getLogger(CassandraDependenciesJob.class);
 

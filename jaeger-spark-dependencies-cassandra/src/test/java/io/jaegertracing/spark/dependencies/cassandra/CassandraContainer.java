@@ -26,6 +26,7 @@ import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.traits.LinkableContainer;
 
 /**
+ * @author OpenZipkin authors
  * @author Pavol Loffay
  */
 public class CassandraContainer extends GenericContainer<CassandraContainer> implements LinkableContainer {

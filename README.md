@@ -1,12 +1,15 @@
 [![Build Status][ci-img]][ci]
 
 # Jaeger Spark dependencies
-
 This is a Spark job that collects spans from storage, analyze links between services,
-and stores them for later presentation in the UI. It is needed for the production deployment.
+and stores them for later presentation in the UI. Note that it is needed for the production deployment, 
+all-in-one distribution does not need this job.
 
-This job parses all traces on a given day, based on UTC. By default, it processes the current day, 
+This job parses all traces on a given day, based on UTC. By default, it processes the current day,
 but other days can be explicitly specified.
+
+
+This repository is based on [zipkin-dependencies](https://github.com/openzipkin/zipkin-dependencies).
 
 ## Quick-start
 Spark job can be run as docker container and also as java executable:
