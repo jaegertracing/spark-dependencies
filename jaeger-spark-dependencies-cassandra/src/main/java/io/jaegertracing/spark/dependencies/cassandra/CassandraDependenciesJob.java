@@ -19,7 +19,6 @@ import static com.datastax.spark.connector.japi.CassandraJavaUtil.mapRowTo;
 import static com.datastax.spark.connector.japi.CassandraJavaUtil.mapToRow;
 
 import com.google.common.base.Joiner;
-import com.google.common.collect.Lists;
 import com.google.common.net.HostAndPort;
 import io.jaegertracing.spark.dependencies.DependencyLinksSparkJob;
 import io.jaegertracing.spark.dependencies.Utils;
@@ -96,7 +95,7 @@ public final class CassandraDependenciesJob {
       return this;
     }
 
-    /** Day (in epoch milliseconds) to process dependencies for. Defaults to today. */
+    /** Day to process dependencies for. Defaults to today. */
     public Builder day(LocalDate day) {
       this.day = day.atStartOfDay(ZoneOffset.UTC);
       return this;
@@ -158,13 +157,6 @@ public final class CassandraDependenciesJob {
           .where("start_time < ? AND start_time > ?", microsUpper, microsLower)
           .mapToPair(span -> new Tuple2<>(span.getTraceId(), span))
           .groupByKey();
-
-      // TODO remove for debug purposes
-      traces.foreach(stringIterableTuple2 -> {
-        System.out.println(
-            stringIterableTuple2._1() + "  ->  " + Lists.newArrayList(stringIterableTuple2._2())
-                .size());
-      });
 
       List<Dependency> dependencyLinks = DependencyLinksSparkJob.derive(traces);
       store(sc, dependencyLinks);

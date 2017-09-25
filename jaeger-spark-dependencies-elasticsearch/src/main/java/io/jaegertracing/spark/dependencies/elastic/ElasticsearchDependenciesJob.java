@@ -16,7 +16,6 @@ package io.jaegertracing.spark.dependencies.elastic;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.Lists;
 import io.jaegertracing.spark.dependencies.DependencyLinksSparkJob;
 import io.jaegertracing.spark.dependencies.Utils;
 import io.jaegertracing.spark.dependencies.model.Dependency;
@@ -112,7 +111,7 @@ public class ElasticsearchDependenciesJob {
       return this;
     }
 
-    /** Day (in epoch milliseconds) to process dependencies for. Defaults to today. */
+    /** Day to process dependencies for. Defaults to today. */
     public Builder day(LocalDate day) {
       this.day = day.atStartOfDay(ZoneOffset.UTC);
       return this;
@@ -166,10 +165,6 @@ public class ElasticsearchDependenciesJob {
       JavaPairRDD<String, Iterable<Span>> traces = JavaEsSpark.esJsonRDD(sc, spanResource)
           .map(new ElasticTupleToSpan())
           .groupBy(Span::getTraceId);
-
-      traces.foreach(stringIterableTuple2 -> {
-        System.out.println(stringIterableTuple2._1() +"  ->  " +  Lists.newArrayList(stringIterableTuple2._2()).size());
-      });
 
       List<Dependency> dependencyLinks = DependencyLinksSparkJob.derive(traces);
       store(sc, dependencyLinks, depResource);
