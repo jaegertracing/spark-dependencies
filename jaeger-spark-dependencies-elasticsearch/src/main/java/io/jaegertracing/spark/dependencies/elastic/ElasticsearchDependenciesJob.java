@@ -20,7 +20,6 @@ import io.jaegertracing.spark.dependencies.DependencyLinksSparkJob;
 import io.jaegertracing.spark.dependencies.Utils;
 import io.jaegertracing.spark.dependencies.model.Dependency;
 import io.jaegertracing.spark.dependencies.model.Span;
-import java.net.URI;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -144,7 +143,7 @@ public class ElasticsearchDependenciesJob {
     if (builder.password != null) {
       conf.set("es.net.http.auth.pass", builder.password);
     }
-    conf.set("es.nodes", parseHosts(builder.hosts));
+    conf.set("es.nodes", builder.hosts);
     if (builder.hosts.indexOf("https") != -1) {
       conf.set("es.net.ssl", "true");
     }
@@ -187,28 +186,6 @@ public class ElasticsearchDependenciesJob {
     }
 
     JavaEsSpark.saveJsonToEs(javaSparkContext.parallelize(Collections.singletonList(json)), resource);
-  }
-
-  static String parseHosts(String hosts) {
-    StringBuilder to = new StringBuilder();
-    String[] hostParts = hosts.split(",");
-    for (int i = 0; i < hostParts.length; i++) {
-      String host = hostParts[i];
-      if (host.startsWith("http")) {
-        URI httpUri = URI.create(host);
-        int port = httpUri.getPort();
-        if (port == -1) {
-          port = host.startsWith("https") ? 443 : 80;
-        }
-        to.append(httpUri.getHost() + ":" + port);
-      } else {
-        to.append(host);
-      }
-      if (i + 1 < hostParts.length) {
-        to.append(',');
-      }
-    }
-    return to.toString();
   }
 
   /**
