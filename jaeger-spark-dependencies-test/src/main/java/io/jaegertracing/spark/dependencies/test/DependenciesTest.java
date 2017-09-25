@@ -66,7 +66,7 @@ public abstract class DependenciesTest {
   public void testJaegerOneTrace() throws Exception {
     TreeGenerator<Tracer> treeGenerator = new TreeGenerator(
         TracersGenerator.generateJaeger(5, collectorUrl));
-    Node<JaegerWrapper> root = treeGenerator.generateTree(200, 3);
+    Node<JaegerWrapper> root = treeGenerator.generateTree(50, 3);
     Traversals.inorder(root, (node, parent) -> node.getTracingWrapper().get().getSpan().finish());
     waitBetweenTraces();
     treeGenerator.getTracers().forEach(tracer -> {
@@ -84,7 +84,7 @@ public abstract class DependenciesTest {
         TracersGenerator.generateJaeger(50, collectorUrl));
     Map<String, Map<String, Long>> expectedDependencies = new LinkedHashMap<>();
     for (int i = 0; i < 20; i++) {
-      Node<JaegerWrapper> root = treeGenerator.generateTree(150, 15);
+      Node<JaegerWrapper> root = treeGenerator.generateTree(50, 15);
       DependencyLinkDerivator.serviceDependencies(root, expectedDependencies);
       Traversals.inorder(root, (node, parent) -> node.getTracingWrapper().get().getSpan().finish());
       waitBetweenTraces();
