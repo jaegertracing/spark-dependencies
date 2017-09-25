@@ -19,6 +19,7 @@ import com.uber.jaeger.Tracer;
 import io.jaegertracing.spark.dependencies.elastic.ElasticsearchDependenciesJob;
 import io.jaegertracing.spark.dependencies.test.DependenciesTest;
 import io.jaegertracing.spark.dependencies.test.TracersGenerator;
+import java.time.LocalDate;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -94,7 +95,7 @@ public class ElasticsearchDependenciesJobTest extends DependenciesTest {
   protected void deriveDependencies() {
     ElasticsearchDependenciesJob.builder()
         .hosts("http://localhost:" + elasticsearch.getMappedPort(9200))
-        .day(System.currentTimeMillis())
+        .day(LocalDate.now())
         .build()
         .run();
   }

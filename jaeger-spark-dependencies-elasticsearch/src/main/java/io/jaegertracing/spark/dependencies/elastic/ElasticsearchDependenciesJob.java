@@ -22,13 +22,14 @@ import io.jaegertracing.spark.dependencies.Utils;
 import io.jaegertracing.spark.dependencies.model.Dependency;
 import io.jaegertracing.spark.dependencies.model.Span;
 import java.net.URI;
-import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Collections;
-import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TimeZone;
 import java.util.logging.Logger;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
@@ -77,7 +78,7 @@ public class ElasticsearchDependenciesJob {
     String[] jars;
 
     // By default the job only works on traces whose first timestamp is today
-    long day = Utils.midnightUTC(System.currentTimeMillis());
+    ZonedDateTime day = ZonedDateTime.of(LocalDate.now().atStartOfDay(), ZoneOffset.UTC);
 
     /** When set, this indicates which jars to distribute to the cluster. */
     public Builder jars(String... jars) {
@@ -112,8 +113,8 @@ public class ElasticsearchDependenciesJob {
     }
 
     /** Day (in epoch milliseconds) to process dependencies for. Defaults to today. */
-    public Builder day(long day) {
-      this.day = Utils.midnightUTC(day);
+    public Builder day(LocalDate day) {
+      this.day = day.atStartOfDay(ZoneOffset.UTC);
       return this;
     }
 
@@ -128,16 +129,12 @@ public class ElasticsearchDependenciesJob {
   }
 
   private final String index;
-  private final long day;
-  private final String dateStamp;
+  private final ZonedDateTime day;
   private final SparkConf conf;
 
   ElasticsearchDependenciesJob(Builder builder) {
     this.index = builder.index;
     this.day = builder.day;
-    SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
-    df.setTimeZone(TimeZone.getTimeZone("UTC"));
-    this.dateStamp = df.format(new Date(builder.day));
     this.conf = new SparkConf(true).setMaster(builder.sparkMaster).setAppName(getClass().getName());
     if (builder.jars != null) {
       conf.setJars(builder.jars);
@@ -158,7 +155,8 @@ public class ElasticsearchDependenciesJob {
   }
 
   public void run() {
-    run(index + "-span-" + dateStamp,"jaeger-dependencies-" + dateStamp + "/dependencies");
+    String date = day.toLocalDate().format(DateTimeFormatter.ISO_LOCAL_DATE);
+    run(index + "-span-" + date,"jaeger-dependencies-" + date + "/dependencies");
     log.info("Done");
   }
 
@@ -223,9 +221,9 @@ public class ElasticsearchDependenciesJob {
    */
   public static final class ElasticsearchDependencies {
     private List<Dependency> dependencies;
-    private long ts;
+    private ZonedDateTime ts;
 
-    public ElasticsearchDependencies(List<Dependency> dependencies, long ts) {
+    public ElasticsearchDependencies(List<Dependency> dependencies, ZonedDateTime ts) {
       this.dependencies = dependencies;
       this.ts = ts;
     }
@@ -236,8 +234,7 @@ public class ElasticsearchDependenciesJob {
 
     public String getTimestamp() {
       // Jaeger ES dependency storage uses RFC3339Nano for timestamp
-        return new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX")
-            .format(new Date(ts)).toString();
+      return ts.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX"));
     }
   }
 }

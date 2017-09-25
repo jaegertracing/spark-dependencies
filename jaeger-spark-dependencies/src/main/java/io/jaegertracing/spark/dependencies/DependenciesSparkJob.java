@@ -18,42 +18,35 @@ import io.jaegertracing.spark.dependencies.elastic.ElasticsearchDependenciesJob;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.net.URLDecoder;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.TimeZone;
+import java.time.LocalDate;
 
 public final class DependenciesSparkJob {
 
   public static void main(String[] args) throws UnsupportedEncodingException {
-    if (args.length != 1) {
-      throw new IllegalArgumentException("");
-    }
-
     String storage = System.getenv("STORAGE");
     if (storage == null) {
       throw new IllegalArgumentException("Missing environmental variable STORAGE");
     }
 
-    run(storage, args.length == 1 ? parseDay(args[0]) : System.currentTimeMillis());
+    run(storage, args.length == 1 ? parseZonedDateTime(args[0]) : LocalDate.now());
   }
 
-  private static void run(String storage, long day) throws UnsupportedEncodingException {
+  private static void run(String storage, LocalDate localDate) throws UnsupportedEncodingException {
     String jarPath = pathToUberJar();
     if ("elasticsearch".equalsIgnoreCase(storage)) {
       ElasticsearchDependenciesJob.builder()
           .jars(jarPath)
-          .day(day)
+          .day(localDate)
           .build()
           .run();
     } else if ("cassandra".equalsIgnoreCase(storage)) {
       CassandraDependenciesJob.builder()
           .jars(jarPath)
-          .day(day)
+          .day(localDate)
           .build()
           .run();
     } else {
-      System.out.println("Unsupported storage: " + storage);
-      System.exit(1);
+      throw new IllegalArgumentException("Unsupported storage: " + storage);
     }
   }
 
@@ -62,14 +55,7 @@ public final class DependenciesSparkJob {
     return URLDecoder.decode(jarFile.getPath(), "UTF-8");
   }
 
-  static long parseDay(String formattedDate) {
-    SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
-    df.setTimeZone(TimeZone.getTimeZone("UTC"));
-    try {
-      return df.parse(formattedDate).getTime();
-    } catch (ParseException e) {
-      throw new IllegalArgumentException(
-          "First argument must be a yyyy-MM-dd formatted date. Ex. 2016-07-16");
-    }
+  static LocalDate parseZonedDateTime(String date) {
+    return LocalDate.parse(date);
   }
 }

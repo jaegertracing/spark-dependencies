@@ -27,8 +27,11 @@ import io.jaegertracing.spark.dependencies.model.Dependency;
 import io.jaegertracing.spark.dependencies.model.Span;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.Period;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -36,7 +39,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
-import java.util.concurrent.TimeUnit;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
@@ -65,7 +67,7 @@ public final class CassandraDependenciesJob {
     String[] jars;
 
     // By default the job only works on traces whose first timestamp is today
-    long day = Utils.midnightUTC(System.currentTimeMillis());
+    ZonedDateTime day = ZonedDateTime.of(LocalDate.now().atStartOfDay(), ZoneOffset.UTC);
 
     final Map<String, String> sparkProperties = new LinkedHashMap<>();
 
@@ -95,8 +97,8 @@ public final class CassandraDependenciesJob {
     }
 
     /** Day (in epoch milliseconds) to process dependencies for. Defaults to today. */
-    public Builder day(long day) {
-      this.day = Utils.midnightUTC(day);
+    public Builder day(LocalDate day) {
+      this.day = day.atStartOfDay(ZoneOffset.UTC);
       return this;
     }
 
@@ -118,8 +120,7 @@ public final class CassandraDependenciesJob {
   }
 
   private final String keyspace;
-  private final long day;
-  private final String dateStamp;
+  private final ZonedDateTime day;
   private final SparkConf conf;
 
   CassandraDependenciesJob(Builder builder) {
@@ -127,7 +128,6 @@ public final class CassandraDependenciesJob {
     this.day = builder.day;
     SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
     df.setTimeZone(TimeZone.getTimeZone("UTC"));
-    this.dateStamp = df.format(new Date(builder.day));
     this.conf = new SparkConf(true)
         .setMaster(builder.sparkMaster)
         .setAppName(getClass().getName());
@@ -145,10 +145,10 @@ public final class CassandraDependenciesJob {
   }
 
   public void run() {
-    long microsLower = day * 1000;
-    long microsUpper = (day * 1000) + TimeUnit.DAYS.toMicros(1) - 1;
+    long microsLower = day.toInstant().toEpochMilli() * 1000;
+    long microsUpper = day.plus(Period.ofDays(1)).toInstant().toEpochMilli() * 1000 - 1;
 
-    log.info("Running Dependencies job for {}: {} ≤ Span.timestamp {}", dateStamp, microsLower,
+    log.info("Running Dependencies job for {}: {} ≤ Span.timestamp {}", day, microsLower,
         microsUpper);
 
     JavaSparkContext sc = new JavaSparkContext(conf);
@@ -206,11 +206,11 @@ public final class CassandraDependenciesJob {
     private static final long serialVersionUID = 0L;
 
     private List<Dependency> dependencies;
-    private long ts;
+    private ZonedDateTime zonedDateTime;
 
-    public CassandraDependencies(List<Dependency> dependencies, long ts) {
+    public CassandraDependencies(List<Dependency> dependencies, ZonedDateTime ts) {
       this.dependencies = dependencies;
-      this.ts = ts;
+      this.zonedDateTime = ts;
     }
 
     public List<Dependency> getDependencies() {
@@ -218,11 +218,11 @@ public final class CassandraDependenciesJob {
     }
 
     public Long getTs() {
-      return ts;
+      return zonedDateTime.toInstant().toEpochMilli();
     }
 
     public Long getTsIndex() {
-      return ts;
+      return zonedDateTime.toInstant().toEpochMilli();
     }
   }
 }

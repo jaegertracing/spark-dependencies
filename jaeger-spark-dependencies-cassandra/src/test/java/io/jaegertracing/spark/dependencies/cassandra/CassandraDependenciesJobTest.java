@@ -15,6 +15,7 @@ package io.jaegertracing.spark.dependencies.cassandra;
 
 import com.github.dockerjava.api.model.Link;
 import io.jaegertracing.spark.dependencies.test.DependenciesTest;
+import java.time.LocalDate;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -63,7 +64,7 @@ public class CassandraDependenciesJobTest extends DependenciesTest {
 
     CassandraDependenciesJob.builder()
         .contactPoints("localhost:" + cassandraPort)
-        .day(System.currentTimeMillis())
+        .day(LocalDate.now())
         .keyspace("jaeger")
         .build()
         .run();
