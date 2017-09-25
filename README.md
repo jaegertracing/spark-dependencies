@@ -53,14 +53,14 @@ Cassandra is used when `STORAGE_TYPE=cassandra`.
 Example usage:
 
 ```bash
-$ STORAGE_TYPE=cassandra CASSANDRA_USERNAME=user CASSANDRA_PASSWORD=pass java -jar jaeger-dependencies.jar
+$ STORAGE_TYPE=cassandra CASSANDRA_CONTACT_POINTS=localhost:9042 java -jar jaeger-dependencies.jar
 ```
 ### Elasticsearch
 Elasticsearch is used when `STORAGE_TYPE=elasticsearch`.
 
     * `ES_INDEX`: The index prefix to use when generating daily index names. Defaults to jaeger.
                   The final index look like jaeger-span-yyyy-DD-mm.
-    * `ES_HOSTS`: A comma separated list of elasticsearch hosts advertising http. Defaults to
+    * `ES_NODES`: A comma separated list of elasticsearch hosts advertising http. Defaults to
                   localhost. Add port section if not listening on port 9200. Only one of these hosts
                   needs to be available to fetch the remaining nodes in the cluster. It is
                   recommended to set this to all the master nodes of the cluster. Use url format for
@@ -74,9 +74,7 @@ Elasticsearch is used when `STORAGE_TYPE=elasticsearch`.
 Example usage:
 
 ```bash
-$ STORAGE_TYPE=elasticsearch ES_HOSTS=host1,host2 java -jar jaeger-spark-dependencies.jar
-# To override the http port, add it to the host string
-$ STORAGE_TYPE=elasticsearch ES_HOSTS=host1:9201 java -jar jaeger-spark-dependencies.jar
+$ STORAGE_TYPE=elasticsearch ES_NODES=http://localhost:9200 java -jar jaeger-spark-dependencies.jar
 ```
 
 ## Building locally

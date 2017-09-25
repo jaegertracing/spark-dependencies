@@ -102,7 +102,7 @@ public final class CassandraDependenciesJob {
     }
 
     /** Comma separated list of hosts / IPs part of Cassandra cluster. Defaults to localhost */
-    public Builder contactPoints( String contactPoints) {
+    public Builder contactPoints(String contactPoints) {
       this.contactPoints = contactPoints;
       return this;
     }

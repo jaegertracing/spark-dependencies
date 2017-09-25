@@ -49,7 +49,7 @@ public class ElasticsearchDependenciesJob {
   public static final class Builder {
 
     String index = Utils.getEnv("ES_INDEX", "jaeger");
-    String hosts = Utils.getEnv("ES_HOSTS", "127.0.0.1");
+    String hosts = Utils.getEnv("ES_NODES", "127.0.0.1");
     String username = Utils.getEnv("ES_USERNAME", null);
     String password = Utils.getEnv("ES_PASSWORD", null);
 
@@ -91,8 +91,9 @@ public class ElasticsearchDependenciesJob {
       return this;
     }
 
-    public Builder hosts(String hosts) {
-      Utils.checkNoTNull(hosts, "hosts");
+    /** es.nodes separated by ',' */
+    public Builder nodes(String hosts) {
+      Utils.checkNoTNull(hosts, "nodes");
       this.hosts = hosts;
       sparkProperties.put("es.nodes.wan.only", "true");
       return this;

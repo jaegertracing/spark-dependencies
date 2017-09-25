@@ -94,7 +94,7 @@ public class ElasticsearchDependenciesJobTest extends DependenciesTest {
   @Override
   protected void deriveDependencies() {
     ElasticsearchDependenciesJob.builder()
-        .hosts("http://localhost:" + elasticsearch.getMappedPort(9200))
+        .nodes("http://localhost:" + elasticsearch.getMappedPort(9200))
         .day(LocalDate.now())
         .build()
         .run();
