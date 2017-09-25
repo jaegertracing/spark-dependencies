@@ -41,7 +41,7 @@ The following variables are common to all storage layers:
 ### Cassandra
 Cassandra is used when `STORAGE_TYPE=cassandra`.
 
-    * `CASSANDRA_KEYSPACE`: The keyspace to use. Defaults to "zipkin".
+    * `CASSANDRA_KEYSPACE`: The keyspace to use. Defaults to "jaeger_v1_test".
     * `CASSANDRA_CONTACT_POINTS`: Comma separated list of hosts / ip addresses part of Cassandra cluster. Defaults to localhost
     * `CASSANDRA_LOCAL_DC`: The local DC to connect to (other nodes will be ignored)
     * `CASSANDRA_USERNAME` and `CASSANDRA_PASSWORD`: Cassandra authentication. Will throw an exception on startup if authentication fails
@@ -50,10 +50,10 @@ Cassandra is used when `STORAGE_TYPE=cassandra`.
 Example usage:
 
 ```bash
-$ STORAGE_TYPE=cassandra CASSANDRA_USERNAME=user CASSANDRA_PASSWORD=pass java -jar jaeager-dependencies.jar
+$ STORAGE_TYPE=cassandra CASSANDRA_USERNAME=user CASSANDRA_PASSWORD=pass java -jar jaeger-dependencies.jar
 ```
 ### Elasticsearch
-Elasticsearch is used when `STORAGE_TYPE=cassandra`.
+Elasticsearch is used when `STORAGE_TYPE=elasticsearch`.
 
     * `ES_INDEX`: The index prefix to use when generating daily index names. Defaults to jaeger.
                   The final index look like jaeger-span-yyyy-DD-mm.

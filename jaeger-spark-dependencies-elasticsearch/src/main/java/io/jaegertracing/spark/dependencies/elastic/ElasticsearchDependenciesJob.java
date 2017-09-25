@@ -17,7 +17,7 @@ package io.jaegertracing.spark.dependencies.elastic;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
-import io.jaegertracing.spark.dependencies.DepenencyLinksSparkJob;
+import io.jaegertracing.spark.dependencies.DependencyLinksSparkJob;
 import io.jaegertracing.spark.dependencies.Utils;
 import io.jaegertracing.spark.dependencies.model.Dependency;
 import io.jaegertracing.spark.dependencies.model.Span;
@@ -172,7 +172,7 @@ public class ElasticsearchDependenciesJob {
         System.out.println(stringIterableTuple2._1() +"  ->  " +  Lists.newArrayList(stringIterableTuple2._2()).size());
       });
 
-      List<Dependency> dependencyLinks = DepenencyLinksSparkJob.derive(traces);
+      List<Dependency> dependencyLinks = DependencyLinksSparkJob.derive(traces);
       store(sc, dependencyLinks, depResource);
     } finally {
       sc.stop();

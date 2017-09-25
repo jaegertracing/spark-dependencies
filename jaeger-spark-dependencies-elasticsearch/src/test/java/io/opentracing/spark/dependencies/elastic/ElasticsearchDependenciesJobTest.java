@@ -19,6 +19,7 @@ import com.uber.jaeger.Tracer;
 import io.jaegertracing.spark.dependencies.elastic.ElasticsearchDependenciesJob;
 import io.jaegertracing.spark.dependencies.test.DependenciesTest;
 import io.jaegertracing.spark.dependencies.test.TracersGenerator;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import org.junit.After;
@@ -84,9 +85,9 @@ public class ElasticsearchDependenciesJobTest extends DependenciesTest {
 
   @After
   public void after() {
-    elasticsearch.stop();
-    jaegerCollector.stop();
-    jaegerQuery.stop();
+    Optional.of(elasticsearch).ifPresent(GenericContainer::close);
+    Optional.of(jaegerCollector).ifPresent(GenericContainer::close);
+    Optional.of(jaegerQuery).ifPresent(GenericContainer::close);
   }
 
   @Override

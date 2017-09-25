@@ -20,14 +20,16 @@ import java.util.concurrent.TimeUnit;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
-import org.awaitility.Awaitility;
+import org.rnorth.ducttape.unreliables.Unreliables;
 import org.testcontainers.containers.ContainerLaunchException;
 import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.traits.LinkableContainer;
 
 /**
  * @author Pavol Loffay
  */
-public class JaegerTestDriverContainer extends GenericContainer<JaegerTestDriverContainer> {
+public class JaegerTestDriverContainer extends GenericContainer<JaegerTestDriverContainer>
+    implements LinkableContainer {
   protected final OkHttpClient okHttpClient = new OkHttpClient.Builder().build();
   protected final Duration waitUntilReady;
 
@@ -43,9 +45,7 @@ public class JaegerTestDriverContainer extends GenericContainer<JaegerTestDriver
   @Override
   protected void waitUntilContainerStarted() {
     String statusUrl = String.format("http://localhost:%d/", this.getMappedPort(8080));
-    Awaitility.await().atMost(waitUntilReady.toMillis(), TimeUnit.MILLISECONDS)
-        .pollInterval(org.awaitility.Duration.TWO_SECONDS)
-        .until(containerStartedCondition(statusUrl));
+    Unreliables.retryUntilTrue((int)waitUntilReady.toMillis(), TimeUnit.MILLISECONDS, containerStartedCondition(statusUrl));
   }
 
   protected Callable<Boolean> containerStartedCondition(String statusUrl) {

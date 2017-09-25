@@ -24,7 +24,6 @@ import org.rnorth.ducttape.unreliables.Unreliables;
 import org.testcontainers.containers.ContainerLaunchException;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.traits.LinkableContainer;
-import org.testcontainers.shaded.com.google.common.net.HostAndPort;
 
 /**
  * @author Pavol Loffay
@@ -51,8 +50,7 @@ public class CassandraContainer extends GenericContainer<CassandraContainer> imp
   }
 
   private Cluster getCluster() {
-    HostAndPort hap = HostAndPort.fromParts(getContainerIpAddress(), getMappedPort(9042));
-    InetSocketAddress address = new InetSocketAddress(hap.getHostText(), hap.getPort());
+    InetSocketAddress address = new InetSocketAddress(getContainerIpAddress(), getMappedPort(9042));
 
     return Cluster.builder()
         .addContactPointsWithPorts(address)

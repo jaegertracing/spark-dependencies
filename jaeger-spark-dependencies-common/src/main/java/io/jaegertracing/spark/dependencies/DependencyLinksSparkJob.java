@@ -22,9 +22,9 @@ import scala.Tuple2;
 /**
  * @author Pavol Loffay
  */
-public class DepenencyLinksSparkJob {
+public class DependencyLinksSparkJob {
 
-  private DepenencyLinksSparkJob() {}
+  private DependencyLinksSparkJob() {}
 
   /**
    * Derives dependency links based on supplied spans.

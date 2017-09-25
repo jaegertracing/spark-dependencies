@@ -15,6 +15,7 @@ package io.jaegertracing.spark.dependencies.cassandra;
 
 import com.github.dockerjava.api.model.Link;
 import io.jaegertracing.spark.dependencies.test.DependenciesTest;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.junit.After;
@@ -51,8 +52,8 @@ public class CassandraDependenciesJobTest extends DependenciesTest {
 
   @After
   public void after() {
-    cassandra.stop();
-    jaegerTestDriver.stop();
+    Optional.of(cassandra).ifPresent(GenericContainer::close);
+    Optional.of(jaegerTestDriver).ifPresent(GenericContainer::close);
   }
 
   @Override

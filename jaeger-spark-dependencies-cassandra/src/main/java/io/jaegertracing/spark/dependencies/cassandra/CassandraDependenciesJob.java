@@ -21,7 +21,7 @@ import static com.datastax.spark.connector.japi.CassandraJavaUtil.mapToRow;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import com.google.common.net.HostAndPort;
-import io.jaegertracing.spark.dependencies.DepenencyLinksSparkJob;
+import io.jaegertracing.spark.dependencies.DependencyLinksSparkJob;
 import io.jaegertracing.spark.dependencies.Utils;
 import io.jaegertracing.spark.dependencies.model.Dependency;
 import io.jaegertracing.spark.dependencies.model.Span;
@@ -162,7 +162,7 @@ public final class CassandraDependenciesJob {
                 .size());
       });
 
-      List<Dependency> dependencyLinks = DepenencyLinksSparkJob.derive(traces);
+      List<Dependency> dependencyLinks = DependencyLinksSparkJob.derive(traces);
       store(sc, dependencyLinks);
     } finally {
       sc.stop();
