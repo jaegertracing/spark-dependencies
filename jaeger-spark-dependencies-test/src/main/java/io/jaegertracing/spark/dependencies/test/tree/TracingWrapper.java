@@ -59,10 +59,7 @@ public interface TracingWrapper<T extends TracingWrapper> {
     @Override
     public void createChildSpan(TracingWrapper<JaegerWrapper> parent) {
       io.opentracing.Tracer.SpanBuilder spanBuilder = tracer.buildSpan(UUID.randomUUID().toString().replace("-", ""))
-          .ignoreActiveSpan();
-      if (parent != null) {
-        spanBuilder.asChildOf(parent.get().span);
-      }
+          .asChildOf(parent != null ? parent.get().span : null);
       span = (Span)spanBuilder.startManual();
     }
 

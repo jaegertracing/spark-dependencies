@@ -58,7 +58,7 @@ public class CassandraDependenciesJobTest extends DependenciesTest {
 
   @Override
   protected void deriveDependencies() throws Exception {
-    // flush all date to the storage
+    // flush all data to disk
     cassandra.execInContainer("nodetool", "flush", "jaeger");
 
     CassandraDependenciesJob.builder()

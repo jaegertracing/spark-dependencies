@@ -44,7 +44,7 @@ The following variables are common to all storage layers:
 ### Cassandra
 Cassandra is used when `STORAGE_TYPE=cassandra`.
 
-    * `CASSANDRA_KEYSPACE`: The keyspace to use. Defaults to "jaeger_v1_test".
+    * `CASSANDRA_KEYSPACE`: The keyspace to use. Defaults to "jaeger_v1_dc1".
     * `CASSANDRA_CONTACT_POINTS`: Comma separated list of hosts / ip addresses part of Cassandra cluster. Defaults to localhost
     * `CASSANDRA_LOCAL_DC`: The local DC to connect to (other nodes will be ignored)
     * `CASSANDRA_USERNAME` and `CASSANDRA_PASSWORD`: Cassandra authentication. Will throw an exception on startup if authentication fails

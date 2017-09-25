@@ -69,6 +69,7 @@ public abstract class DependenciesTest {
     Node<JaegerWrapper> root = treeGenerator.generateTree(50, 3);
     Traversals.inorder(root, (node, parent) -> node.getTracingWrapper().get().getSpan().finish());
     waitBetweenTraces();
+    // TODO move to TracersGenerator once jaeger tracer implements closeable.
     treeGenerator.getTracers().forEach(tracer -> {
       tracer.getTracer().close();
     });

@@ -56,7 +56,7 @@ public final class CassandraDependenciesJob {
   }
 
   public static final class Builder {
-    String keyspace = Utils.getEnv("CASSANDRA_KEYSPACE", "jaeger_v1_test");
+    String keyspace = Utils.getEnv("CASSANDRA_KEYSPACE", "jaeger_v1_dc1");
     String contactPoints = Utils.getEnv("CASSANDRA_CONTACT_POINTS", "localhost");
     String localDc = Utils.getEnv("CASSANDRA_LOCAL_DC", null);
     // local[*] master lets us run & test the job locally without setting a Spark cluster
