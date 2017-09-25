@@ -13,29 +13,11 @@
  */
 package io.jaegertracing.spark.dependencies;
 
-import java.time.LocalDate;
-import java.util.Calendar;
-import java.util.TimeZone;
-
 /**
  * @author Pavol Loffay
  */
 public class Utils {
   private Utils() {}
-
-  public static long midnightUTC(long epochMillis) {
-//    TODO
-//    new LocalDateTime().atStartOfDay();
-    LocalDate.parse("");
-
-    Calendar day = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
-    day.setTimeInMillis(epochMillis);
-    day.set(Calendar.MILLISECOND, 0);
-    day.set(Calendar.SECOND, 0);
-    day.set(Calendar.MINUTE, 0);
-    day.set(Calendar.HOUR_OF_DAY, 0);
-    return day.getTimeInMillis();
-  }
 
   public static String getEnv(String key, String defaultValue) {
     String result = System.getenv(key);
