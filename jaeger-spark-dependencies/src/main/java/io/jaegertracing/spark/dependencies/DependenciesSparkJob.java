@@ -52,7 +52,8 @@ public final class DependenciesSparkJob {
           .build()
           .run();
     } else {
-      throw new IllegalArgumentException("Unsupported storage: " + storage);
+      System.out.println("Unsupported storage: " + storage);
+      System.exit(1);
     }
   }
 
