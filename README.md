@@ -2,11 +2,11 @@
 
 # Jaeger Spark dependencies
 
-This is a Spark job that will collect spans from your datastore, analyze links between services,
-and store them for later presentation in the UI.
+This is a Spark job that collects spans from storage, analyze links between services,
+and stores them for later presentation in the UI. It is needed for the production deployment.
 
-This job parses all traces in the current day in UTC time. This means you should schedule it to run
-just prior to midnight UTC.
+This job parses all traces on a given day, based on UTC. By default, it processes the current day, 
+but other days can be explicitly specified.
 
 ## Quick-start
 Spark job can be run as docker container and also as java executable:
