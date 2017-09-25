@@ -23,14 +23,15 @@ import scala.Tuple2;
  * @author Pavol Loffay
  */
 public class DependencyLinksSparkJob {
-
   private DependencyLinksSparkJob() {}
 
   /**
-   * Derives dependency links based on supplied spans.
+   * Derives dependency links based on supplied spans (e.g. multiple traces). If there is a link A->B
+   * in multiple traces it will return just one {@link Dependency} link with a correct {@link Dependency#callCount}.
    *
-   * @param traceIdSpans <traceId, trace>
-   * @return Dependency links for given traces
+   * @param traceIdSpans <traceId, trace> {@link org.apache.spark.api.java.JavaRDD} with trace id and a collection of
+   *                     spans with that traceId.
+   * @return Aggregated dependency links for all traces.
    */
   public static List<Dependency> derive(JavaPairRDD<String, Iterable<Span>> traceIdSpans) {
     return traceIdSpans.flatMapValues(new SpansToDependencyLinks())
