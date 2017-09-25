@@ -39,6 +39,7 @@ $ STORAGE_TYPE=cassandra java -jar jaeger-spark-dependencies.jar `date -u -d '1 
 `jaeger-spark-dependencies` applies configuration parameters through environment variables.
 
 The following variables are common to all storage layers:
+
     * `SPARK_MASTER`: Spark master to submit the job to; Defaults to `local[*]`
 
 ### Cassandra
