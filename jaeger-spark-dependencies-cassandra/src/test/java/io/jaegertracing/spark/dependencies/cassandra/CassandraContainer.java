@@ -50,7 +50,7 @@ public class CassandraContainer extends GenericContainer<CassandraContainer> imp
     });
   }
 
-  private Cluster getCluster() {
+  public Cluster getCluster() {
     InetSocketAddress address = new InetSocketAddress(getContainerIpAddress(), getMappedPort(9042));
 
     return Cluster.builder()

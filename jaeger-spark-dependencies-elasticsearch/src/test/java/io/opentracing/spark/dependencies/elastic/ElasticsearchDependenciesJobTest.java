@@ -19,6 +19,7 @@ import com.uber.jaeger.Tracer;
 import io.jaegertracing.spark.dependencies.elastic.ElasticsearchDependenciesJob;
 import io.jaegertracing.spark.dependencies.test.DependenciesTest;
 import io.jaegertracing.spark.dependencies.test.TracersGenerator;
+import java.io.IOException;
 import java.time.LocalDate;
 import java.util.Optional;
 import java.util.UUID;
@@ -78,14 +79,14 @@ public class ElasticsearchDependenciesJobTest extends DependenciesTest {
     zipkinCollectorUrl = String.format("http://localhost:%d", jaegerCollector.getMappedPort(9411));
     queryUrl = String.format("http://localhost:%d", jaegerQuery.getMappedPort(16686));
 
-    Tracer initStorageTracer = TracersGenerator.createJaeger("init-elasticsearch", collectorUrl).getA();
+    Tracer initStorageTracer = TracersGenerator.createJaeger(UUID.randomUUID().toString(), collectorUrl).getA();
     initStorageTracer.buildSpan(UUID.randomUUID().toString()).withTag("foo", "bar").start().finish();
     initStorageTracer.close();
     waitJaegerQueryContains(initStorageTracer.getServiceName(), "foo");
   }
 
   @After
-  public void after() {
+  public void after() throws IOException, InterruptedException {
     Optional.of(elasticsearch).ifPresent(GenericContainer::close);
     Optional.of(jaegerCollector).ifPresent(GenericContainer::close);
     Optional.of(jaegerQuery).ifPresent(GenericContainer::close);

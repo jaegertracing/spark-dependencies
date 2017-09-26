@@ -13,6 +13,8 @@
  */
 package io.jaegertracing.spark.dependencies.cassandra;
 
+import com.datastax.driver.core.Cluster;
+import com.datastax.driver.core.Session;
 import com.github.dockerjava.api.model.Link;
 import io.jaegertracing.spark.dependencies.test.DependenciesTest;
 import java.time.LocalDate;
@@ -20,7 +22,8 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.junit.After;
-import org.junit.Before;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.testcontainers.containers.GenericContainer;
 
 /**
@@ -28,12 +31,12 @@ import org.testcontainers.containers.GenericContainer;
  */
 public class CassandraDependenciesJobTest extends DependenciesTest {
 
-  private GenericContainer cassandra;
-  private GenericContainer jaegerTestDriver;
-  private int cassandraPort;
+  private static CassandraContainer cassandra;
+  private static GenericContainer jaegerTestDriver;
+  private static int cassandraPort;
 
-  @Before
-  public void before() throws TimeoutException {
+  @BeforeClass
+  public static void beforeClass() throws TimeoutException {
     cassandra = new CassandraContainer("cassandra:3.9")
         .withExposedPorts(9042);
     cassandra.start();
@@ -51,10 +54,19 @@ public class CassandraDependenciesJobTest extends DependenciesTest {
     zipkinCollectorUrl = String.format("http://localhost:%d", jaegerTestDriver.getMappedPort(9411));
   }
 
-  @After
-  public void after() {
+  @AfterClass
+  public static void afterClass() {
     Optional.of(cassandra).ifPresent(GenericContainer::close);
     Optional.of(jaegerTestDriver).ifPresent(GenericContainer::close);
+  }
+
+  @After
+  public void after() {
+    try (Cluster cluster = cassandra.getCluster(); Session session = cluster.newSession()) {
+      session.execute("TRUNCATE jaeger.traces");
+      session.execute("TRUNCATE jaeger.dependencies");
+
+    }
   }
 
   @Override
