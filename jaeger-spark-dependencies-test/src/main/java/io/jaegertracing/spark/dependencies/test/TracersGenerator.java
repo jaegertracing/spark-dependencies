@@ -30,6 +30,7 @@ import io.jaegertracing.spark.dependencies.test.tree.TracingWrapper.ZipkinWrappe
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import zipkin.Span;
 import zipkin.reporter.AsyncReporter;
 import zipkin.reporter.Encoding;
@@ -131,8 +132,7 @@ public class TracersGenerator {
       .build();
 
     AsyncReporter<Span> reporter = AsyncReporter.builder(sender)
-        // TODO when using this number of Spaks in Spark != reported spans
-//        .queuedMaxSpans(100000)
+        .closeTimeout(1, TimeUnit.MILLISECONDS)
         .build();
     return new Tuple<>(Tracing.newBuilder()
         .localServiceName(serviceName)

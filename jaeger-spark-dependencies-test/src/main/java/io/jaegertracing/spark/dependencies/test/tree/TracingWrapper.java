@@ -100,19 +100,22 @@ public interface TracingWrapper<T extends TracingWrapper> {
     public void createChildSpan(TracingWrapper<ZipkinWrapper> parent) {
       operationName = UUID.randomUUID().toString().replace("-","");
       if (parent == null) {
-        span = tracing.tracer().newTrace().name(operationName)
-            .kind(Kind.CLIENT)
-            .start();
+        // root node we start a new trace
+        span = tracing.tracer().newTrace().name(operationName + "-root")
+           .start();
       } else {
-        brave.Span spanJoinedServer = tracing.tracer().joinSpan(parent.get().span.context())
-            .kind(Kind.SERVER)
-            .name(operationName)
-            .start();
-        span = tracing.tracer().newChild(spanJoinedServer.context())
+        brave.Span parentClient = parent.get().tracing.tracer().newChild(parent.get().span.context())
             .kind(Kind.CLIENT)
+            .name(operationName + "-client")
             .start();
-        // do not finish it creates internal dependency link
-//        spanJoinedServer.finish();
+        // TODO if I finish this later the span is cached
+        // and joined with server span and reported as a single span.
+        // to properly solve this we have to look into the tags inside the job
+        parentClient.finish();
+        span = tracing.tracer().joinSpan(parentClient.context())
+            .name(operationName + "-server")
+            .kind(Kind.SERVER)
+            .start();
       }
     }
 

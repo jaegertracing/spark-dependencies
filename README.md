@@ -2,14 +2,23 @@
 
 # Jaeger Spark dependencies
 This is a Spark job that collects spans from storage, analyze links between services,
-and stores them for later presentation in the UI. Note that it is needed for the production deployment, 
-all-in-one distribution does not need this job.
+and stores them for later presentation in the UI. Note that it is needed for the production deployment.
+`all-in-one` distribution does not need this job.
 
 This job parses all traces on a given day, based on UTC. By default, it processes the current day,
 but other days can be explicitly specified.
 
-
 This repository is based on [zipkin-dependencies](https://github.com/openzipkin/zipkin-dependencies).
+
+
+## Spans from Zipkin native clients e.g. `Brave`
+This implementation currently does not **fully** support processing of spans reported from native Zipkin
+tracers. However, in the most cases it identifies links correctly. 
+
+it is problematic if a RPC span is reported as a single span e.g. containing both client and server annotations.
+For example app instrumented with `Brave` sending requests to itself.
+In this case the job does not create a link for this service. The job also assumes that timestamp
+for client spans are lower than server spans.
 
 ## Quick-start
 Spark job can be run as docker container and also as java executable:
