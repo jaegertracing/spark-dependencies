@@ -14,70 +14,70 @@
 package io.opentracing.spark.dependencies.elastic;
 
 
-import com.github.dockerjava.api.model.Link;
 import com.uber.jaeger.Tracer;
 import io.jaegertracing.spark.dependencies.elastic.ElasticsearchDependenciesJob;
 import io.jaegertracing.spark.dependencies.test.DependenciesTest;
 import io.jaegertracing.spark.dependencies.test.TracersGenerator;
-import java.io.IOException;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.rules.RuleChain;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.Network;
+import org.testcontainers.containers.wait.Wait;
+
 import java.time.LocalDate;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
-import org.junit.After;
-import org.junit.Before;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.wait.Wait;
 
 /**
  * @author Pavol Loffay
  */
 public class ElasticsearchDependenciesJobTest extends DependenciesTest {
 
-  private GenericContainer elasticsearch;
-  private GenericContainer jaegerCollector;
-  private GenericContainer jaegerQuery;
+  private Network network = Network.newNetwork();
+
+  private GenericContainer elasticsearch = new GenericContainer<>("docker.elastic.co/elasticsearch/elasticsearch:5.6.1")
+          .withNetwork(network)
+          .withNetworkAliases("elasticsearch")
+          .waitingFor(Wait.forHttp("/"))
+          .withExposedPorts(9200, 9300)
+          .withEnv("xpack.security.enabled", "false")
+          .withEnv("network.bind_host", "elasticsearch")
+          .withEnv("network.host", "_site_")
+          .withEnv("network.publish_host", "_local_");
+
+  private GenericContainer jaegerCollector = new GenericContainer<>("jaegertracing/jaeger-collector:latest")
+          .withNetwork(network)
+          .withCommand("/go/bin/collector-linux",
+                  "--es.server-urls=http://elasticsearch:9200",
+                  "--span-storage.type=elasticsearch",
+                  "--collector.zipkin.http-port=9411",
+                  "--collector.queue-size=100000",
+                  "--collector.num-workers=500")
+          .waitingFor(Wait.forHttp("/").forStatusCode(204))
+          // the first one is health check
+          .withExposedPorts(14269, 14268, 14269, 9411);
+
+  private GenericContainer jaegerQuery = new GenericContainer<>("jaegertracing/jaeger-query:latest")
+          .withCommand("/go/bin/query-linux",
+                  "--es.server-urls=http://elasticsearch:9200",
+                  "--span-storage.type=elasticsearch")
+          .withNetwork(network)
+          .waitingFor(Wait.forHttp("/").forStatusCode(204))
+          .withExposedPorts(16687, 16686);
+
+  @Rule
+  public RuleChain ruleChain = RuleChain.emptyRuleChain()
+          .around(network)
+          .around(elasticsearch)
+          .around(jaegerCollector)
+          .around(jaegerQuery);
 
   @Before
   public void before() {
-    elasticsearch = new GenericContainer<>("docker.elastic.co/elasticsearch/elasticsearch:5.6.1")
-        .withCreateContainerCmdModifier(cmd -> cmd.withHostName("elasticsearch"))
-        .withExposedPorts(9200, 9300)
-        .waitingFor(Wait.forHttp("/"))
-        .withEnv("xpack.security.enabled", "false")
-        .withEnv("network.host", "_site_")
-        .withEnv("network.publish_host", "_local_");
-    elasticsearch.start();
-
-    jaegerCollector = new GenericContainer<>("jaegertracing/jaeger-collector:latest")
-        .withCreateContainerCmdModifier(cmd -> {
-          cmd.withCmd("/go/bin/collector-linux",
-              "--es.server-urls=http://elasticsearch:9200",
-              "--span-storage.type=elasticsearch",
-              "--collector.zipkin.http-port=9411",
-              "--collector.queue-size=100000",
-              "--collector.num-workers=500");
-          cmd.withLinks(new Link(elasticsearch.getContainerId(), "elasticsearch"));
-        })
-        .waitingFor(Wait.forHttp("/").forStatusCode(204))
-        // the first one is health check
-        .withExposedPorts(14269, 14268, 14269, 9411);
-    jaegerQuery = new GenericContainer<>("jaegertracing/jaeger-query:latest")
-        .withCreateContainerCmdModifier(cmd -> {
-          cmd.withCmd("/go/bin/query-linux",
-              "--es.server-urls=http://elasticsearch:9200",
-              "--span-storage.type=elasticsearch");
-          cmd.withLinks(new Link(elasticsearch.getContainerId(), "elasticsearch"));
-        })
-        .waitingFor(Wait.forHttp("/").forStatusCode(204))
-        .withExposedPorts(16687, 16686);
-
-    jaegerQuery.start();
-    jaegerCollector.start();
-
-    collectorUrl = String.format("http://localhost:%d", jaegerCollector.getMappedPort(14268));
-    zipkinCollectorUrl = String.format("http://localhost:%d", jaegerCollector.getMappedPort(9411));
-    queryUrl = String.format("http://localhost:%d", jaegerQuery.getMappedPort(16686));
+    collectorUrl = String.format("http://%s:%d", jaegerCollector.getContainerIpAddress(), jaegerCollector.getMappedPort(14268));
+    zipkinCollectorUrl = String.format("http://%s:%d", jaegerCollector.getContainerIpAddress(), jaegerCollector.getMappedPort(9411));
+    queryUrl = String.format("http://%s:%d", jaegerQuery.getContainerIpAddress(), jaegerQuery.getMappedPort(16686));
 
     Tracer initStorageTracer = TracersGenerator.createJaeger(UUID.randomUUID().toString(), collectorUrl).getA();
     initStorageTracer.buildSpan(UUID.randomUUID().toString()).withTag("foo", "bar").start().finish();
@@ -85,17 +85,10 @@ public class ElasticsearchDependenciesJobTest extends DependenciesTest {
     waitJaegerQueryContains(initStorageTracer.getServiceName(), "foo");
   }
 
-  @After
-  public void after() throws IOException, InterruptedException {
-    Optional.of(elasticsearch).ifPresent(GenericContainer::close);
-    Optional.of(jaegerCollector).ifPresent(GenericContainer::close);
-    Optional.of(jaegerQuery).ifPresent(GenericContainer::close);
-  }
-
   @Override
   protected void deriveDependencies() {
     ElasticsearchDependenciesJob.builder()
-        .nodes("http://localhost:" + elasticsearch.getMappedPort(9200))
+        .nodes("http://" + elasticsearch.getContainerIpAddress() + ":" + elasticsearch.getMappedPort(9200))
         .day(LocalDate.now())
         .build()
         .run();
