@@ -16,7 +16,7 @@ Spark job can be run as docker container and also as java executable:
 
 Docker:
 ```bash
-$ docker run --env STORAGE_TYPE=cassandra --env CASSANDRA_CONTACT_POINTS=host1,host2 jaegertracing/jaeger-spark-dependencies
+$ docker run --env STORAGE=cassandra --env CASSANDRA_CONTACT_POINTS=host1,host2 jaegertracing/spark-dependencies
 ```
 
 As jar file:
@@ -59,8 +59,6 @@ $ STORAGE_TYPE=cassandra CASSANDRA_CONTACT_POINTS=localhost:9042 java -jar jaege
 ### Elasticsearch
 Elasticsearch is used when `STORAGE_TYPE=elasticsearch`.
 
-    * `ES_INDEX`: The index prefix to use when generating daily index names. Defaults to jaeger.
-                  The final index look like jaeger-span-yyyy-DD-mm.
     * `ES_NODES`: A comma separated list of elasticsearch hosts advertising http. Defaults to
                   localhost. Add port section if not listening on port 9200. Only one of these hosts
                   needs to be available to fetch the remaining nodes in the cluster. It is
