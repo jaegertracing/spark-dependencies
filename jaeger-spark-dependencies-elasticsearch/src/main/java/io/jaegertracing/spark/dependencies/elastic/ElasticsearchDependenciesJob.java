@@ -48,7 +48,6 @@ public class ElasticsearchDependenciesJob {
 
   public static final class Builder {
 
-    String index = Utils.getEnv("ES_INDEX", "jaeger");
     String hosts = Utils.getEnv("ES_NODES", "127.0.0.1");
     String username = Utils.getEnv("ES_USERNAME", null);
     String password = Utils.getEnv("ES_PASSWORD", null);
@@ -81,13 +80,6 @@ public class ElasticsearchDependenciesJob {
     /** When set, this indicates which jars to distribute to the cluster. */
     public Builder jars(String... jars) {
       this.jars = jars;
-      return this;
-    }
-
-    /** The index prefix to use when generating daily index names. Defaults to "jaeger" */
-    public Builder index(String index) {
-      Utils.checkNoTNull("index", index);
-      this.index = index;
       return this;
     }
 
@@ -127,12 +119,10 @@ public class ElasticsearchDependenciesJob {
     return prop != null && !prop.isEmpty() ? "file:" + prop : prop;
   }
 
-  private final String index;
   private final ZonedDateTime day;
   private final SparkConf conf;
 
   ElasticsearchDependenciesJob(Builder builder) {
-    this.index = builder.index;
     this.day = builder.day;
     this.conf = new SparkConf(true).setMaster(builder.sparkMaster).setAppName(getClass().getName());
     if (builder.jars != null) {
@@ -154,9 +144,13 @@ public class ElasticsearchDependenciesJob {
   }
 
   public void run() {
-    String date = day.toLocalDate().format(DateTimeFormatter.ISO_LOCAL_DATE);
-    run(index + "-span-" + date,"jaeger-dependencies-" + date + "/dependencies");
+    run(indexDate("jaeger-span"), indexDate("jaeger-dependencies") + "/dependencies");
     log.info("Done");
+  }
+
+  String indexDate(String index) {
+    String date = day.toLocalDate().format(DateTimeFormatter.ISO_LOCAL_DATE);
+    return String.format("%s-%s", index, date);
   }
 
   void run(String spanResource, String depResource) {

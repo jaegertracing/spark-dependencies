@@ -16,7 +16,7 @@ Spark job can be run as docker container and also as java executable:
 
 Docker:
 ```bash
-$ docker run --env STORAGE_TYPE=cassandra --env CASSANDRA_CONTACT_POINTS=host1,host2 jaegertracing/jaeger-spark-dependencies
+$ docker run --env STORAGE=cassandra --env CASSANDRA_CONTACT_POINTS=host1,host2 jaegertracing/spark-dependencies
 ```
 
 As jar file:
@@ -30,9 +30,9 @@ via an argument in YYYY-mm-dd format, like 2016-07-16.
 
 ```bash
 # ex to run the job to process yesterday's traces on OS/X
-$ STORAGE_TYPE=cassandra java -jar jaeger-spark-dependencies.jar `date -uv-1d +%F`
+$ STORAGE=cassandra java -jar jaeger-spark-dependencies.jar `date -uv-1d +%F`
 # or on Linux
-$ STORAGE_TYPE=cassandra java -jar jaeger-spark-dependencies.jar `date -u -d '1 day ago' +%F`
+$ STORAGE=cassandra java -jar jaeger-spark-dependencies.jar `date -u -d '1 day ago' +%F`
 ```
 
 ### Configuration
@@ -43,7 +43,7 @@ The following variables are common to all storage layers:
     * `SPARK_MASTER`: Spark master to submit the job to; Defaults to `local[*]`
 
 ### Cassandra
-Cassandra is used when `STORAGE_TYPE=cassandra`.
+Cassandra is used when `STORAGE=cassandra`.
 
     * `CASSANDRA_KEYSPACE`: The keyspace to use. Defaults to "jaeger_v1_dc1".
     * `CASSANDRA_CONTACT_POINTS`: Comma separated list of hosts / ip addresses part of Cassandra cluster. Defaults to localhost
@@ -54,13 +54,11 @@ Cassandra is used when `STORAGE_TYPE=cassandra`.
 Example usage:
 
 ```bash
-$ STORAGE_TYPE=cassandra CASSANDRA_CONTACT_POINTS=localhost:9042 java -jar jaeger-spark-dependencies.jar
+$ STORAGE=cassandra CASSANDRA_CONTACT_POINTS=localhost:9042 java -jar jaeger-spark-dependencies.jar
 ```
 ### Elasticsearch
-Elasticsearch is used when `STORAGE_TYPE=elasticsearch`.
+Elasticsearch is used when `STORAGE=elasticsearch`.
 
-    * `ES_INDEX`: The index prefix to use when generating daily index names. Defaults to jaeger.
-                  The final index look like jaeger-span-yyyy-DD-mm.
     * `ES_NODES`: A comma separated list of elasticsearch hosts advertising http. Defaults to
                   localhost. Add port section if not listening on port 9200. Only one of these hosts
                   needs to be available to fetch the remaining nodes in the cluster. It is
@@ -75,7 +73,7 @@ Elasticsearch is used when `STORAGE_TYPE=elasticsearch`.
 Example usage:
 
 ```bash
-$ STORAGE_TYPE=elasticsearch ES_NODES=http://localhost:9200 java -jar jaeger-spark-dependencies.jar
+$ STORAGE=elasticsearch ES_NODES=http://localhost:9200 java -jar jaeger-spark-dependencies.jar
 ```
 
 ## Building locally
