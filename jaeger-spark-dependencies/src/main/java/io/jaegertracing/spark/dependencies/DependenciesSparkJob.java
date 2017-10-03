@@ -28,7 +28,14 @@ public final class DependenciesSparkJob {
       throw new IllegalArgumentException("Missing environmental variable STORAGE");
     }
 
-    run(storage, args.length == 1 ? parseZonedDateTime(args[0]) : LocalDate.now());
+    LocalDate date = LocalDate.now();
+    if (args.length == 1) {
+      date = parseZonedDateTime(args[0]);
+    } else if (System.getenv("DATE") != null) {
+      date = parseZonedDateTime(System.getenv("DATE"));
+    }
+
+    run(storage, date);
   }
 
   private static void run(String storage, LocalDate localDate) throws UnsupportedEncodingException {

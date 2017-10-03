@@ -35,7 +35,7 @@ STORAGE=cassandra java -jar jaeager-spark-dependencies.jar
 
 ## Usage
 By default, this job parses all traces since midnight UTC. You can parse traces for a different day
-via an argument in YYYY-mm-dd format, like 2016-07-16.
+via an argument in YYYY-mm-dd format, like 2016-07-16 or specify the date via an env property.
 
 ```bash
 # ex to run the job to process yesterday's traces on OS/X
@@ -50,6 +50,7 @@ $ STORAGE=cassandra java -jar jaeger-spark-dependencies.jar `date -u -d '1 day a
 The following variables are common to all storage layers:
 
     * `SPARK_MASTER`: Spark master to submit the job to; Defaults to `local[*]`
+    * `DATE`: Date in YYYY-mm-dd format.
 
 ### Cassandra
 Cassandra is used when `STORAGE=cassandra`.
