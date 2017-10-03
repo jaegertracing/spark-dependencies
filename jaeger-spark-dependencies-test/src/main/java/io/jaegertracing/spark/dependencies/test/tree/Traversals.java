@@ -21,24 +21,23 @@ import java.util.function.BiConsumer;
 public class Traversals {
 
   /**
-   * Traverse tree inorder
+   * Traverse tree postOrder
    *
-   * @param node root node
+   * @param root root node
    * @param fce <node, parent>
    */
-  public static <T extends TracingWrapper> void inorder(Node<T> node, BiConsumer<Node<T>, Node<T>> fce) {
-    inorderRec(node, fce);
-    fce.accept(node, null);
+  public static <T extends TracingWrapper> void postOrder(Node<T> root, BiConsumer<Node<T>, Node<T>> fce) {
+    postOrder(null, root, fce);
   }
 
   /**
    * @param node node
    * @param fce <node, parent>
    */
-  private static <T extends TracingWrapper> void inorderRec(Node<T> node, BiConsumer<Node<T>, Node<T>> fce) {
-    for (Node descendant: node.getDescendants()) {
-      inorderRec(descendant, fce);
-      fce.accept(descendant, node);
+  private static <T extends TracingWrapper> void postOrder(Node<T> parent, Node<T> node, BiConsumer<Node<T>, Node<T>> fce) {
+    for (Node descendant : node.getDescendants()) {
+      postOrder(node, descendant, fce);
     }
+    fce.accept(node, parent);
   }
 }

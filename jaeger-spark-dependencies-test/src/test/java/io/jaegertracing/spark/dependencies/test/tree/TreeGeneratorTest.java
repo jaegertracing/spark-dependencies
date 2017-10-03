@@ -44,7 +44,7 @@ public class TreeGeneratorTest {
     Node<JaegerWrapper> root = new TreeGenerator(TracersGenerator.generateJaeger(1, "http://localhost"))
         .generateTree(16, 3);
     List<Node> nodes = new ArrayList<>();
-    Traversals.inorder(root, (jaegerWrapperNode, jaegerWrapperNode2) -> {
+    Traversals.postOrder(root, (jaegerWrapperNode, jaegerWrapperNode2) -> {
       assertTrue(jaegerWrapperNode.getDescendants().size() <= 3);
       nodes.add(jaegerWrapperNode);
     });

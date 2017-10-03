@@ -33,7 +33,7 @@ public class DependencyLinkDerivator {
   public static Map<String, Map<String, Long>> serviceDependencies(Node root,
       Map<String, Map<String, Long>> dependenciesMap) {
 
-    Traversals.inorder(root, (Node<TracingWrapper> child, Node<TracingWrapper> parent) -> {
+    Traversals.postOrder(root, (Node<TracingWrapper> child, Node<TracingWrapper> parent) -> {
       // zipkin spans - there is a span representing an internal link in service
       // e.g. for each descendant there is a separate client span (we follow zipkin semantics)
       if (child.getTracingWrapper().get() instanceof TracingWrapper.ZipkinWrapper) {
