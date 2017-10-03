@@ -15,6 +15,7 @@ package io.jaegertracing.spark.dependencies.test;
 
 import io.jaegertracing.spark.dependencies.test.rest.DependencyLink;
 import io.jaegertracing.spark.dependencies.test.tree.Node;
+import io.jaegertracing.spark.dependencies.test.tree.TracingWrapper;
 import io.jaegertracing.spark.dependencies.test.tree.Traversals;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -31,21 +32,38 @@ public class DependencyLinkDerivator {
 
   public static Map<String, Map<String, Long>> serviceDependencies(Node root,
       Map<String, Map<String, Long>> dependenciesMap) {
-    Traversals.inorder(root, (child, parent) -> {
-      if (parent == null) {
-        return;
-      }
-      Map<String, Long> childMap = dependenciesMap.get(parent.getServiceName());
-      if (childMap == null) {
-        childMap = new LinkedHashMap<>();
-        dependenciesMap.put(parent.getServiceName(), childMap);
+
+    Traversals.inorder(root, (Node<TracingWrapper> child, Node<TracingWrapper> parent) -> {
+      // zipkin spans - there is a span representing an internal link in service
+      // e.g. for each descendant there is a separate client span (we follow zipkin semantics)
+      if (child.getTracingWrapper().get() instanceof TracingWrapper.ZipkinWrapper) {
+        if (!child.getDescendants().isEmpty()) {
+          Map<String, Long> stringLongMap = dependenciesMap.get(child.getServiceName());
+          if (stringLongMap == null) {
+            stringLongMap = new LinkedHashMap<>();
+            dependenciesMap.put(child.getServiceName(), stringLongMap);
+          }
+          Long internalCallCount = stringLongMap.get(child.getServiceName());
+          if (internalCallCount == null) {
+            internalCallCount = 0L;
+          }
+          stringLongMap.put(child.getServiceName(), internalCallCount + child.getDescendants().size());
+        }
       }
 
-      Long callCount = childMap.get(child.getServiceName());
-      if (callCount == null) {
-        callCount = 0L;
+      if (parent != null) {
+        Map<String, Long> childMap = dependenciesMap.get(parent.getServiceName());
+        if (childMap == null) {
+          childMap = new LinkedHashMap<>();
+          dependenciesMap.put(parent.getServiceName(), childMap);
+        }
+
+        Long callCount = childMap.get(child.getServiceName());
+        if (callCount == null) {
+          callCount = 0L;
+        }
+        childMap.put(child.getServiceName(), ++callCount);
       }
-      childMap.put(child.getServiceName(), ++callCount);
     });
     return dependenciesMap;
   }

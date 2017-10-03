@@ -26,7 +26,6 @@ import java.util.Random;
  */
 public class TreeGenerator<Tracer> {
 
-  private Random descendantsRandom = new Random();
   private Random tracersRandom = new Random();
   private List<TracerHolder<Tracer>> tracers;
 
@@ -47,7 +46,7 @@ public class TreeGenerator<Tracer> {
     return root;
   }
 
-  private void generateDescendants(Queue<Node> queue, int numOfNodes, int maxNumberOfDescendants) {
+  private void generateDescendants(Queue<Node> queue, int numOfNodes, final int maxNumberOfDescendants) {
     if (numOfNodes <= 0) {
       return;
     }
@@ -56,9 +55,7 @@ public class TreeGenerator<Tracer> {
     if (parent == null) {
       return;
     }
-    // +1 to assure that we generate all exact number of nodes
-    int numOfDescendants = descendantsRandom.nextInt(maxNumberOfDescendants) + 1;
-    for (int i = 0; i < numOfDescendants; i++) {
+    for (int i = 0; i < maxNumberOfDescendants; i++) {
       Node descendant = new Node(tracers.get(tracersRandom.nextInt(tracers.size())).tracingWrapper(), parent);
       queue.add(descendant);
       parent.addDescendant(descendant);

@@ -30,4 +30,24 @@ public class Process implements Serializable {
   public void setServiceName(String serviceName) {
     this.serviceName = serviceName;
   }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof Process)) {
+      return false;
+    }
+
+    Process process = (Process) o;
+
+    return serviceName != null ? serviceName.equals(process.serviceName)
+        : process.serviceName == null;
+  }
+
+  @Override
+  public int hashCode() {
+    return serviceName != null ? serviceName.hashCode() : 0;
+  }
 }
