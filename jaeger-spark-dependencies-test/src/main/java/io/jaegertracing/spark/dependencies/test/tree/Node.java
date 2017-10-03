@@ -43,7 +43,6 @@ public class Node<T extends TracingWrapper> {
     return tracingWrapper;
   }
 
-//  // TODO shouldn't be public node should be added in constructor
   private void addDescendant(Node descendant) {
     this.descendants.add(descendant);
   }
