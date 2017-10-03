@@ -30,15 +30,20 @@ public class Node<T extends TracingWrapper> {
 
   public Node(TracingWrapper<T> tracingWrapper, Node parent) {
     this.tracingWrapper = tracingWrapper;
-    tracingWrapper.createChildSpan(parent == null ? null : parent.getTracingWrapper());
+
+    if (parent != null) {
+      tracingWrapper.createChildSpan(parent.getTracingWrapper());
+      parent.addDescendant(this);
+    } else {
+      tracingWrapper.createChildSpan(null);
+    }
   }
 
   public TracingWrapper<T> getTracingWrapper() {
     return tracingWrapper;
   }
 
-  // TODO shouldn't be public node should be added in constructor
-  public void addDescendant(Node descendant) {
+  private void addDescendant(Node descendant) {
     this.descendants.add(descendant);
   }
 

@@ -30,18 +30,12 @@ public class DependencyLinksDerivatorTest {
   @Test
   public void testRootToMap() {
     Node<MockTracingWrapper> root = new Node<>(new MockTracingWrapper(new MockTracer(), "foo"), null);
-    Node<MockTracingWrapper> child1 = new Node<>(new MockTracingWrapper(new MockTracer(), "child1"), null);
-    Node<MockTracingWrapper> child1Other = new Node<>(new MockTracingWrapper(new MockTracer(), "child1"), null);
-    Node<MockTracingWrapper> child2 = new Node<>(new MockTracingWrapper(new MockTracer(), "child2"), null);
-    Node<MockTracingWrapper> child3 = new Node<>(new MockTracingWrapper(new MockTracer(), "child3"), null);
-    root.addDescendant(child1);
-    root.addDescendant(child1Other);
-    root.addDescendant(child2);
-    root.addDescendant(child3);
-    Node<MockTracingWrapper> child33 = new Node<>(new MockTracingWrapper(new MockTracer(), "child33"), null);
-    Node<MockTracingWrapper> child333 = new Node<>(new MockTracingWrapper(new MockTracer(), "child333"), null);
-    child3.addDescendant(child33);
-    child33.addDescendant(child333);
+    new Node<>(new MockTracingWrapper(new MockTracer(), "child1"), root);
+    new Node<>(new MockTracingWrapper(new MockTracer(), "child1"), root);
+    new Node<>(new MockTracingWrapper(new MockTracer(), "child2"), root);
+    Node<MockTracingWrapper> child3 = new Node<>(new MockTracingWrapper(new MockTracer(), "child3"), root);
+    Node<MockTracingWrapper> child33 = new Node<>(new MockTracingWrapper(new MockTracer(), "child33"), child3);
+    new Node<>(new MockTracingWrapper(new MockTracer(), "child333"), child33);
 
     Map<String, Map<String, Long>> depLinks = DependencyLinkDerivator.serviceDependencies(root);
     // 3 parents

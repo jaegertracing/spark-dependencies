@@ -58,7 +58,6 @@ public class TreeGenerator<Tracer> {
     for (int i = 0; i < maxNumberOfDescendants; i++) {
       Node descendant = new Node(tracers.get(tracersRandom.nextInt(tracers.size())).tracingWrapper(), parent);
       queue.add(descendant);
-      parent.addDescendant(descendant);
       if (--numOfNodes <= 0) {
         return;
       }
