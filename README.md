@@ -50,7 +50,7 @@ $ STORAGE=cassandra java -jar jaeger-spark-dependencies.jar `date -u -d '1 day a
 The following variables are common to all storage layers:
 
     * `SPARK_MASTER`: Spark master to submit the job to; Defaults to `local[*]`
-    * `DATE`: Date in YYYY-mm-dd format.
+    * `DATE`: Date in YYYY-mm-dd format. Denotes a day for which dependency links will be created.
 
 ### Cassandra
 Cassandra is used when `STORAGE=cassandra`.
