@@ -55,6 +55,7 @@ public class ElasticsearchDependenciesJobTest extends DependenciesTest {
         .waitingFor(Wait.forHttp("/"))
         .withExposedPorts(9200, 9300)
         .withEnv("xpack.security.enabled", "false")
+        .withEnv("discovery.type", "single-node")
         .withEnv("network.bind_host", "elasticsearch")
         .withEnv("network.host", "_site_")
         .withEnv("network.publish_host", "_local_");
