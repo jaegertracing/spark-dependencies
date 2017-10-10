@@ -28,19 +28,19 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Logger;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.elasticsearch.spark.rdd.api.java.JavaEsSpark;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author OpenZipkin authors
  * @author Pavol Loffay
  */
 public class ElasticsearchDependenciesJob {
-
-  private static final Logger log = Logger.getLogger(ElasticsearchDependenciesJob.class.getName());
+  private static final Logger log = LoggerFactory.getLogger(ElasticsearchDependenciesJob.class);
 
   public static Builder builder() {
     return new Builder();
@@ -145,7 +145,6 @@ public class ElasticsearchDependenciesJob {
 
   public void run() {
     run(indexDate("jaeger-span"), indexDate("jaeger-dependencies") + "/dependencies");
-    log.info("Done");
   }
 
   String indexDate(String index) {
@@ -154,6 +153,7 @@ public class ElasticsearchDependenciesJob {
   }
 
   void run(String spanResource, String depResource) {
+    log.info("Running Dependencies job for {}, reading from {} index, result storing to {}", day, spanResource ,depResource);
     JavaSparkContext sc = new JavaSparkContext(conf);
     try {
       JavaPairRDD<String, Iterable<Span>> traces = JavaEsSpark.esJsonRDD(sc, spanResource)
@@ -162,6 +162,7 @@ public class ElasticsearchDependenciesJob {
 
       List<Dependency> dependencyLinks = DependenciesSparkHelper.derive(traces);
       store(sc, dependencyLinks, depResource);
+      log.info("Done, %d dependency objects created", dependencyLinks.size());
     } finally {
       sc.stop();
     }
