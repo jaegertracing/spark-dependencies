@@ -162,7 +162,7 @@ public class ElasticsearchDependenciesJob {
 
       List<Dependency> dependencyLinks = DependenciesSparkHelper.derive(traces);
       store(sc, dependencyLinks, depResource);
-      log.info("Done, %d dependency objects created", dependencyLinks.size());
+      log.info("Done, {} dependency objects created", dependencyLinks.size());
     } finally {
       sc.stop();
     }

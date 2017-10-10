@@ -158,7 +158,7 @@ public final class CassandraDependenciesJob {
 
       List<Dependency> dependencyLinks = DependenciesSparkHelper.derive(traces);
       store(sc, dependencyLinks);
-      log.info("Done, %d dependency objects created", dependencyLinks.size());
+      log.info("Done, {} dependency objects created", dependencyLinks.size());
     } finally {
       sc.stop();
     }
