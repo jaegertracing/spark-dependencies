@@ -20,49 +20,37 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import io.jaegertracing.spark.dependencies.model.KeyValue;
-import io.jaegertracing.spark.dependencies.model.Process;
-import io.jaegertracing.spark.dependencies.model.Span;
 import java.io.IOException;
-import java.math.BigInteger;
-import java.util.Arrays;
 
 /**
  * @author Pavol Loffay
  */
-public class SpanDeserializer extends StdDeserializer<Span> {
+public class KeyValueDeserializer extends StdDeserializer<KeyValue> {
 
   // TODO Spark incorrectly serializes object mapper, therefore reinitializing here
   private ObjectMapper objectMapper = JsonHelper.configure(new ObjectMapper());
 
-  public SpanDeserializer() {
-    super(Span.class);
+  public KeyValueDeserializer() {
+    super(KeyValue.class);
   }
 
   @Override
-  public Span deserialize(JsonParser jp, DeserializationContext ctxt) throws IOException, JsonProcessingException {
+  public KeyValue deserialize(JsonParser jp, DeserializationContext ctxt) throws IOException, JsonProcessingException {
     JsonNode node = objectMapper.getFactory().setCodec(objectMapper).getCodec().readTree(jp);
 
-    String spanIdHex = node.get("spanID").asText();
-    String parentIdHex = node.get("parentSpanID").asText();
-    String traceIdHex = node.get("traceID").asText();
-    String startTimeStr = node.get("startTime").asText();
+    String key = node.get("key").asText();
+    String type = node.get("type").asText();
 
-    BigInteger spanId = new BigInteger(spanIdHex, 16);
-    BigInteger parentId = new BigInteger(parentIdHex, 16);
+    KeyValue keyValue = new KeyValue();
+    keyValue.setKey(key);
+    keyValue.setValueType(type);
 
-    JsonNode processNode = node.get("process");
-    Process process = objectMapper.treeToValue(processNode, Process.class);
+    if ("string".equalsIgnoreCase(type)) {
+      keyValue.setValueString(node.get("value").asText());
+    } else if ("boolean".equalsIgnoreCase(type)) {
+      keyValue.setValueBoolean(node.get("value").asBoolean());
+    }
 
-    JsonNode tagsNode = node.get("tags");
-    KeyValue[] tags = objectMapper.treeToValue(tagsNode, KeyValue[].class);
-
-    Span span = new Span();
-    span.setSpanId(spanId.longValue());
-    span.setParentId(parentId.longValue());
-    span.setTraceId(traceIdHex);
-    span.setStartTime(startTimeStr != null ? Long.parseLong(startTimeStr) : null);
-    span.setProcess(process);
-    span.setTags(Arrays.asList(tags));
-    return span;
+    return keyValue;
   }
 }

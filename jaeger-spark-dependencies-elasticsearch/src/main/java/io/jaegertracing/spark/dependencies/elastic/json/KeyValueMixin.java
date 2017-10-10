@@ -13,22 +13,11 @@
  */
 package io.jaegertracing.spark.dependencies.elastic.json;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import io.jaegertracing.spark.dependencies.model.KeyValue;
-import io.jaegertracing.spark.dependencies.model.Span;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 /**
  * @author Pavol Loffay
  */
-public class JsonHelper {
-
-  private JsonHelper() {}
-
-  public static ObjectMapper configure(ObjectMapper objectMapper) {
-    objectMapper.addMixIn(Span.class, SpanMixin.class);
-    objectMapper.addMixIn(KeyValue.class, KeyValueMixin.class);
-    objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-    return objectMapper;
-  }
+@JsonDeserialize(using = KeyValueDeserializer.class)
+public class KeyValueMixin {
 }

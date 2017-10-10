@@ -14,6 +14,7 @@
 package io.jaegertracing.spark.dependencies.model;
 
 import java.io.Serializable;
+import java.util.List;
 
 /**
  * @author Pavol Loffay
@@ -27,6 +28,7 @@ public class Span implements Serializable {
 
   private Long startTime;
   private Process process;
+  private List<KeyValue> tags;
 
   public String getTraceId() {
     return traceId;
@@ -66,6 +68,14 @@ public class Span implements Serializable {
 
   public void setProcess(Process process) {
     this.process = process;
+  }
+
+  public List<KeyValue> getTags() {
+    return tags;
+  }
+
+  public void setTags(List<KeyValue> tags) {
+    this.tags = tags;
   }
 }
 

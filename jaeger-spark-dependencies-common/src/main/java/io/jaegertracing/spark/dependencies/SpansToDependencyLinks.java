@@ -14,7 +14,9 @@
 package io.jaegertracing.spark.dependencies;
 
 import io.jaegertracing.spark.dependencies.model.Dependency;
+import io.jaegertracing.spark.dependencies.model.KeyValue;
 import io.jaegertracing.spark.dependencies.model.Span;
+import io.opentracing.tag.Tags;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -38,14 +40,14 @@ public class SpansToDependencyLinks implements Function<Iterable<Span>, Iterable
      */
     @Override
     public Iterable<Dependency> call(Iterable<Span> trace) throws Exception {
-        Map<Long, Set<OnlySpanIdsKey>> spanMap = new LinkedHashMap<>();
+        Map<Long, Set<Span>> spanMap = new LinkedHashMap<>();
         for (Span span: trace) {
-            Set<OnlySpanIdsKey> sharedSpans = spanMap.get(span.getSpanId());
+            Set<Span> sharedSpans = spanMap.get(span.getSpanId());
             if (sharedSpans == null) {
                 sharedSpans = new LinkedHashSet<>();
                 spanMap.put(span.getSpanId(), sharedSpans);
             }
-            sharedSpans.add(new OnlySpanIdsKey(span));
+            sharedSpans.add(span);
         }
 
         // Let's start with zipkin shared spans
@@ -57,28 +59,22 @@ public class SpansToDependencyLinks implements Function<Iterable<Span>, Iterable
                 continue;
             }
 
-            // if current span is shared server span we don't want to create a link
-            // because the link should be for client span
-            if (existsSpanWhichStartedBefore(span, spanMap)) {
+            // if the current span is shared and not a client span we skip it
+            // because the link from this span to parent should be from client span
+            if (spanMap.get(span.getSpanId()).size() > 1 && !isClientSpan(span)) {
                 continue;
             }
 
-            Set<OnlySpanIdsKey> parents = spanMap.get(span.getParentId());
+            Set<Span> parents = spanMap.get(span.getParentId());
             if (parents != null) {
                 if (parents.size() > 1) {
-                    // multiple possible parents so parent is zipkin shared span
-                    // therefore we choose the one with the greatest start time (e.g. server span)
-                    // we cannot choose client span because it's not a true parent!
-                    Span sharedParent = null;
-                    for (OnlySpanIdsKey sharedSpan: parents) {
-                        if (sharedParent == null || sharedSpan.span.getStartTime() > sharedParent.getStartTime()) {
-                            sharedParent = sharedSpan.span;
-                        }
-                    }
-                    result.add(new Dependency(sharedParent.getProcess().getServiceName(), span.getProcess().getServiceName()));
+                    serverSpan(parents)
+                        .ifPresent(parent ->
+                          result.add(new Dependency(parent.getProcess().getServiceName(), span.getProcess().getServiceName()))
+                    );
                 } else {
                     // this is jaeger span or zipkin native (not shared!)
-                    Span parent = parents.iterator().next().span;
+                    Span parent = parents.iterator().next();
                     if (parent.getProcess() == null || parent.getProcess().getServiceName() == null) {
                         continue;
                     }
@@ -89,95 +85,60 @@ public class SpansToDependencyLinks implements Function<Iterable<Span>, Iterable
         return result;
     }
 
-    /**
-     * @param span span
-     * @param spanMap span map, key is spanId and value set of spans
-     * @return true if there is a span in the set which started before given span.
-     */
-    private boolean existsSpanWhichStartedBefore(Span span, Map<Long, Set<OnlySpanIdsKey>> spanMap) {
-        Set<OnlySpanIdsKey> sharedSpans = spanMap.get(span.getSpanId());
-        if (sharedSpans != null && sharedSpans.size() > 1) {
-            for (OnlySpanIdsKey other: sharedSpans) {
-                if (span.getStartTime() > other.span.getStartTime()) {
-                    return true;
-                }
+    static Optional<Span> serverSpan(Set<Span> sharedSpans) {
+        for (Span span: sharedSpans) {
+            if (isServerSpan(span)) {
+                return Optional.of(span);
+            }
+        }
+
+        return Optional.empty();
+    }
+
+    static boolean isClientSpan(Span span) {
+        for (KeyValue tag: span.getTags()) {
+            if (Tags.SPAN_KIND_CLIENT.equals(tag.getValueString())) {
+                return true;
             }
         }
         return false;
     }
 
-    private List<Dependency> sharedSpanDependencies(Map<Long, Set<OnlySpanIdsKey>> spanMap) {
+    static boolean isServerSpan(Span span) {
+        for (KeyValue tag: span.getTags()) {
+            if (Tags.SPAN_KIND_SERVER.equals(tag.getValueString())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private List<Dependency> sharedSpanDependencies(Map<Long, Set<Span>> spanMap) {
         List<Dependency> dependencies = new ArrayList<>();
         // create links between shared spans
-        spanMap.values().forEach(spans -> {
-            List<OnlySpanIdsKey> spanList = new ArrayList<>(spans);
-            for (int i = 0; i < spanList.size(); i++) {
-                for (int j = i + 1; j < spanList.size(); j++) {
-                    createLinkSharedSpan(spanList.get(i).span, spanList.get(j).span)
-                        .ifPresent(dependency -> dependencies.add(dependency));
-                }
-            }
-        });
-
+        for (Set<Span> sharedSpans: spanMap.values()) {
+            sharedSpanDependency(sharedSpans)
+                .ifPresent(dependencies::add);
+        }
         return dependencies;
     }
 
-    private Optional<Dependency> createLinkSharedSpan(Span spanA, Span spanB) {
-        // return empty if the span is not shared
-        if (!spanA.getSpanId().equals(spanB.getSpanId())) {
-            return Optional.empty();
-        }
+    private Optional<Dependency> sharedSpanDependency(Set<Span> sharedSpans) {
+        String clientService = null;
+        String serverService = null;
+        for (Span span: sharedSpans) {
+            for (KeyValue tag: span.getTags()) {
+                if (Tags.SPAN_KIND_CLIENT.equals(tag.getValueString())) {
+                    clientService = span.getProcess().getServiceName();
+                } else if (Tags.SPAN_KIND_SERVER.equals(tag.getValueString())) {
+                    serverService = span.getProcess().getServiceName();
+                }
 
-        Dependency dependency;
-        if (spanA.getStartTime() < spanB.getStartTime()) {
-            dependency = new Dependency(spanA.getProcess().getServiceName(), spanB.getProcess().getServiceName());
-        } else {
-            dependency = new Dependency(spanB.getProcess().getServiceName(), spanA.getProcess().getServiceName());
-        }
-        return Optional.of(dependency);
-    }
-
-    /**
-     * Used in Set to eliminate the same spans reported in chunks.
-     * So we compare only ids and process because of zipkin shared spans.
-     */
-    private class OnlySpanIdsKey {
-        public final Span span;
-
-        public OnlySpanIdsKey(Span span) {
-            this.span = span;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
+                if (clientService != null && serverService != null) {
+                    return Optional.of(new Dependency(clientService, serverService));
+                }
             }
-            if (!(o instanceof Span)) {
-                return false;
-            }
-
-            Span other = (Span) o;
-
-            if (span.getTraceId() != null ? !span.getTraceId().equals(other.getTraceId()) : other.getTraceId() != null) {
-                return false;
-            }
-            if (span.getSpanId() != null ? !span.getSpanId().equals(other.getSpanId()) : other.getSpanId() != null) {
-                return false;
-            }
-            if (span.getParentId() != null ? !span.getParentId().equals(other.getParentId()) : other.getParentId() != null) {
-                return false;
-            }
-            return span.getProcess() != null ? span.equals(other.getProcess()) : other.getProcess() == null;
         }
-
-        @Override
-        public int hashCode() {
-            int result = span.getTraceId() != null ? span.getTraceId().hashCode() : 0;
-            result = 31 * result + (span.getSpanId() != null ? span.getSpanId().hashCode() : 0);
-            result = 31 * result + (span.getParentId() != null ? span.getParentId().hashCode() : 0);
-            result = 31 * result + (span.getProcess() != null ? span.getProcess().hashCode() : 0);
-            return result;
-        }
+        return Optional.empty();
     }
 }

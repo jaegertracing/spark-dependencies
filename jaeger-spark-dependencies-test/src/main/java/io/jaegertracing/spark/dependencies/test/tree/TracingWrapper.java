@@ -110,7 +110,12 @@ public interface TracingWrapper<T extends TracingWrapper> {
             .start();
         // TODO if I finish this later the span is cached
         // and joined with server span and reported as a single span.
-        // to properly solve this we have to look into the tags inside the job
+        // to properly solve this we have to look into the tags.
+        // However there is another problem jaeger adds only one span.kind
+        // (even if span contains cs,cr,sr,ss)
+        // And it filters out core annotations, so there is no way how to find out
+        // that there is a dependency link in this span.
+        // https://github.com/jaegertracing/jaeger/issues/451
         parentClient.finish();
         span = tracing.tracer().joinSpan(parentClient.context())
             .name(operationName + "-server")
