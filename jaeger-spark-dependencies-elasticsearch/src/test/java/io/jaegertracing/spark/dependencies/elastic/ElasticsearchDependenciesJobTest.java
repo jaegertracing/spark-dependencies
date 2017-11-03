@@ -63,21 +63,18 @@ public class ElasticsearchDependenciesJobTest extends DependenciesTest {
 
     jaegerCollector = new GenericContainer<>("jaegertracing/jaeger-collector:latest")
         .withNetwork(network)
-        .withCommand("/go/bin/collector-linux",
-            "--es.server-urls=http://elasticsearch:9200",
-            "--span-storage.type=elasticsearch",
-            "--collector.zipkin.http-port=9411",
-            "--collector.queue-size=100000",
-            "--collector.num-workers=500")
+        .withEnv("SPAN_STORAGE_TYPE", "elasticsearch")
+        .withEnv("ES_SERVER_URLS", "http://elasticsearch:9200")
+        .withEnv("COLLECTOR_ZIPKIN_HTTP_PORT", "9411")
+        .withEnv("COLLECTOR_QUEUE_SIZE", "100000")
         .waitingFor(Wait.forHttp("/").forStatusCode(204))
         // the first one is health check
         .withExposedPorts(14269, 14268, 9411);
     jaegerCollector.start();
 
     jaegerQuery = new GenericContainer<>("jaegertracing/jaeger-query:latest")
-        .withCommand("/go/bin/query-linux",
-            "--es.server-urls=http://elasticsearch:9200",
-            "--span-storage.type=elasticsearch")
+        .withEnv("SPAN_STORAGE_TYPE", "elasticsearch")
+        .withEnv("ES_SERVER_URLS", "http://elasticsearch:9200")
         .withNetwork(network)
         .waitingFor(Wait.forHttp("/").forStatusCode(204))
         .withExposedPorts(16687, 16686);
