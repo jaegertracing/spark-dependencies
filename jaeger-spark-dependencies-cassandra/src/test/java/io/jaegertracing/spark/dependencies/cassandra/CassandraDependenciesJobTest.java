@@ -13,9 +13,10 @@
  */
 package io.jaegertracing.spark.dependencies.cassandra;
 
+import static org.awaitility.Awaitility.await;
+
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.Session;
-import com.github.dockerjava.api.model.Link;
 import io.jaegertracing.spark.dependencies.test.DependenciesTest;
 import java.time.LocalDate;
 import java.util.Optional;
@@ -25,59 +26,85 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.Network;
+import org.testcontainers.containers.wait.Wait;
 
 /**
  * @author Pavol Loffay
  */
 public class CassandraDependenciesJobTest extends DependenciesTest {
 
+  private static Network network;
   private static CassandraContainer cassandra;
-  private static GenericContainer jaegerTestDriver;
+  private static GenericContainer jaegerCollector;
+  private static GenericContainer jaegerQuery;
+  private static GenericContainer jaegerCassandraSchema;
   private static int cassandraPort;
 
   @BeforeClass
   public static void beforeClass() throws TimeoutException {
+    network = Network.newNetwork();
     cassandra = new CassandraContainer("cassandra:3.9")
+        .withNetwork(network)
+        .withNetworkAliases("cassandra")
         .withExposedPorts(9042);
     cassandra.start();
     cassandraPort = cassandra.getMappedPort(9042);
 
-    jaegerTestDriver = new JaegerTestDriverContainer("jaegertracing/test-driver:latest")
-        .withCreateContainerCmdModifier(cmd -> {
-          cmd.withLinks(new Link(cassandra.getContainerId(), "cassandra"));
-          cmd.withHostName("test_driver");
-        })
-        .withExposedPorts(14268, 16686, 8080, 9411);
-    jaegerTestDriver.start();
-    queryUrl = String.format("http://localhost:%d", jaegerTestDriver.getMappedPort(16686));
-    collectorUrl = String.format("http://localhost:%d", jaegerTestDriver.getMappedPort(14268));
-    zipkinCollectorUrl = String.format("http://localhost:%d", jaegerTestDriver.getMappedPort(9411));
+    jaegerCassandraSchema = new GenericContainer<>("jaegertracing/jaeger-cassandra-schema:latest")
+        .withNetwork(network);
+    jaegerCassandraSchema.start();
+    /**
+     * Wait until schema is created
+     */
+    await().until(() -> !jaegerCassandraSchema.isRunning());
+
+    jaegerCollector = new GenericContainer<>("jaegertracing/jaeger-collector:latest")
+        .withNetwork(network)
+        .withEnv("CASSANDRA_SERVERS", "cassandra")
+        .withEnv("CASSANDRA_KEYSPACE", "jaeger_v1_dc1")
+        .withEnv("COLLECTOR_ZIPKIN_HTTP_PORT", "9411")
+        .withEnv("COLLECTOR_QUEUE_SIZE", "100000")
+        .waitingFor(Wait.forHttp("/").forStatusCode(204))
+        // the first one is health check
+        .withExposedPorts(14269, 14268, 9411);
+    jaegerCollector.start();
+
+    jaegerQuery = new GenericContainer<>("jaegertracing/jaeger-query:latest")
+        .withNetwork(network)
+        .withEnv("CASSANDRA_SERVERS", "cassandra")
+        .withEnv("CASSANDRA_KEYSPACE", "jaeger_v1_dc1")
+        .waitingFor(Wait.forHttp("/").forStatusCode(204))
+        .withExposedPorts(16687, 16686);
+    jaegerQuery.start();
+
+    queryUrl = String.format("http://localhost:%d", jaegerQuery.getMappedPort(16686));
+    collectorUrl = String.format("http://localhost:%d", jaegerCollector.getMappedPort(14268));
+    zipkinCollectorUrl = String.format("http://localhost:%d", jaegerCollector.getMappedPort(9411));
   }
 
   @AfterClass
   public static void afterClass() {
     Optional.of(cassandra).ifPresent(GenericContainer::close);
-    Optional.of(jaegerTestDriver).ifPresent(GenericContainer::close);
+    Optional.of(jaegerCollector).ifPresent(GenericContainer::close);
+    Optional.of(jaegerQuery).ifPresent(GenericContainer::close);
+    Optional.of(jaegerCassandraSchema).ifPresent(GenericContainer::close);
   }
 
   @After
   public void after() {
     try (Cluster cluster = cassandra.getCluster(); Session session = cluster.newSession()) {
-      session.execute("TRUNCATE jaeger.traces");
-      session.execute("TRUNCATE jaeger.dependencies");
-
+      session.execute("TRUNCATE jaeger_v1_dc1.traces");
+      session.execute("TRUNCATE jaeger_v1_dc1.dependencies");
     }
   }
 
   @Override
   protected void deriveDependencies() throws Exception {
-    // flush all data to disk
-    cassandra.execInContainer("nodetool", "flush", "jaeger");
-
     CassandraDependenciesJob.builder()
         .contactPoints("localhost:" + cassandraPort)
         .day(LocalDate.now())
-        .keyspace("jaeger")
+        .keyspace("jaeger_v1_dc1")
         .build()
         .run();
   }
