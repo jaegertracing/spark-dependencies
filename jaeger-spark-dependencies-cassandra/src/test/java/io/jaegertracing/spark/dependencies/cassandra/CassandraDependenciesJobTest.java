@@ -46,8 +46,8 @@ public class CassandraDependenciesJobTest extends DependenciesTest {
     network = Network.newNetwork();
     cassandra = new CassandraContainer("cassandra:3.9")
         .withNetwork(network)
-        .withExposedPorts(9042)
-    .withNetworkAliases("cassandra");
+        .withNetworkAliases("cassandra")
+        .withExposedPorts(9042);
     cassandra.start();
     cassandraPort = cassandra.getMappedPort(9042);
 
