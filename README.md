@@ -10,16 +10,6 @@ but other days can be explicitly specified.
 
 This repository is based on [zipkin-dependencies](https://github.com/openzipkin/zipkin-dependencies).
 
-
-## Spans from Zipkin native clients e.g. `Brave`
-This implementation currently does not **fully** support processing of spans reported from native Zipkin
-tracers. However, in the most cases links are created correctly.
-
-It is problematic if a RPC span is reported as a single span e.g. containing both client and server
-annotations [jaeger-451](https://github.com/jaegertracing/jaeger/issues/451).
-For example app instrumented with `Brave` sending requests to itself.
-In this case the job does not create a link for this service.
-
 ## Quick-start
 Spark job can be run as docker container and also as java executable:
 
