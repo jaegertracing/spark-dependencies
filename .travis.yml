@@ -1,5 +1,6 @@
 dist: trusty
 sudo: required
+group: deprecated-2017Q4
 
 language: java
 jdk:
@@ -25,5 +26,3 @@ script:
 branches:
   except:
     - /^[0-9]/
-
-env:
