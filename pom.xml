@@ -188,6 +188,7 @@
             <exclude>**/ElasticsearchDependenciesJob.java</exclude>
             <exclude>**/CassandraDependenciesJob.java</exclude>
             <exclude>**/CassandraContainer.java</exclude>
+            <exclude>**swp</exclude>
           </excludes>
         </configuration>
         <executions>
