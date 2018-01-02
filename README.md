@@ -18,6 +18,8 @@ Docker:
 $ docker run --env STORAGE=cassandra --env CASSANDRA_CONTACT_POINTS=host1,host2 jaegertracing/spark-dependencies
 ```
 
+Use `--env JAVA_OPTS=-Djavax.net.ssl.` to set trust store and other Java properties.
+
 As jar file:
 ```bash
 STORAGE=cassandra java -jar jaeager-spark-dependencies.jar
@@ -50,8 +52,6 @@ Cassandra is used when `STORAGE=cassandra`.
     * `CASSANDRA_LOCAL_DC`: The local DC to connect to (other nodes will be ignored)
     * `CASSANDRA_USERNAME` and `CASSANDRA_PASSWORD`: Cassandra authentication. Will throw an exception on startup if authentication fails
     * `CASSANDRA_USE_SSL`: Requires `javax.net.ssl.trustStore` and `javax.net.ssl.trustStorePassword`, defaults to false.
-    * `CASSANDRA_SSL_KEYSTORE`: If set enables client authentication on SSL connections.
-    * `CASSANDRA_SSL_KEYSTORE_PASSWORD`: Password for the keystore.
 
 Example usage:
 
