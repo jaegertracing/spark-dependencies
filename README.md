@@ -18,6 +18,8 @@ Docker:
 $ docker run --env STORAGE=cassandra --env CASSANDRA_CONTACT_POINTS=host1,host2 jaegertracing/spark-dependencies
 ```
 
+Use `--env JAVA_OPTS=-Djavax.net.ssl.` to set trust store and other Java properties.
+
 As jar file:
 ```bash
 STORAGE=cassandra java -jar jaeager-spark-dependencies.jar

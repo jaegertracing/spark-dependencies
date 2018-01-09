@@ -30,4 +30,4 @@ COPY mvnw $APP_HOME
 WORKDIR $APP_HOME
 RUN ./mvnw package -Dlicense.skip=true -DskipTests && rm -rf ~/.m2
 
-CMD java -jar jaeger-spark-dependencies/target/jaeger-spark-dependencies-0.0.1-SNAPSHOT.jar
+CMD java ${JAVA_OPTS} -jar jaeger-spark-dependencies/target/jaeger-spark-dependencies-0.0.1-SNAPSHOT.jar
