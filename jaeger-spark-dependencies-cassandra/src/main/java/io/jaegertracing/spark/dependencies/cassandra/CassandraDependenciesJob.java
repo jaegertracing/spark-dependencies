@@ -78,6 +78,12 @@ public final class CassandraDependenciesJob {
           System.getProperty("javax.net.ssl.trustStorePassword", ""));
       sparkProperties.put("spark.cassandra.connection.ssl.trustStore.path",
           System.getProperty("javax.net.ssl.trustStore", ""));
+      sparkProperties.put("spark.cassandra.connection.ssl.clientAuth.enabled",
+          Utils.getEnv("CASSANDRA_SSL_KEYSTORE", "").isEmpty() ? "false" : "true");
+      sparkProperties.put("spark.cassandra.connection.ssl.keyStore.path",
+          Utils.getEnv("CASSANDRA_SSL_KEYSTORE", ""));
+      sparkProperties.put("spark.cassandra.connection.ssl.keyStore.password",
+          Utils.getEnv("CASSANDRA_SSL_KEYSTORE_PASSWORD", ""));
       sparkProperties.put("spark.cassandra.auth.username", Utils.getEnv("CASSANDRA_USERNAME", ""));
       sparkProperties.put("spark.cassandra.auth.password", Utils.getEnv("CASSANDRA_PASSWORD", ""));
     }
