@@ -85,5 +85,10 @@ To build the job locally and run tests:
 docker build -t jaegertracing/spark-dependencies:latest .
 ```
 
+## License
+  
+[Apache 2.0 License](./LICENSE).
+
+
    [ci-img]: https://travis-ci.org/jaegertracing/spark-dependencies.svg?branch=master
    [ci]: https://travis-ci.org/jaegertracing/spark-dependencies
