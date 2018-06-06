@@ -15,6 +15,7 @@ package io.jaegertracing.spark.dependencies;
 
 import io.jaegertracing.spark.dependencies.model.Dependency;
 import io.jaegertracing.spark.dependencies.model.KeyValue;
+import io.jaegertracing.spark.dependencies.model.Reference;
 import io.jaegertracing.spark.dependencies.model.Span;
 import io.opentracing.tag.Tags;
 import java.util.ArrayList;
@@ -54,8 +55,8 @@ public class SpansToDependencyLinks implements Function<Iterable<Span>, Iterable
         List<Dependency> result = sharedSpanDependencies(spanMap);
 
         for (Span span: trace) {
-            if (span.getParentId() == null || span.getProcess() == null ||
-                span.getProcess().getServiceName() == null) {
+            if (span.getRefs() == null || span.getRefs().isEmpty() ||
+                span.getProcess() == null || span.getProcess().getServiceName() == null) {
                 continue;
             }
 
@@ -65,20 +66,22 @@ public class SpansToDependencyLinks implements Function<Iterable<Span>, Iterable
                 continue;
             }
 
-            Set<Span> parents = spanMap.get(span.getParentId());
-            if (parents != null) {
-                if (parents.size() > 1) {
-                    serverSpan(parents)
-                        .ifPresent(parent ->
-                          result.add(new Dependency(parent.getProcess().getServiceName(), span.getProcess().getServiceName()))
-                    );
-                } else {
-                    // this is jaeger span or zipkin native (not shared!)
-                    Span parent = parents.iterator().next();
-                    if (parent.getProcess() == null || parent.getProcess().getServiceName() == null) {
-                        continue;
+            for (Reference reference: span.getRefs()) {
+                Set<Span> parents = spanMap.get(reference.getSpanId());
+                if (parents != null) {
+                    if (parents.size() > 1) {
+                        serverSpan(parents)
+                            .ifPresent(parent ->
+                                result.add(new Dependency(parent.getProcess().getServiceName(), span.getProcess().getServiceName()))
+                            );
+                    } else {
+                        // this is jaeger span or zipkin native (not shared!)
+                        Span parent = parents.iterator().next();
+                        if (parent.getProcess() == null || parent.getProcess().getServiceName() == null) {
+                            continue;
+                        }
+                        result.add(new Dependency(parent.getProcess().getServiceName(), span.getProcess().getServiceName()));
                     }
-                    result.add(new Dependency(parent.getProcess().getServiceName(), span.getProcess().getServiceName()));
                 }
             }
         }

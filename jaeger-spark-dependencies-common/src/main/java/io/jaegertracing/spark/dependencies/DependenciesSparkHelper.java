@@ -28,6 +28,8 @@ public class DependenciesSparkHelper {
   /**
    * Derives dependency links based on supplied spans (e.g. multiple traces). If there is a link A->B
    * in multiple traces it will return just one {@link Dependency} link with a correct {@link Dependency#callCount}.
+   * Note that RDDs are grouped on traceId so if a span contains multiple references from different traces
+   * the job does not produce correct result.
    *
    * @param traceIdSpans <traceId, trace> {@link org.apache.spark.api.java.JavaRDD} with trace id and a collection of
    *                     spans with that traceId.

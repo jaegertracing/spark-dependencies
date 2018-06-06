@@ -14,29 +14,14 @@
 package io.jaegertracing.spark.dependencies.model;
 
 import java.io.Serializable;
-import java.util.List;
 
 /**
  * @author Pavol Loffay
  */
-public class Span implements Serializable {
+public class Reference implements Serializable {
   private static final long serialVersionUID = 0L;
 
-  private String traceId;
   private Long spanId;
-
-  private Long startTime;
-  private Process process;
-  private List<KeyValue> tags;
-  private List<Reference> refs;
-
-  public String getTraceId() {
-    return traceId;
-  }
-
-  public void setTraceId(String traceId) {
-    this.traceId = traceId;
-  }
 
   public Long getSpanId() {
     return spanId;
@@ -45,37 +30,4 @@ public class Span implements Serializable {
   public void setSpanId(Long spanId) {
     this.spanId = spanId;
   }
-
-  public long getStartTime() {
-    return startTime;
-  }
-
-  public void setStartTime(Long startTime) {
-    this.startTime = startTime;
-  }
-
-  public Process getProcess() {
-    return process;
-  }
-
-  public void setProcess(Process process) {
-    this.process = process;
-  }
-
-  public List<KeyValue> getTags() {
-    return tags;
-  }
-
-  public void setTags(List<KeyValue> tags) {
-    this.tags = tags;
-  }
-
-  public List<Reference> getRefs() {
-    return refs;
-  }
-
-  public void setRefs(List<Reference> refs) {
-    this.refs = refs;
-  }
 }
-

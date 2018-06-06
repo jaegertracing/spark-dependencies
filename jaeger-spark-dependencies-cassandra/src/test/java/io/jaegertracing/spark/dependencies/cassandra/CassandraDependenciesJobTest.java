@@ -51,7 +51,7 @@ public class CassandraDependenciesJobTest extends DependenciesTest {
     cassandra.start();
     cassandraPort = cassandra.getMappedPort(9042);
 
-    jaegerCassandraSchema = new GenericContainer<>("jaegertracing/jaeger-cassandra-schema:latest")
+    jaegerCassandraSchema = new GenericContainer<>("jaegertracing/jaeger-cassandra-schema:" + jaegerVersion())
         .withNetwork(network);
     jaegerCassandraSchema.start();
     /**
@@ -59,7 +59,7 @@ public class CassandraDependenciesJobTest extends DependenciesTest {
      */
     await().until(() -> !jaegerCassandraSchema.isRunning());
 
-    jaegerCollector = new GenericContainer<>("jaegertracing/jaeger-collector:latest")
+    jaegerCollector = new GenericContainer<>("jaegertracing/jaeger-collector:" + jaegerVersion())
         .withNetwork(network)
         .withEnv("CASSANDRA_SERVERS", "cassandra")
         .withEnv("CASSANDRA_KEYSPACE", "jaeger_v1_dc1")
@@ -70,7 +70,7 @@ public class CassandraDependenciesJobTest extends DependenciesTest {
         .withExposedPorts(14269, 14268, 9411);
     jaegerCollector.start();
 
-    jaegerQuery = new GenericContainer<>("jaegertracing/jaeger-query:latest")
+    jaegerQuery = new GenericContainer<>("jaegertracing/jaeger-query:" + jaegerVersion())
         .withNetwork(network)
         .withEnv("CASSANDRA_SERVERS", "cassandra")
         .withEnv("CASSANDRA_KEYSPACE", "jaeger_v1_dc1")

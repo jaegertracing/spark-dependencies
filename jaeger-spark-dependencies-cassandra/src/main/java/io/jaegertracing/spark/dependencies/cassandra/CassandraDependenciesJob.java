@@ -18,6 +18,7 @@ import static com.datastax.spark.connector.japi.CassandraJavaUtil.javaFunctions;
 import static com.datastax.spark.connector.japi.CassandraJavaUtil.mapRowTo;
 import static com.datastax.spark.connector.japi.CassandraJavaUtil.mapToRow;
 
+import com.datastax.spark.connector.japi.CassandraJavaUtil;
 import com.google.common.base.Joiner;
 import com.google.common.net.HostAndPort;
 import io.jaegertracing.spark.dependencies.DependenciesSparkHelper;
@@ -151,9 +152,10 @@ public final class CassandraDependenciesJob {
     JavaSparkContext sc = new JavaSparkContext(conf);
     try {
       JavaPairRDD<String, Iterable<Span>> traces = javaFunctions(sc)
-          .cassandraTable(keyspace, "traces", mapRowTo(Span.class))
+          .cassandraTable(keyspace, "traces", mapRowTo(CassandraSpan.class))
           .where("start_time < ? AND start_time > ?", microsUpper, microsLower)
           .mapToPair(span -> new Tuple2<>(span.getTraceId(), span))
+          .mapValues(span -> (Span) span)
           .groupByKey();
 
       List<Dependency> dependencyLinks = DependenciesSparkHelper.derive(traces);

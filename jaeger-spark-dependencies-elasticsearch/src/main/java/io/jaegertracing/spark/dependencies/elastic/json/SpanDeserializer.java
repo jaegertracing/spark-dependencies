@@ -21,10 +21,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import io.jaegertracing.spark.dependencies.model.KeyValue;
 import io.jaegertracing.spark.dependencies.model.Process;
+import io.jaegertracing.spark.dependencies.model.Reference;
 import io.jaegertracing.spark.dependencies.model.Span;
 import java.io.IOException;
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * @author Pavol Loffay
@@ -43,12 +46,8 @@ public class SpanDeserializer extends StdDeserializer<Span> {
     JsonNode node = objectMapper.getFactory().setCodec(objectMapper).getCodec().readTree(jp);
 
     String spanIdHex = node.get("spanID").asText();
-    String parentIdHex = node.get("parentSpanID").asText();
     String traceIdHex = node.get("traceID").asText();
     String startTimeStr = node.get("startTime").asText();
-
-    BigInteger spanId = new BigInteger(spanIdHex, 16);
-    BigInteger parentId = new BigInteger(parentIdHex, 16);
 
     JsonNode processNode = node.get("process");
     Process process = objectMapper.treeToValue(processNode, Process.class);
@@ -57,12 +56,28 @@ public class SpanDeserializer extends StdDeserializer<Span> {
     KeyValue[] tags = objectMapper.treeToValue(tagsNode, KeyValue[].class);
 
     Span span = new Span();
-    span.setSpanId(spanId.longValue());
-    span.setParentId(parentId.longValue());
+    span.setSpanId(new BigInteger(spanIdHex, 16).longValue());
     span.setTraceId(traceIdHex);
+    span.setRefs(deserializeReferences(node));
     span.setStartTime(startTimeStr != null ? Long.parseLong(startTimeStr) : null);
     span.setProcess(process);
     span.setTags(Arrays.asList(tags));
     return span;
+  }
+
+  private List<Reference> deserializeReferences(JsonNode node) throws JsonProcessingException {
+    List<Reference> references = new ArrayList<>();
+    JsonNode parentSpanID = node.get("parentSpanID");
+    if (parentSpanID != null) {
+      BigInteger bigInteger = new BigInteger(parentSpanID.asText(), 16);
+      Reference reference = new Reference();
+      reference.setSpanId(bigInteger.longValue());
+      references.add(reference);
+    }
+
+    Reference[] referencesArr = objectMapper.treeToValue(node.get("references"), Reference[].class);
+    references.addAll(Arrays.asList(referencesArr));
+
+    return references;
   }
 }

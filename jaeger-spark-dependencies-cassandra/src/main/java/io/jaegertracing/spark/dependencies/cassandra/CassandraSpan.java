@@ -11,26 +11,34 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package io.jaegertracing.spark.dependencies.elastic.json;
+package io.jaegertracing.spark.dependencies.cassandra;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import io.jaegertracing.spark.dependencies.model.KeyValue;
 import io.jaegertracing.spark.dependencies.model.Reference;
 import io.jaegertracing.spark.dependencies.model.Span;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author Pavol Loffay
  */
-public class JsonHelper {
+public class CassandraSpan extends Span {
 
-  private JsonHelper() {}
+  private Long parentId;
 
-  public static ObjectMapper configure(ObjectMapper objectMapper) {
-    objectMapper.addMixIn(Span.class, SpanMixin.class);
-    objectMapper.addMixIn(KeyValue.class, KeyValueMixin.class);
-    objectMapper.addMixIn(Reference.class, ReferenceMixin.class);
-    objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-    return objectMapper;
+  public Long getParentId() {
+    return parentId;
+  }
+
+  public void setParentId(Long parentId) {
+    this.parentId = parentId;
+  }
+
+  @Override
+  public List<Reference> getRefs() {
+    ArrayList<Reference> references = new ArrayList<>(super.getRefs());
+    Reference legacyParent = new Reference();
+    legacyParent.setSpanId(parentId);
+    references.add(legacyParent);
+    return references;
   }
 }

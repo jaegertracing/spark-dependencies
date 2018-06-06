@@ -85,6 +85,9 @@ To build the job locally and run tests:
 docker build -t jaegertracing/spark-dependencies:latest .
 ```
 
+In tests it's possible to specify version of Jaeger images by env variable `JAEGER_VERSION` 
+or system property `jaeger.version`. By default tests are using latest images.
+
 ## License
   
 [Apache 2.0 License](./LICENSE).
