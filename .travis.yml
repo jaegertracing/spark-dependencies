@@ -24,7 +24,7 @@ jobs:
       script: JAEGER_VERSION=1.4 ./mvnw clean test
 
     - stage: test
-    - env: [ NAME=Jaeger latest ]
+      env: [ NAME=Jaeger latest ]
       script: ./mvnw clean test
 
 
