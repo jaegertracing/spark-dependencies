@@ -19,7 +19,7 @@ import static org.junit.Assert.assertEquals;
 import brave.Tracing;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.uber.jaeger.Tracer;
+import io.jaegertracing.Tracer;
 import io.jaegertracing.spark.dependencies.test.TracersGenerator.Flushable;
 import io.jaegertracing.spark.dependencies.test.TracersGenerator.Tuple;
 import io.jaegertracing.spark.dependencies.test.rest.DependencyLink;

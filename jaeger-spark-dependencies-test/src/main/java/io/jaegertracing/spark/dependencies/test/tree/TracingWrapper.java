@@ -15,8 +15,8 @@ package io.jaegertracing.spark.dependencies.test.tree;
 
 import brave.Span.Kind;
 import brave.Tracing;
-import com.uber.jaeger.Span;
-import com.uber.jaeger.Tracer;
+import io.jaegertracing.Span;
+import io.jaegertracing.Tracer;
 import java.util.UUID;
 
 /**

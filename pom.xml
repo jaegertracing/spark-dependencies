@@ -39,13 +39,13 @@
     <version.scala.binary>2.11</version.scala.binary>
     <!-- spark-cassandra-connector doesn't yet support spark 2.2 -->
     <version.org.apache.spark>2.1.1</version.org.apache.spark>
-    <version.org.uber.jaeger-jaeger-core>0.21.0</version.org.uber.jaeger-jaeger-core>
-    <version.io.opentracing>0.30.0</version.io.opentracing>
+    <version.io.jaegertracing>0.28.0</version.io.jaegertracing>
+    <version.io.opentracing>0.31.0</version.io.opentracing>
     <version.io.zipkin.brave-brave>4.6.0</version.io.zipkin.brave-brave>
     <version.io.zipkin.reporter-zipkin-sender-okhttp3>1.0.2</version.io.zipkin.reporter-zipkin-sender-okhttp3>
     <version.junit>4.12</version.junit>
     <version.org.assertj>3.8.0</version.org.assertj>
-    <version.org.testcontainers>1.4.2</version.org.testcontainers>
+    <version.org.testcontainers>1.7.3</version.org.testcontainers>
     <version.com.squareup.okhttp3-okhttp>3.8.0</version.com.squareup.okhttp3-okhttp>
     <version.org.awaitility-awaitility>3.0.0</version.org.awaitility-awaitility>
 

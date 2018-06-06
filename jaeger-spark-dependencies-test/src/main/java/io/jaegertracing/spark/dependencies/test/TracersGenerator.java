@@ -15,15 +15,13 @@ package io.jaegertracing.spark.dependencies.test;
 
 import brave.Tracing;
 import brave.sampler.Sampler;
-import com.uber.jaeger.Tracer;
-import com.uber.jaeger.Tracer.Builder;
-import com.uber.jaeger.exceptions.SenderException;
-import com.uber.jaeger.metrics.Metrics;
-import com.uber.jaeger.metrics.NullStatsReporter;
-import com.uber.jaeger.metrics.StatsFactoryImpl;
-import com.uber.jaeger.reporters.RemoteReporter;
-import com.uber.jaeger.samplers.ConstSampler;
-import com.uber.jaeger.senders.HttpSender;
+import io.jaegertracing.Tracer;
+import io.jaegertracing.Tracer.Builder;
+import io.jaegertracing.exceptions.SenderException;
+import io.jaegertracing.metrics.Metrics;
+import io.jaegertracing.reporters.RemoteReporter;
+import io.jaegertracing.samplers.ConstSampler;
+import io.jaegertracing.senders.HttpSender;
 import io.jaegertracing.spark.dependencies.test.tree.TracingWrapper;
 import io.jaegertracing.spark.dependencies.test.tree.TracingWrapper.JaegerWrapper;
 import io.jaegertracing.spark.dependencies.test.tree.TracingWrapper.ZipkinWrapper;
@@ -83,7 +81,7 @@ public class TracersGenerator {
       if (tracer instanceof Tracing) {
         return new ZipkinWrapper((brave.Tracing)tracer, serviceName);
       }
-      return new JaegerWrapper((com.uber.jaeger.Tracer)tracer);
+      return new JaegerWrapper((io.jaegertracing.Tracer)tracer);
     }
 
     public Flushable flushable() {
@@ -102,10 +100,16 @@ public class TracersGenerator {
   }
 
   public static Tuple<Tracer, Flushable> createJaeger(String serviceName, String collectorUrl) {
-    HttpSender sender = new HttpSender(collectorUrl + "/api/traces", 65000);
-    RemoteReporter reporter = new RemoteReporter(sender, 1, 100000,
-        new Metrics(new StatsFactoryImpl(new NullStatsReporter())));
-    return new Tuple<>(new Builder(serviceName, reporter, new ConstSampler(true)).build(),
+    HttpSender sender = new HttpSender.Builder(collectorUrl + "/api/traces").build();
+    RemoteReporter reporter = new RemoteReporter.Builder()
+        .withSender(sender)
+        .withMaxQueueSize(100000)
+        .withFlushInterval(1)
+        .build();
+    return new Tuple<>(new Builder(serviceName)
+        .withReporter(reporter)
+        .withSampler(new ConstSampler(true))
+        .build(),
         () -> {
       try {
         sender.flush();

@@ -14,7 +14,7 @@
 package io.jaegertracing.spark.dependencies.elastic;
 
 
-import com.uber.jaeger.Tracer;
+import io.jaegertracing.Tracer;
 import io.jaegertracing.spark.dependencies.test.DependenciesTest;
 import io.jaegertracing.spark.dependencies.test.TracersGenerator;
 import java.io.IOException;
@@ -119,7 +119,13 @@ public class ElasticsearchDependenciesJobTest extends DependenciesTest {
     Optional.of(jaegerCollector).ifPresent(GenericContainer::close);
     Optional.of(jaegerQuery).ifPresent(GenericContainer::close);
     Optional.of(elasticsearch).ifPresent(GenericContainer::close);
-    Optional.of(network).ifPresent(Network::close);
+    Optional.of(network).ifPresent(network1 -> {
+      try {
+        network1.close();
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
+    });
   }
 
   @Override
