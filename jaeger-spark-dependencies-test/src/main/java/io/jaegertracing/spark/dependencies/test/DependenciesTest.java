@@ -179,10 +179,10 @@ public abstract class DependenciesTest {
         .ignoreActiveSpan()
         .start();
     Span s2Span = s2Tuple.getA().buildSpan("bar")
-        .addReference(References.FOLLOWS_FROM, s1Span.context())
+        .addReference(References.CHILD_OF, s1Span.context())
         .start();
     Span s3Span = s3Tuple.getA().buildSpan("baz")
-        .addReference(References.FOLLOWS_FROM, s1Span.context())
+        .addReference(References.CHILD_OF, s1Span.context())
         .addReference(References.FOLLOWS_FROM, s2Span.context())
         .start();
 

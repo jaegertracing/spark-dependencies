@@ -19,6 +19,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
+ * Jaeger > 1.5 does not store parentId. All references are stored in references table.
+ * This class is used to maintain compatibility with older Jaeger deployments.
+ *
  * @author Pavol Loffay
  */
 public class CassandraSpan extends Span {
