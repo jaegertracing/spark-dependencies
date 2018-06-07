@@ -61,7 +61,7 @@ public class ElasticsearchDependenciesJobTest extends DependenciesTest {
         .withEnv("network.publish_host", "_local_");
     elasticsearch.start();
 
-    jaegerCollector = new GenericContainer<>("jaegertracing/jaeger-collector:latest")
+    jaegerCollector = new GenericContainer<>("jaegertracing/jaeger-collector:" + jaegerVersion())
         .withNetwork(network)
         .withEnv("SPAN_STORAGE_TYPE", "elasticsearch")
         .withEnv("ES_SERVER_URLS", "http://elasticsearch:9200")
@@ -72,7 +72,7 @@ public class ElasticsearchDependenciesJobTest extends DependenciesTest {
         .withExposedPorts(14269, 14268, 9411);
     jaegerCollector.start();
 
-    jaegerQuery = new GenericContainer<>("jaegertracing/jaeger-query:latest")
+    jaegerQuery = new GenericContainer<>("jaegertracing/jaeger-query:" + jaegerVersion())
         .withEnv("SPAN_STORAGE_TYPE", "elasticsearch")
         .withEnv("ES_SERVER_URLS", "http://elasticsearch:9200")
         .withNetwork(network)

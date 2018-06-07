@@ -17,13 +17,19 @@ install:
   # Use quiet as shade plugin creates too many logs for Travis: The log length has exceeded the limit of 4 MB
   - ./mvnw -q install -DskipTests=true -Dmaven.javadoc.skip=true -Dlicense.skip=true -B -V
 
-script:
-  - ./mvnw clean test
+jobs:
+  include:
+    - stage: test
+      env: [ NAME=Jaeger 1.4 ]
+      script: JAEGER_VERSION=1.4 ./mvnw clean test
+
+    - stage: test
+      env: [ NAME=Jaeger latest ]
+      script: ./mvnw clean test
+
 
 # Don't build release tags. This avoids publish conflicts because the version commit exists both on master and the release tag.
 # See https://github.com/travis-ci/travis-ci/issues/1532
 branches:
   except:
     - /^[0-9]/
-
-env:

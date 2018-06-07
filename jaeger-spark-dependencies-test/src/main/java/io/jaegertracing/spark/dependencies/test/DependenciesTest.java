@@ -30,7 +30,10 @@ import io.jaegertracing.spark.dependencies.test.tree.TracingWrapper.JaegerWrappe
 import io.jaegertracing.spark.dependencies.test.tree.TracingWrapper.ZipkinWrapper;
 import io.jaegertracing.spark.dependencies.test.tree.Traversals;
 import io.jaegertracing.spark.dependencies.test.tree.TreeGenerator;
+import io.opentracing.References;
+import io.opentracing.Span;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -53,6 +56,11 @@ public abstract class DependenciesTest {
   protected static String queryUrl;
   protected static String collectorUrl;
   protected static String zipkinCollectorUrl;
+
+  public static String jaegerVersion() {
+    String jaegerVersion = System.getProperty("jaeger.version", System.getenv("JAEGER_VERSION"));
+    return jaegerVersion != null ? jaegerVersion : "latest";
+  }
 
   /**
    * Override this and run spark job
@@ -158,6 +166,46 @@ public abstract class DependenciesTest {
     });
 
     deriveDependencies();
+    assertDependencies(expectedDependencies);
+  }
+
+  @Test
+  public void testMultipleReferences() throws Exception {
+    Tuple<Tracer, Flushable> s1Tuple = TracersGenerator.createJaeger("S1", collectorUrl);
+    Tuple<Tracer, Flushable> s2Tuple = TracersGenerator.createJaeger("S2", collectorUrl);
+    Tuple<Tracer, Flushable> s3Tuple = TracersGenerator.createJaeger("S3", collectorUrl);
+
+    Span s1Span = s1Tuple.getA().buildSpan("foo")
+        .ignoreActiveSpan()
+        .start();
+    Span s2Span = s2Tuple.getA().buildSpan("bar")
+        .addReference(References.CHILD_OF, s1Span.context())
+        .start();
+    Span s3Span = s3Tuple.getA().buildSpan("baz")
+        .addReference(References.CHILD_OF, s1Span.context())
+        .addReference(References.FOLLOWS_FROM, s2Span.context())
+        .start();
+
+    s1Span.finish();
+    s2Span.finish();
+    s3Span.finish();
+    s1Tuple.getB().flush();
+    s2Tuple.getB().flush();
+    s3Tuple.getB().flush();
+    waitJaegerQueryContains("S1", "foo");
+    waitJaegerQueryContains("S2", "bar");
+    waitJaegerQueryContains("S3", "baz");
+
+    deriveDependencies();
+
+    Map<String, Map<String, Long>> expectedDependencies = new HashMap<>();
+    Map<String, Long> s1Descendants = new HashMap<>();
+    s1Descendants.put("S2", 1L);
+    s1Descendants.put("S3", 1L);
+    expectedDependencies.put("S1", s1Descendants);
+    Map<String, Long> s2Descendants = new HashMap<>();
+    s2Descendants.put("S3", 1L);
+    expectedDependencies.put("S2", s2Descendants);
     assertDependencies(expectedDependencies);
   }
 
