@@ -1,5 +1,5 @@
-[![Build Status][ci-img]][ci] ![Docker Build Status](https://img.shields.io/docker/build/jaegertracing/spark-dependencies.svg) ![Docker Pulls](https://img.shields.io/docker/pulls/jaegertracing/spark-dependencies.svg)
-
+[![Build Status][ci-img]][ci] [![Docker Build Status](https://img.shields.io/docker/build/jaegertracing/spark-dependencies.svg)](https://hub.docker.com/r/jaegertracing/spark-dependencies/builds/) 
+[![Docker Pulls](https://img.shields.io/docker/pulls/jaegertracing/spark-dependencies.svg)](https://hub.docker.com/r/jaegertracing/spark-dependencies/)
 
 # Jaeger Spark dependencies
 This is a Spark job that collects spans from storage, analyze links between services,
