@@ -19,7 +19,9 @@ import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.Session;
 import io.jaegertracing.spark.dependencies.test.DependenciesTest;
 import java.time.LocalDate;
+import java.util.Collections;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.junit.After;
@@ -65,7 +67,7 @@ public class CassandraDependenciesJobTest extends DependenciesTest {
         .withEnv("CASSANDRA_KEYSPACE", "jaeger_v1_dc1")
         .withEnv("COLLECTOR_ZIPKIN_HTTP_PORT", "9411")
         .withEnv("COLLECTOR_QUEUE_SIZE", "100000")
-        .waitingFor(new HttpWaitStrategy().forStatusCode(204))
+        .waitingFor(new BoundPortHttpWaitStrategy(14269).forStatusCode(204))
         // the first one is health check
         .withExposedPorts(14269, 14268, 9411);
     jaegerCollector.start();
@@ -74,7 +76,7 @@ public class CassandraDependenciesJobTest extends DependenciesTest {
         .withNetwork(network)
         .withEnv("CASSANDRA_SERVERS", "cassandra")
         .withEnv("CASSANDRA_KEYSPACE", "jaeger_v1_dc1")
-        .waitingFor(new HttpWaitStrategy().forStatusCode(204))
+        .waitingFor(new BoundPortHttpWaitStrategy(16687).forStatusCode(204))
         .withExposedPorts(16687, 16686);
     jaegerQuery.start();
 
@@ -113,5 +115,19 @@ public class CassandraDependenciesJobTest extends DependenciesTest {
   protected void waitBetweenTraces() throws InterruptedException {
     // TODO otherwise it sometimes fails
     TimeUnit.SECONDS.sleep(1);
+  }
+
+  public static class BoundPortHttpWaitStrategy extends HttpWaitStrategy {
+    private final int port;
+
+    public BoundPortHttpWaitStrategy(int port) {
+      this.port = port;
+    }
+
+    @Override
+    protected Set<Integer> getLivenessCheckPorts() {
+      int mapptedPort = this.waitStrategyTarget.getMappedPort(port);
+      return Collections.singleton(mapptedPort);
+    }
   }
 }
