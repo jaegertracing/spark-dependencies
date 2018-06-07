@@ -14,12 +14,14 @@
 package io.jaegertracing.spark.dependencies.elastic;
 
 
-import com.uber.jaeger.Tracer;
+import io.jaegertracing.Tracer;
 import io.jaegertracing.spark.dependencies.test.DependenciesTest;
 import io.jaegertracing.spark.dependencies.test.TracersGenerator;
 import java.io.IOException;
 import java.time.LocalDate;
+import java.util.Collections;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import okhttp3.MediaType;
@@ -32,7 +34,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
-import org.testcontainers.containers.wait.Wait;
+import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
 
 /**
  * @author Pavol Loffay
@@ -49,10 +51,10 @@ public class ElasticsearchDependenciesJobTest extends DependenciesTest {
   @BeforeClass
   public static void beforeClass() {
     network = Network.newNetwork();
-    elasticsearch = new GenericContainer<>("docker.elastic.co/elasticsearch/elasticsearch:5.6.1")
+    elasticsearch = new GenericContainer<>("docker.elastic.co/elasticsearch/elasticsearch:5.6.9")
         .withNetwork(network)
         .withNetworkAliases("elasticsearch")
-        .waitingFor(Wait.forHttp("/"))
+        .waitingFor(new BoundPortHttpWaitStrategy(9200).forStatusCode(200))
         .withExposedPorts(9200, 9300)
         .withEnv("xpack.security.enabled", "false")
         .withEnv("discovery.type", "single-node")
@@ -67,7 +69,7 @@ public class ElasticsearchDependenciesJobTest extends DependenciesTest {
         .withEnv("ES_SERVER_URLS", "http://elasticsearch:9200")
         .withEnv("COLLECTOR_ZIPKIN_HTTP_PORT", "9411")
         .withEnv("COLLECTOR_QUEUE_SIZE", "100000")
-        .waitingFor(Wait.forHttp("/").forStatusCode(204))
+        .waitingFor(new BoundPortHttpWaitStrategy(14269).forStatusCode(204))
         // the first one is health check
         .withExposedPorts(14269, 14268, 9411);
     jaegerCollector.start();
@@ -76,7 +78,7 @@ public class ElasticsearchDependenciesJobTest extends DependenciesTest {
         .withEnv("SPAN_STORAGE_TYPE", "elasticsearch")
         .withEnv("ES_SERVER_URLS", "http://elasticsearch:9200")
         .withNetwork(network)
-        .waitingFor(Wait.forHttp("/").forStatusCode(204))
+        .waitingFor(new BoundPortHttpWaitStrategy(16687).forStatusCode(204))
         .withExposedPorts(16687, 16686);
     jaegerQuery.start();
 
@@ -119,7 +121,13 @@ public class ElasticsearchDependenciesJobTest extends DependenciesTest {
     Optional.of(jaegerCollector).ifPresent(GenericContainer::close);
     Optional.of(jaegerQuery).ifPresent(GenericContainer::close);
     Optional.of(elasticsearch).ifPresent(GenericContainer::close);
-    Optional.of(network).ifPresent(Network::close);
+    Optional.of(network).ifPresent(network1 -> {
+      try {
+        network1.close();
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
+    });
   }
 
   @Override
@@ -136,5 +144,19 @@ public class ElasticsearchDependenciesJobTest extends DependenciesTest {
   protected void waitBetweenTraces() throws InterruptedException {
     // TODO otherwise elastic drops some spans
     TimeUnit.SECONDS.sleep(2);
+  }
+
+  public static class BoundPortHttpWaitStrategy extends HttpWaitStrategy {
+    private final int port;
+
+    public BoundPortHttpWaitStrategy(int port) {
+      this.port = port;
+    }
+
+    @Override
+    protected Set<Integer> getLivenessCheckPorts() {
+      int mapptedPort = this.waitStrategyTarget.getMappedPort(port);
+      return Collections.singleton(mapptedPort);
+    }
   }
 }

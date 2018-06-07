@@ -42,9 +42,9 @@
       <artifactId>testcontainers</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.uber.jaeger</groupId>
+      <groupId>io.jaegertracing</groupId>
       <artifactId>jaeger-core</artifactId>
-      <version>${version.org.uber.jaeger-jaeger-core}</version>
+      <version>${version.io.jaegertracing}</version>
     </dependency>
     <dependency>
       <groupId>com.squareup.okhttp3</groupId>
