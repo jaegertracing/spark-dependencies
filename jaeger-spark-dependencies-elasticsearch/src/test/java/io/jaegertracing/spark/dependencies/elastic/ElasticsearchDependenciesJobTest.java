@@ -32,7 +32,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
-import org.testcontainers.containers.wait.Wait;
+import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
 
 /**
  * @author Pavol Loffay
@@ -49,11 +49,11 @@ public class ElasticsearchDependenciesJobTest extends DependenciesTest {
   @BeforeClass
   public static void beforeClass() {
     network = Network.newNetwork();
-    elasticsearch = new GenericContainer<>("docker.elastic.co/elasticsearch/elasticsearch:5.6.1")
+    elasticsearch = new GenericContainer<>("docker.elastic.co/elasticsearch/elasticsearch:5.6.9")
         .withNetwork(network)
         .withNetworkAliases("elasticsearch")
-        .waitingFor(Wait.forHttp("/"))
-        .withExposedPorts(9200, 9300)
+        .waitingFor(new HttpWaitStrategy().forStatusCode(200))
+        .withExposedPorts(9200)
         .withEnv("xpack.security.enabled", "false")
         .withEnv("discovery.type", "single-node")
         .withEnv("network.bind_host", "elasticsearch")
@@ -67,7 +67,7 @@ public class ElasticsearchDependenciesJobTest extends DependenciesTest {
         .withEnv("ES_SERVER_URLS", "http://elasticsearch:9200")
         .withEnv("COLLECTOR_ZIPKIN_HTTP_PORT", "9411")
         .withEnv("COLLECTOR_QUEUE_SIZE", "100000")
-        .waitingFor(Wait.forHttp("/").forStatusCode(204))
+        .waitingFor(new HttpWaitStrategy().forStatusCode(204))
         // the first one is health check
         .withExposedPorts(14269, 14268, 9411);
     jaegerCollector.start();
@@ -76,7 +76,7 @@ public class ElasticsearchDependenciesJobTest extends DependenciesTest {
         .withEnv("SPAN_STORAGE_TYPE", "elasticsearch")
         .withEnv("ES_SERVER_URLS", "http://elasticsearch:9200")
         .withNetwork(network)
-        .waitingFor(Wait.forHttp("/").forStatusCode(204))
+        .waitingFor(new HttpWaitStrategy().forStatusCode(204))
         .withExposedPorts(16687, 16686);
     jaegerQuery.start();
 

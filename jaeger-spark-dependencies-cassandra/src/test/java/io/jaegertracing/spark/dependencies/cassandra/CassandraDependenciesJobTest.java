@@ -27,7 +27,7 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
-import org.testcontainers.containers.wait.Wait;
+import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
 
 /**
  * @author Pavol Loffay
@@ -65,7 +65,7 @@ public class CassandraDependenciesJobTest extends DependenciesTest {
         .withEnv("CASSANDRA_KEYSPACE", "jaeger_v1_dc1")
         .withEnv("COLLECTOR_ZIPKIN_HTTP_PORT", "9411")
         .withEnv("COLLECTOR_QUEUE_SIZE", "100000")
-        .waitingFor(Wait.forHttp("/").forStatusCode(204))
+        .waitingFor(new HttpWaitStrategy().forStatusCode(204))
         // the first one is health check
         .withExposedPorts(14269, 14268, 9411);
     jaegerCollector.start();
@@ -74,7 +74,7 @@ public class CassandraDependenciesJobTest extends DependenciesTest {
         .withNetwork(network)
         .withEnv("CASSANDRA_SERVERS", "cassandra")
         .withEnv("CASSANDRA_KEYSPACE", "jaeger_v1_dc1")
-        .waitingFor(Wait.forHttp("/").forStatusCode(204))
+        .waitingFor(new HttpWaitStrategy().forStatusCode(204))
         .withExposedPorts(16687, 16686);
     jaegerQuery.start();
 
