@@ -68,7 +68,8 @@ Elasticsearch is used when `STORAGE=elasticsearch`.
                   recommended to set this to all the master nodes of the cluster. Use url format for
                   SSL. For example, "https://yourhost:8888"
     * `ES_NODES_WAN_ONLY`: Set to true to only use the values set in ES_HOSTS, for example if your
-                           elasticsearch cluster is in Docker. Defaults to false
+                           elasticsearch cluster is in Docker. If you're using a cloudprovider
+                           such as AWS Elasticsearch, set this to true. Defaults to false
     * `ES_USERNAME` and `ES_PASSWORD`: Elasticsearch basic authentication. Use when X-Pack security
                                        (formerly Shield) is in place. By default no username or
                                        password is provided to elasticsearch.
