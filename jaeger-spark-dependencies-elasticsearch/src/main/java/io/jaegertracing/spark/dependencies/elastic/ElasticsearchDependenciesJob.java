@@ -52,6 +52,7 @@ public class ElasticsearchDependenciesJob {
     String username = Utils.getEnv("ES_USERNAME", null);
     String password = Utils.getEnv("ES_PASSWORD", null);
     Boolean clientNodeOnly = Boolean.parseBoolean(Utils.getEnv("ES_CLIENT_NODE_ONLY", "false"));
+    String indexPrefix = Utils.getEnv("ES_INDEX_PREFIX", null);
 
     final Map<String, String> sparkProperties = new LinkedHashMap<>();
 
@@ -104,6 +105,12 @@ public class ElasticsearchDependenciesJob {
       return this;
     }
 
+    /** index prefix for Jaeger indices. By default empty */
+    public Builder indexPrefix(String indexPrefix) {
+      this.indexPrefix = indexPrefix;
+      return this;
+    }
+
     /** Day to process dependencies for. Defaults to today. */
     public Builder day(LocalDate day) {
       this.day = day.atStartOfDay(ZoneOffset.UTC);
@@ -122,6 +129,7 @@ public class ElasticsearchDependenciesJob {
 
   private final ZonedDateTime day;
   private final SparkConf conf;
+  private final String indexPrefix;
 
   ElasticsearchDependenciesJob(Builder builder) {
     this.day = builder.day;
@@ -146,6 +154,14 @@ public class ElasticsearchDependenciesJob {
     for (Map.Entry<String, String> entry : builder.sparkProperties.entrySet()) {
       conf.set(entry.getKey(), entry.getValue());
     }
+
+    String indexPrefix = builder.indexPrefix;
+    if (indexPrefix != null) {
+      indexPrefix = String.format("%s:", indexPrefix);
+    } else {
+      indexPrefix = "";
+    }
+    this.indexPrefix = indexPrefix;
   }
 
   public void run() {
@@ -154,7 +170,7 @@ public class ElasticsearchDependenciesJob {
 
   String indexDate(String index) {
     String date = day.toLocalDate().format(DateTimeFormatter.ISO_LOCAL_DATE);
-    return String.format("%s-%s", index, date);
+    return String.format("%s%s-%s", indexPrefix, index, date);
   }
 
   void run(String spanResource, String depResource) {
@@ -167,7 +183,7 @@ public class ElasticsearchDependenciesJob {
 
       List<Dependency> dependencyLinks = DependenciesSparkHelper.derive(traces);
       store(sc, dependencyLinks, depResource);
-      log.info("Done, {} dependency objects created", dependencyLinks.size());
+      log.info("Done, {} dependency objects created and stored to {}", dependencyLinks.size(), depResource);
     } finally {
       sc.stop();
     }
