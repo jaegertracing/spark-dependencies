@@ -73,6 +73,9 @@ Elasticsearch is used when `STORAGE=elasticsearch`.
     * `ES_USERNAME` and `ES_PASSWORD`: Elasticsearch basic authentication. Use when X-Pack security
                                        (formerly Shield) is in place. By default no username or
                                        password is provided to elasticsearch.
+    * `ES_CLIENT_NODE_ONLY`: Set to true to disable elasticsearch cluster nodes.discovery and enable nodes.client.only. 
+                             If your elasticsearch cluster's data nodes only listen on loopback ip, set this to true. 
+                             Defaults to false
 
 Example usage:
 

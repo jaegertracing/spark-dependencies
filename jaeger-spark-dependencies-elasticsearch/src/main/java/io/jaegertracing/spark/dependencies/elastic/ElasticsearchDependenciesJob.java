@@ -51,6 +51,7 @@ public class ElasticsearchDependenciesJob {
     String hosts = Utils.getEnv("ES_NODES", "127.0.0.1");
     String username = Utils.getEnv("ES_USERNAME", null);
     String password = Utils.getEnv("ES_PASSWORD", null);
+    Boolean clientNodeOnly = Boolean.parseBoolean(Utils.getEnv("ES_CLIENT_NODE_ONLY", "false"));
 
     final Map<String, String> sparkProperties = new LinkedHashMap<>();
 
@@ -137,6 +138,10 @@ public class ElasticsearchDependenciesJob {
     conf.set("es.nodes", builder.hosts);
     if (builder.hosts.indexOf("https") != -1) {
       conf.set("es.net.ssl", "true");
+    }
+    if (builder.clientNodeOnly) {
+      conf.set("es.nodes.discovery", "0");
+      conf.set("es.nodes.client.only", "1");
     }
     for (Map.Entry<String, String> entry : builder.sparkProperties.entrySet()) {
       conf.set(entry.getKey(), entry.getValue());
