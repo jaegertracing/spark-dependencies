@@ -76,6 +76,7 @@ Elasticsearch is used when `STORAGE=elasticsearch`.
     * `ES_CLIENT_NODE_ONLY`: Set to true to disable elasticsearch cluster nodes.discovery and enable nodes.client.only. 
                              If your elasticsearch cluster's data nodes only listen on loopback ip, set this to true. 
                              Defaults to false
+    * `ES_INDEX_PREFIX`: index prefix of Jaeger indices. By default unset.
 
 Example usage:
 
