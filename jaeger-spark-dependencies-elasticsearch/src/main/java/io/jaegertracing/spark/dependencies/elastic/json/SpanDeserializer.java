@@ -28,6 +28,8 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * @author Pavol Loffay
@@ -53,7 +55,13 @@ public class SpanDeserializer extends StdDeserializer<Span> {
     Process process = objectMapper.treeToValue(processNode, Process.class);
 
     JsonNode tagsNode = node.get("tags");
-    KeyValue[] tags = objectMapper.treeToValue(tagsNode, KeyValue[].class);
+    List<KeyValue> tags = Arrays.asList(objectMapper.treeToValue(tagsNode, KeyValue[].class));
+
+    JsonNode tagFieldsNode = node.get("tag");
+    if (tagFieldsNode != null) {
+      Map<String, Object> tagFields = objectMapper.treeToValue(tagFieldsNode, Map.class);
+      tags = addTagFields(tags, tagFields);
+    }
 
     Span span = new Span();
     span.setSpanId(new BigInteger(spanIdHex, 16).longValue());
@@ -61,8 +69,21 @@ public class SpanDeserializer extends StdDeserializer<Span> {
     span.setRefs(deserializeReferences(node));
     span.setStartTime(startTimeStr != null ? Long.parseLong(startTimeStr) : null);
     span.setProcess(process);
-    span.setTags(Arrays.asList(tags));
+    span.setTags(tags);
     return span;
+  }
+
+  private List<KeyValue> addTagFields(List<KeyValue> tags, Map<String, Object> tagFields) {
+    ArrayList<KeyValue> result = new ArrayList<>(tags.size() + tagFields.size());
+    result.addAll(tags);
+    List<KeyValue> collect = tagFields.entrySet().stream().map(stringObjectEntry -> {
+      KeyValue kv = new KeyValue();
+      kv.setKey(stringObjectEntry.getKey());
+      kv.setValueString(stringObjectEntry.getValue().toString());
+      return kv;
+    }).collect(Collectors.toList());
+    result.addAll(collect);
+    return result;
   }
 
   private List<Reference> deserializeReferences(JsonNode node) throws JsonProcessingException {

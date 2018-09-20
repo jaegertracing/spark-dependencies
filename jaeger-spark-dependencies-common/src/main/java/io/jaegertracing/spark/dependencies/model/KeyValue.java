@@ -26,7 +26,6 @@ public class KeyValue implements Serializable {
 
   // TODO there are more types: double, long, binary, not needed at the moment
   private String valueString;
-  private Boolean valueBoolean;
 
   public String getKey() {
     return key;
@@ -34,14 +33,6 @@ public class KeyValue implements Serializable {
 
   public void setKey(String key) {
     this.key = key;
-  }
-
-  public Boolean getValueBoolean() {
-    return valueBoolean;
-  }
-
-  public void setValueBoolean(Boolean valueBoolean) {
-    this.valueBoolean = valueBoolean;
   }
 
   public String getValueString() {

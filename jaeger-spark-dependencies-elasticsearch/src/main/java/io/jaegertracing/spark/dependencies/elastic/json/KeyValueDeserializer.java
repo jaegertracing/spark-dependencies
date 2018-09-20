@@ -47,8 +47,6 @@ public class KeyValueDeserializer extends StdDeserializer<KeyValue> {
 
     if ("string".equalsIgnoreCase(type)) {
       keyValue.setValueString(node.get("value").asText());
-    } else if ("boolean".equalsIgnoreCase(type)) {
-      keyValue.setValueBoolean(node.get("value").asBoolean());
     }
 
     return keyValue;
