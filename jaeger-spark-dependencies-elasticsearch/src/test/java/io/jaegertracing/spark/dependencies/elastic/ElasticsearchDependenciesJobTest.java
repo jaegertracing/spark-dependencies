@@ -20,20 +20,14 @@ import io.jaegertracing.spark.dependencies.test.TracersGenerator;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.Collections;
-import java.util.Optional;
+import java.util.HashMap;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
-import okhttp3.MediaType;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
 
 /**
@@ -41,50 +35,16 @@ import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
  */
 public class ElasticsearchDependenciesJobTest extends DependenciesTest {
 
-  private static Network network;
-  private static GenericContainer elasticsearch;
-  private static GenericContainer jaegerCollector;
-  private static GenericContainer jaegerQuery;
-
   private ElasticsearchDependenciesJob dependenciesJob;
+  static JaegerElasticsearchEnvironment jaegerElasticsearchEnvironment;
 
   @BeforeClass
   public static void beforeClass() {
-    network = Network.newNetwork();
-    elasticsearch = new GenericContainer<>("docker.elastic.co/elasticsearch/elasticsearch:5.6.9")
-        .withNetwork(network)
-        .withNetworkAliases("elasticsearch")
-        .waitingFor(new BoundPortHttpWaitStrategy(9200).forStatusCode(200))
-        .withExposedPorts(9200, 9300)
-        .withEnv("xpack.security.enabled", "false")
-        .withEnv("discovery.type", "single-node")
-        .withEnv("network.bind_host", "elasticsearch")
-        .withEnv("network.host", "_site_")
-        .withEnv("network.publish_host", "_local_");
-    elasticsearch.start();
-
-    jaegerCollector = new GenericContainer<>("jaegertracing/jaeger-collector:" + jaegerVersion())
-        .withNetwork(network)
-        .withEnv("SPAN_STORAGE_TYPE", "elasticsearch")
-        .withEnv("ES_SERVER_URLS", "http://elasticsearch:9200")
-        .withEnv("COLLECTOR_ZIPKIN_HTTP_PORT", "9411")
-        .withEnv("COLLECTOR_QUEUE_SIZE", "100000")
-        .waitingFor(new BoundPortHttpWaitStrategy(14269).forStatusCode(204))
-        // the first one is health check
-        .withExposedPorts(14269, 14268, 9411);
-    jaegerCollector.start();
-
-    jaegerQuery = new GenericContainer<>("jaegertracing/jaeger-query:" + jaegerVersion())
-        .withEnv("SPAN_STORAGE_TYPE", "elasticsearch")
-        .withEnv("ES_SERVER_URLS", "http://elasticsearch:9200")
-        .withNetwork(network)
-        .waitingFor(new BoundPortHttpWaitStrategy(16687).forStatusCode(204))
-        .withExposedPorts(16687, 16686);
-    jaegerQuery.start();
-
-    collectorUrl = String.format("http://%s:%d", jaegerCollector.getContainerIpAddress(), jaegerCollector.getMappedPort(14268));
-    zipkinCollectorUrl = String.format("http://%s:%d", jaegerCollector.getContainerIpAddress(), jaegerCollector.getMappedPort(9411));
-    queryUrl = String.format("http://%s:%d", jaegerQuery.getContainerIpAddress(), jaegerQuery.getMappedPort(16686));
+    jaegerElasticsearchEnvironment = new JaegerElasticsearchEnvironment();
+    jaegerElasticsearchEnvironment.start(new HashMap<>(), jaegerVersion());
+    collectorUrl = jaegerElasticsearchEnvironment.getCollectorUrl();
+    zipkinCollectorUrl = jaegerElasticsearchEnvironment.getZipkinCollectorUrl();
+    queryUrl = jaegerElasticsearchEnvironment.getQueryUrl();
   }
 
   @Before
@@ -97,44 +57,18 @@ public class ElasticsearchDependenciesJobTest extends DependenciesTest {
 
   @After
   public void after() throws IOException {
-    if (dependenciesJob != null) {
-      String matchAllQuery = "{\"query\": {\"match_all\":{} }}";
-      Request request = new Request.Builder()
-          .url(String.format("http://%s:%d/%s,%s/_delete_by_query?conflicts=proceed",
-              elasticsearch.getContainerIpAddress(),
-              elasticsearch.getMappedPort(9200),
-              dependenciesJob.indexDate("jaeger-span"),
-              dependenciesJob.indexDate("jaeger-dependencies")))
-          .post(
-              RequestBody.create(MediaType.parse("application/json; charset=utf-8"), matchAllQuery))
-          .build();
-
-      Response response = okHttpClient.newCall(request).execute();
-      if (!response.isSuccessful()) {
-        throw new IllegalStateException("Could not remove data from ES");
-      }
-    }
+    jaegerElasticsearchEnvironment.cleanUp(dependenciesJob.indexDate("jaeger-span"), dependenciesJob.indexDate("jaeger-dependencies"));
   }
 
   @AfterClass
   public static void afterClass() {
-    Optional.of(jaegerCollector).ifPresent(GenericContainer::close);
-    Optional.of(jaegerQuery).ifPresent(GenericContainer::close);
-    Optional.of(elasticsearch).ifPresent(GenericContainer::close);
-    Optional.of(network).ifPresent(network1 -> {
-      try {
-        network1.close();
-      } catch (Exception e) {
-        e.printStackTrace();
-      }
-    });
+    jaegerElasticsearchEnvironment.stop();
   }
 
   @Override
   protected void deriveDependencies() {
     dependenciesJob = ElasticsearchDependenciesJob.builder()
-        .nodes("http://" + elasticsearch.getContainerIpAddress() + ":" + elasticsearch
-            .getMappedPort(9200))
+        .nodes("http://" + jaegerElasticsearchEnvironment.getElasticsearchIPPort())
         .day(LocalDate.now())
         .build();
     dependenciesJob.run();
