@@ -2,6 +2,7 @@
 [![Docker Pulls](https://img.shields.io/docker/pulls/jaegertracing/spark-dependencies.svg)](https://hub.docker.com/r/jaegertracing/spark-dependencies/)
 
 
+
 # Jaeger Spark dependencies
 This is a Spark job that collects spans from storage, analyze links between services,
 and stores them for later presentation in the UI. Note that it is needed for the production deployment.
