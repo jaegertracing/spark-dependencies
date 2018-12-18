@@ -123,9 +123,15 @@ public final class CassandraDependenciesJob {
       return this;
     }
 
+    public Builder properties(Map<String,String> properties){
+      sparkProperties.putAll(properties);
+      return this;
+    }
+
     public CassandraDependenciesJob build() {
       return new CassandraDependenciesJob(this);
     }
+
   }
 
   private final String keyspace;

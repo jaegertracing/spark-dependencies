@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+
+import org.apache.spark.SparkEnv;
 import org.apache.spark.api.java.function.Function;
 
 /**
@@ -39,10 +41,23 @@ public class SpansToDependencyLinks implements Function<Iterable<Span>, Iterable
      * @return collection of dependency links, note that it contains duplicates
      * @throws Exception
      */
+
     @Override
     public Iterable<Dependency> call(Iterable<Span> trace) throws Exception {
         Map<Long, Set<Span>> spanMap = new LinkedHashMap<>();
+        Map<Long, Set<Span>> spanChildrenMap = new LinkedHashMap<>();
+        String uninstrumentedKey = SparkEnv.get().conf().get("jaeger.uninstrumented_key","peer.service");
         for (Span span: trace) {
+            // Map of children
+            for (Reference ref: span.getRefs()){
+              Set <Span> children = spanChildrenMap.get(ref.getSpanId());
+              if (children == null){
+                children = new LinkedHashSet<>();
+                spanChildrenMap.put(ref.getSpanId(), children);
+              }
+              children.add(span);
+            }
+            // Map of parents
             Set<Span> sharedSpans = spanMap.get(span.getSpanId());
             if (sharedSpans == null) {
                 sharedSpans = new LinkedHashSet<>();
@@ -83,6 +98,13 @@ public class SpansToDependencyLinks implements Function<Iterable<Span>, Iterable
                         result.add(new Dependency(parent.getProcess().getServiceName(), span.getProcess().getServiceName()));
                     }
                 }
+            }
+            // We are on a leaf so we try to add a dependency for calls to components that calls remote components not instrumented
+            if (spanChildrenMap.get(span.getSpanId()) == null ){
+              String targetName = span.getTag(uninstrumentedKey);
+              if (targetName != null) {
+                result.add(new Dependency(span.getProcess().getServiceName(), targetName));
+              }
             }
         }
         return result;

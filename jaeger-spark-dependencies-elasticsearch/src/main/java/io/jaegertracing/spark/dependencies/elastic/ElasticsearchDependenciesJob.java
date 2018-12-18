@@ -117,6 +117,11 @@ public class ElasticsearchDependenciesJob {
       return this;
     }
 
+    public Builder properties(Map<String,String> properties){
+      sparkProperties.putAll(properties);
+      return this;
+    }
+
     public ElasticsearchDependenciesJob build() {
       return new ElasticsearchDependenciesJob(this);
     }

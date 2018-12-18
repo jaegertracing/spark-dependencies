@@ -19,6 +19,8 @@ import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.time.LocalDate;
+import java.util.HashMap;
+import java.util.Map;
 
 public final class DependenciesSparkJob {
 
@@ -39,22 +41,35 @@ public final class DependenciesSparkJob {
   }
 
   private static void run(String storage, LocalDate localDate) throws UnsupportedEncodingException {
+
     String jarPath = pathToUberJar();
     if ("elasticsearch".equalsIgnoreCase(storage)) {
       ElasticsearchDependenciesJob.builder()
           .jars(jarPath)
           .day(localDate)
+          .properties(prepareJobProperties())
           .build()
           .run();
     } else if ("cassandra".equalsIgnoreCase(storage)) {
       CassandraDependenciesJob.builder()
           .jars(jarPath)
           .day(localDate)
+          .properties(prepareJobProperties())
           .build()
           .run();
     } else {
       throw new IllegalArgumentException("Unsupported storage: " + storage);
     }
+  }
+
+  static Map<String,String> prepareJobProperties(){
+    Map<String,String> properties = new HashMap<>();
+    // Key for naming external services as dependencies
+    String uninstrumentedKey = System.getenv("UNINSTRUMENTED_DEPENDENCIES_KEY");
+    if (uninstrumentedKey != null){
+      properties.put("jaeger.uninstrumented_key",uninstrumentedKey);
+    }
+    return properties;
   }
 
   static String pathToUberJar() throws UnsupportedEncodingException {

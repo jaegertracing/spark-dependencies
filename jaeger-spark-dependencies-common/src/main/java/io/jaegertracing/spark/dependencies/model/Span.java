@@ -20,6 +20,7 @@ import java.util.List;
  * @author Pavol Loffay
  */
 public class Span implements Serializable {
+
   private static final long serialVersionUID = 0L;
 
   private String traceId;
