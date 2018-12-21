@@ -23,7 +23,7 @@ Use `--env JAVA_OPTS=-Djavax.net.ssl.` to set trust store and other Java propert
 
 As jar file:
 ```bash
-STORAGE=cassandra java -jar jaeager-spark-dependencies.jar
+STORAGE=cassandra java -jar jaeger-spark-dependencies.jar
 ```
 
 ## Usage
