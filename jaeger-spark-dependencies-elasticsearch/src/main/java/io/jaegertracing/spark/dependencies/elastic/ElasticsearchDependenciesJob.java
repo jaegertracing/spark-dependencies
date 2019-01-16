@@ -157,7 +157,7 @@ public class ElasticsearchDependenciesJob {
 
     String indexPrefix = builder.indexPrefix;
     if (indexPrefix != null) {
-      indexPrefix = String.format("%s:", indexPrefix);
+      indexPrefix = String.format("%s-", indexPrefix);
     } else {
       indexPrefix = "";
     }
