@@ -58,8 +58,7 @@ public class JaegerTestDriverContainer extends GenericContainer<JaegerTestDriver
           .url(statusUrl)
           .head()
           .build();
-      try {
-        Response response = okHttpClient.newCall(request).execute();
+      try (Response response = okHttpClient.newCall(request).execute()) {
         return response.code() == 200;
       } catch (ConnectException ex) {
         return false;

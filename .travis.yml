@@ -25,7 +25,7 @@ jobs:
 
     - stage: test
       env: [ NAME=Jaeger latest ]
-      script: ./mvnw clean test
+      script: JAEGER_VERSION=1.8 ./mvnw clean test
 
 
 # Don't build release tags. This avoids publish conflicts because the version commit exists both on master and the release tag.
