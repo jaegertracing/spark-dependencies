@@ -228,8 +228,9 @@ public abstract class DependenciesTest {
         .get()
         .build();
     await().atMost(30, TimeUnit.SECONDS).until(() -> {
-      Response response = okHttpClient.newCall(request).execute();
-      return response.body().string().contains(spanContainsThis);
+      try(Response response = okHttpClient.newCall(request).execute()) {
+        return response.body().string().contains(spanContainsThis);
+      }
     });
   }
 }

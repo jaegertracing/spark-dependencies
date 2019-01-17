@@ -100,9 +100,10 @@ public class JaegerElasticsearchEnvironment {
           .build();
 
 
-      Response response =  okHttpClient.newCall(request).execute();
-      if (!response.isSuccessful()) {
-        throw new IllegalStateException("Could not remove data from ES");
+      try (Response response =  okHttpClient.newCall(request).execute()) {
+        if (!response.isSuccessful()) {
+          throw new IllegalStateException("Could not remove data from ES");
+        }
       }
   }
 
