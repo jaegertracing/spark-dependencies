@@ -66,6 +66,15 @@ public class Span implements Serializable {
     return tags;
   }
 
+  public String getTag(String key){
+    for (KeyValue kv : tags){
+      if (kv.getKey().equals(key)){
+        return kv.getValueString();
+      }
+    }
+    return null;
+  }
+
   public void setTags(List<KeyValue> tags) {
     this.tags = tags;
   }

@@ -99,21 +99,11 @@ public class SpansToDependencyLinks implements Function<Iterable<Span>, Iterable
     }
 
     static boolean isClientSpan(Span span) {
-        for (KeyValue tag: span.getTags()) {
-            if (Tags.SPAN_KIND_CLIENT.equals(tag.getValueString())) {
-                return true;
-            }
-        }
-        return false;
+        return Tags.SPAN_KIND_CLIENT.equals(span.getTag(Tags.SPAN_KIND.getKey()));
     }
 
     static boolean isServerSpan(Span span) {
-        for (KeyValue tag: span.getTags()) {
-            if (Tags.SPAN_KIND_SERVER.equals(tag.getValueString())) {
-                return true;
-            }
-        }
-        return false;
+        return Tags.SPAN_KIND_SERVER.equals(span.getTag(Tags.SPAN_KIND.getKey()));
     }
 
     private List<Dependency> sharedSpanDependencies(Map<Long, Set<Span>> spanMap) {
