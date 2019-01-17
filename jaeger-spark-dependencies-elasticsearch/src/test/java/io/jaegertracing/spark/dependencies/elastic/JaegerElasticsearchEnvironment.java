@@ -73,6 +73,7 @@ public class JaegerElasticsearchEnvironment {
         .withEnv("ES_SERVER_URLS", "http://elasticsearch:9200")
         .withEnv("COLLECTOR_ZIPKIN_HTTP_PORT", "9411")
         .withEnv("COLLECTOR_QUEUE_SIZE", "100000")
+        .withEnv("LOG_LEVEL","DEBUG")
         .withEnv(jaegerEnvs)
         .waitingFor(new BoundPortHttpWaitStrategy(14269).forStatusCode(204))
         // the first one is health check
@@ -84,6 +85,7 @@ public class JaegerElasticsearchEnvironment {
         .withEnv("SPAN_STORAGE_TYPE", "elasticsearch")
         .withEnv("ES_SERVER_URLS", "http://elasticsearch:9200")
         .withEnv("ES_TAGS_AS_FIELDS_ALL", "true")
+        .withEnv("LOG_LEVEL","DEBUG")
         .withNetwork(network)
         .withEnv(jaegerEnvs)
         .waitingFor(new BoundPortHttpWaitStrategy(16687).forStatusCode(204))
