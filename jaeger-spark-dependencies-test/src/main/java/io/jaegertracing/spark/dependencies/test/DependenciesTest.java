@@ -263,9 +263,12 @@ public abstract class DependenciesTest {
       .build();
     await().atMost(30, TimeUnit.SECONDS).until(() -> {
       try(Response response = okHttpClient.newCall(request).execute()) {
-        boolean result = response.body().string().contains(spanContainsThis);
+        String r = response.body().string();
+        boolean result = r.contains(spanContainsThis);
         if (!result) {
           Thread.sleep(100);
+        }else {
+          LOGGER.warn("Service " + service + " contains " + spanContainsThis + " : " + r);
         }
         return result;
       }
