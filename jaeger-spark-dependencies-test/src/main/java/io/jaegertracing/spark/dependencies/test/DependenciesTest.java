@@ -13,9 +13,6 @@
  */
 package io.jaegertracing.spark.dependencies.test;
 
-import static org.awaitility.Awaitility.await;
-import static org.junit.Assert.assertEquals;
-
 import brave.Tracing;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -32,15 +29,22 @@ import io.jaegertracing.spark.dependencies.test.tree.Traversals;
 import io.jaegertracing.spark.dependencies.test.tree.TreeGenerator;
 import io.opentracing.References;
 import io.opentracing.Span;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+import org.awaitility.core.ConditionTimeoutException;
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
-import org.junit.Test;
+
+import static org.awaitility.Awaitility.await;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author Pavol Loffay
@@ -49,6 +53,8 @@ public abstract class DependenciesTest {
 
   protected OkHttpClient okHttpClient = new OkHttpClient.Builder().build();
   protected ObjectMapper objectMapper = JsonHelper.configure(new ObjectMapper());
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(DependenciesTest.class);
 
   /**
    * Set these in subclasses
@@ -75,7 +81,7 @@ public abstract class DependenciesTest {
   @Test
   public void testJaegerOneTrace() throws Exception {
     TreeGenerator<Tracer> treeGenerator = new TreeGenerator(
-        TracersGenerator.generateJaeger(5, collectorUrl));
+      TracersGenerator.generateJaeger(5, collectorUrl));
     Node<JaegerWrapper> root = treeGenerator.generateTree(50, 3);
     Traversals.postOrder(root, (node, parent) -> node.getTracingWrapper().get().getSpan().finish());
     waitBetweenTraces();
@@ -92,7 +98,7 @@ public abstract class DependenciesTest {
   @Test
   public void testJaegerMultipleTraces() throws Exception {
     TreeGenerator<Tracer> treeGenerator = new TreeGenerator(
-        TracersGenerator.generateJaeger(50, collectorUrl));
+      TracersGenerator.generateJaeger(50, collectorUrl));
     Map<String, Map<String, Long>> expectedDependencies = new LinkedHashMap<>();
     for (int i = 0; i < 20; i++) {
       Node<JaegerWrapper> root = treeGenerator.generateTree(50, 15);
@@ -120,7 +126,6 @@ public abstract class DependenciesTest {
 
     new Node<>(new ZipkinWrapper(tracer2.getA(), "tracer2"), child11);
     new Node<>(new ZipkinWrapper(tracer2.getA(), "tracer2"), child11);
-
 
     Traversals.postOrder(root, (node, parent) -> node.getTracingWrapper().get().getSpan().finish());
     rootTuple.getA().close();
@@ -176,15 +181,15 @@ public abstract class DependenciesTest {
     Tuple<Tracer, Flushable> s3Tuple = TracersGenerator.createJaeger("S3", collectorUrl);
 
     Span s1Span = s1Tuple.getA().buildSpan("foo")
-        .ignoreActiveSpan()
-        .start();
+      .ignoreActiveSpan()
+      .start();
     Span s2Span = s2Tuple.getA().buildSpan("bar")
-        .addReference(References.CHILD_OF, s1Span.context())
-        .start();
+      .addReference(References.CHILD_OF, s1Span.context())
+      .start();
     Span s3Span = s3Tuple.getA().buildSpan("baz")
-        .addReference(References.CHILD_OF, s1Span.context())
-        .addReference(References.FOLLOWS_FROM, s2Span.context())
-        .start();
+      .addReference(References.CHILD_OF, s1Span.context())
+      .addReference(References.FOLLOWS_FROM, s2Span.context())
+      .start();
 
     s1Span.finish();
     s2Span.finish();
@@ -195,9 +200,7 @@ public abstract class DependenciesTest {
     waitJaegerQueryContains("S1", "foo");
     waitJaegerQueryContains("S2", "bar");
     waitJaegerQueryContains("S3", "baz");
-
     deriveDependencies();
-
     Map<String, Map<String, Long>> expectedDependencies = new HashMap<>();
     Map<String, Long> s1Descendants = new HashMap<>();
     s1Descendants.put("S2", 1L);
@@ -210,13 +213,44 @@ public abstract class DependenciesTest {
   }
 
   protected void assertDependencies(Map<String, Map<String, Long>> expectedDependencies) throws IOException {
+
+    long time = System.currentTimeMillis();
+    try {
+      await().atMost(30, TimeUnit.SECONDS).until(() -> {
+        Request request = new Request.Builder()
+          .url(queryUrl + "/api/dependencies?endTs=" + System.currentTimeMillis())
+          .get()
+          .build();
+        try (Response response = okHttpClient.newCall(request).execute()) {
+          if (response.code() != 200) {
+            return false;
+          }
+          RestResult<DependencyLink> restResult = objectMapper.readValue(response.body().string(), new TypeReference<RestResult<DependencyLink>>() {
+          });
+          if (restResult.getErrors() != null) {
+            return false;
+          }
+          boolean result = expectedDependencies.equals(DependencyLinkDerivator.serviceDependencies(restResult.getData()));
+          if (!result) {
+            Thread.sleep(100);
+          }
+          return result;
+
+        }
+      });
+    } catch (ConditionTimeoutException e) {
+      LOGGER.error(e.getMessage(), e);
+    }
+    LOGGER.warn("Waited for assertDependencies result : " + (System.currentTimeMillis() - time));
     Request request = new Request.Builder()
-        .url(queryUrl + "/api/dependencies?endTs=" + System.currentTimeMillis())
-        .get()
-        .build();
+      .url(queryUrl + "/api/dependencies?endTs=" + System.currentTimeMillis())
+      .get()
+      .build();
     try (Response response = okHttpClient.newCall(request).execute()) {
+      String r = response.body().string();
       assertEquals(200, response.code());
-      RestResult<DependencyLink> restResult = objectMapper.readValue(response.body().string(), new TypeReference<RestResult<DependencyLink>>() {});
+      RestResult<DependencyLink> restResult = objectMapper.readValue(r, new TypeReference<RestResult<DependencyLink>>() {
+      });
       assertEquals(null, restResult.getErrors());
       assertEquals(expectedDependencies, DependencyLinkDerivator.serviceDependencies(restResult.getData()));
     }
@@ -224,12 +258,16 @@ public abstract class DependenciesTest {
 
   protected void waitJaegerQueryContains(String service, String spanContainsThis) {
     Request request = new Request.Builder()
-        .url(String.format("%s/api/traces?service=%s", queryUrl, service))
-        .get()
-        .build();
+      .url(String.format("%s/api/traces?service=%s", queryUrl, service))
+      .get()
+      .build();
     await().atMost(30, TimeUnit.SECONDS).until(() -> {
       try(Response response = okHttpClient.newCall(request).execute()) {
-        return response.body().string().contains(spanContainsThis);
+        boolean result = response.body().string().contains(spanContainsThis);
+        if (!result) {
+          Thread.sleep(100);
+        }
+        return result;
       }
     });
   }

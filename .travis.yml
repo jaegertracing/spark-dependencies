@@ -24,6 +24,30 @@ jobs:
       script: JAEGER_VERSION=1.4 ./mvnw clean test
 
     - stage: test
+      env: [ NAME=Jaeger 1.5 ]
+      script: JAEGER_VERSION=1.5 ./mvnw clean test
+
+    - stage: test
+      env: [ NAME=Jaeger 1.6 ]
+      script: JAEGER_VERSION=1.6 ./mvnw clean test
+
+    - stage: test
+      env: [ NAME=Jaeger 1.7 ]
+      script: JAEGER_VERSION=1.7 ./mvnw clean test
+
+    - stage: test
+      env: [ NAME=Jaeger 1.8.0 ]
+      script: JAEGER_VERSION=1.8.0 ./mvnw clean test
+
+    - stage: test
+      env: [ NAME=Jaeger 1.8.1 ]
+      script: JAEGER_VERSION=1.8.1 ./mvnw clean test
+
+    - stage: test
+      env: [ NAME=Jaeger 1.8.2 ]
+      script: JAEGER_VERSION=1.8.2 ./mvnw clean test
+
+    - stage: test
       env: [ NAME=Jaeger latest ]
       script: ./mvnw clean test
 

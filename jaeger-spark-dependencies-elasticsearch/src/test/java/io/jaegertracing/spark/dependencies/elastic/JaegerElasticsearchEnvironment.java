@@ -25,8 +25,11 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
+import org.testcontainers.containers.output.Slf4jLogConsumer;
 
 /**
  * @author Pavol Loffay
@@ -38,6 +41,9 @@ public class JaegerElasticsearchEnvironment {
   private GenericContainer elasticsearch;
   private GenericContainer jaegerCollector;
   private GenericContainer jaegerQuery;
+
+  private static final Logger log = LoggerFactory.getLogger(JaegerElasticsearchEnvironment.class);
+  private static Slf4jLogConsumer logConsumer = new Slf4jLogConsumer(log);
 
   /**
    * Set these in subclasses
@@ -59,6 +65,7 @@ public class JaegerElasticsearchEnvironment {
         .withEnv("network.host", "_site_")
         .withEnv("network.publish_host", "_local_");
     elasticsearch.start();
+    elasticsearch.followOutput(logConsumer);
 
     jaegerCollector = new GenericContainer<>("jaegertracing/jaeger-collector:" + jaegerVersion)
         .withNetwork(network)
@@ -71,6 +78,7 @@ public class JaegerElasticsearchEnvironment {
         // the first one is health check
         .withExposedPorts(14269, 14268, 9411);
     jaegerCollector.start();
+    jaegerCollector.followOutput(logConsumer);
 
     jaegerQuery = new GenericContainer<>("jaegertracing/jaeger-query:" + jaegerVersion())
         .withEnv("SPAN_STORAGE_TYPE", "elasticsearch")
@@ -81,6 +89,7 @@ public class JaegerElasticsearchEnvironment {
         .waitingFor(new BoundPortHttpWaitStrategy(16687).forStatusCode(204))
         .withExposedPorts(16687, 16686);
     jaegerQuery.start();
+    jaegerQuery.followOutput(logConsumer);
 
     collectorUrl = String.format("http://%s:%d", jaegerCollector.getContainerIpAddress(), jaegerCollector.getMappedPort(14268));
     zipkinCollectorUrl = String.format("http://%s:%d", jaegerCollector.getContainerIpAddress(), jaegerCollector.getMappedPort(9411));

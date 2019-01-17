@@ -26,11 +26,15 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.spark.api.java.function.Function;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Pavol Loffay
  */
 public class SpansToDependencyLinks implements Function<Iterable<Span>, Iterable<Dependency>>{
+
+    private static final Logger log = LoggerFactory.getLogger(SpansToDependencyLinks.class);
 
     /**
      * Derives dependency links based on supplied spans.
@@ -43,6 +47,7 @@ public class SpansToDependencyLinks implements Function<Iterable<Span>, Iterable
     public Iterable<Dependency> call(Iterable<Span> trace) throws Exception {
         Map<Long, Set<Span>> spanMap = new LinkedHashMap<>();
         for (Span span: trace) {
+
             Set<Span> sharedSpans = spanMap.get(span.getSpanId());
             if (sharedSpans == null) {
                 sharedSpans = new LinkedHashSet<>();
@@ -55,6 +60,7 @@ public class SpansToDependencyLinks implements Function<Iterable<Span>, Iterable
         List<Dependency> result = sharedSpanDependencies(spanMap);
 
         for (Span span: trace) {
+
             if (span.getRefs() == null || span.getRefs().isEmpty() ||
                 span.getProcess() == null || span.getProcess().getServiceName() == null) {
                 continue;
@@ -67,6 +73,7 @@ public class SpansToDependencyLinks implements Function<Iterable<Span>, Iterable
             }
 
             for (Reference reference: span.getRefs()) {
+                log.info(span.getTraceId() + ":" + span.getSpanId() + " " + reference.getSpanId());
                 Set<Span> parents = spanMap.get(reference.getSpanId());
                 if (parents != null) {
                     if (parents.size() > 1) {

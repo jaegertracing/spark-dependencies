@@ -27,8 +27,11 @@ import java.util.concurrent.TimeoutException;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
+import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
 
 /**
@@ -42,6 +45,8 @@ public class CassandraDependenciesJobTest extends DependenciesTest {
   private static GenericContainer jaegerQuery;
   private static GenericContainer jaegerCassandraSchema;
   private static int cassandraPort;
+  private static final Logger log = LoggerFactory.getLogger(CassandraDependenciesJobTest.class);
+  private static Slf4jLogConsumer logConsumer = new Slf4jLogConsumer(log);
 
   @BeforeClass
   public static void beforeClass() throws TimeoutException {
@@ -50,12 +55,16 @@ public class CassandraDependenciesJobTest extends DependenciesTest {
         .withNetwork(network)
         .withNetworkAliases("cassandra")
         .withExposedPorts(9042);
+
     cassandra.start();
+    cassandra.followOutput(logConsumer);
+
     cassandraPort = cassandra.getMappedPort(9042);
 
     jaegerCassandraSchema = new GenericContainer<>("jaegertracing/jaeger-cassandra-schema:" + jaegerVersion())
         .withNetwork(network);
     jaegerCassandraSchema.start();
+    jaegerCassandraSchema.followOutput(logConsumer);
     /**
      * Wait until schema is created
      */
@@ -71,6 +80,7 @@ public class CassandraDependenciesJobTest extends DependenciesTest {
         // the first one is health check
         .withExposedPorts(14269, 14268, 9411);
     jaegerCollector.start();
+    jaegerCollector.followOutput(logConsumer);
 
     jaegerQuery = new GenericContainer<>("jaegertracing/jaeger-query:" + jaegerVersion())
         .withNetwork(network)
@@ -79,6 +89,7 @@ public class CassandraDependenciesJobTest extends DependenciesTest {
         .waitingFor(new BoundPortHttpWaitStrategy(16687).forStatusCode(204))
         .withExposedPorts(16687, 16686);
     jaegerQuery.start();
+    jaegerQuery.followOutput(logConsumer);
 
     queryUrl = String.format("http://localhost:%d", jaegerQuery.getMappedPort(16686));
     collectorUrl = String.format("http://localhost:%d", jaegerCollector.getMappedPort(14268));

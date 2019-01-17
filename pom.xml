@@ -25,7 +25,7 @@
   <modules>
     <module>jaeger-spark-dependencies-test</module>
     <module>jaeger-spark-dependencies-common</module>
-    <module>jaeger-spark-dependencies-cassandra</module>
+   <!-- <module>jaeger-spark-dependencies-cassandra</module>-->
     <module>jaeger-spark-dependencies-elasticsearch</module>
     <module>jaeger-spark-dependencies</module>
   </modules>
