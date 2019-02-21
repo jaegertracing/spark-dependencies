@@ -16,6 +16,7 @@ package io.jaegertracing.spark.dependencies.cassandra;
 import static org.awaitility.Awaitility.await;
 
 import com.datastax.driver.core.Cluster;
+import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 import io.jaegertracing.spark.dependencies.test.DependenciesTest;
 import java.time.LocalDate;
@@ -76,6 +77,8 @@ public class CassandraDependenciesJobTest extends DependenciesTest {
         .withNetwork(network)
         .withEnv("CASSANDRA_SERVERS", "cassandra")
         .withEnv("CASSANDRA_KEYSPACE", "jaeger_v1_dc1")
+        // TODO remove after https://github.com/jaegertracing/jaeger/pull/1364 is merged
+        .withEnv("CASSANDRA_ENABLE_DEPENDENCIES_V2", "true")
         .waitingFor(new BoundPortHttpWaitStrategy(16687).forStatusCode(204))
         .withExposedPorts(16687, 16686);
     jaegerQuery.start();
@@ -97,8 +100,17 @@ public class CassandraDependenciesJobTest extends DependenciesTest {
   public void after() {
     try (Cluster cluster = cassandra.getCluster(); Session session = cluster.newSession()) {
       session.execute("TRUNCATE jaeger_v1_dc1.traces");
-      session.execute("TRUNCATE jaeger_v1_dc1.dependencies");
+      session.execute(String.format("TRUNCATE jaeger_v1_dc1.%s", dependenciesTable(session)));
     }
+  }
+
+  private String dependenciesTable(Session session) {
+    try {
+      session.execute("SELECT ts from jaeger_v1_dc1.dependencies_v2 limit 1;");
+    } catch (Exception ex) {
+      return "dependencies";
+    }
+    return "dependencies_v2";
   }
 
   @Override
