@@ -66,6 +66,13 @@ public class Dependency implements Serializable {
         && this.callCount == that.callCount;
   }
 
+  public String getSource() {
+    return "jaeger";
+  }
+
+  public void setSource(String source) {
+  }
+
   @Override
   public int hashCode() {
     int h = 1;

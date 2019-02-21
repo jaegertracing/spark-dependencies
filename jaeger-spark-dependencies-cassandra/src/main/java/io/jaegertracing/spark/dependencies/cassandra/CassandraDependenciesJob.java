@@ -18,7 +18,8 @@ import static com.datastax.spark.connector.japi.CassandraJavaUtil.javaFunctions;
 import static com.datastax.spark.connector.japi.CassandraJavaUtil.mapRowTo;
 import static com.datastax.spark.connector.japi.CassandraJavaUtil.mapToRow;
 
-import com.datastax.spark.connector.japi.CassandraJavaUtil;
+import com.datastax.spark.connector.cql.CassandraConnector;
+import com.datastax.spark.connector.japi.CassandraRow;
 import com.google.common.base.Joiner;
 import com.google.common.net.HostAndPort;
 import io.jaegertracing.spark.dependencies.DependenciesSparkHelper;
@@ -173,10 +174,19 @@ public final class CassandraDependenciesJob {
   }
 
   private void store(JavaSparkContext sc, List<Dependency> links) {
-    CassandraDependencies dependencies = new CassandraDependencies(links, day);
-    javaFunctions(sc.parallelize(Collections.singletonList(dependencies)))
-        .writerBuilder(keyspace, "dependencies", mapToRow(CassandraDependencies.class))
-        .saveToCassandra();
+    String table = dependenciesTable(sc);
+    log.info("Storing dependencies into {}", table);
+    if (table == "dependencies_v2") {
+      CassandraDependenciesV2 dependencies = new CassandraDependenciesV2(links, day);
+      javaFunctions(sc.parallelize(Collections.singletonList(dependencies)))
+          .writerBuilder(keyspace, table, mapToRow(CassandraDependenciesV2.class))
+          .saveToCassandra();
+    } else {
+      CassandraDependencies dependencies = new CassandraDependencies(links, day);
+      javaFunctions(sc.parallelize(Collections.singletonList(dependencies)))
+          .writerBuilder(keyspace, table, mapToRow(CassandraDependencies.class))
+          .saveToCassandra();
+    }
   }
 
   static String parseHosts(String contactPoints) {
@@ -196,6 +206,17 @@ public final class CassandraDependenciesJob {
       ports.add(parsed.getPortOrDefault(9042));
     }
     return ports.size() == 1 ? String.valueOf(ports.iterator().next()) : "9042";
+  }
+
+  private String dependenciesTable(JavaSparkContext sc) {
+    try {
+      javaFunctions(sc)
+        .cassandraTable(keyspace, "dependencies_v2")
+        .limit(1L).collect();
+    } catch (Exception ex) {
+      return "dependencies";
+    }
+    return "dependencies_v2";
   }
 
   /**
@@ -221,6 +242,33 @@ public final class CassandraDependenciesJob {
     }
 
     public Long getTsIndex() {
+      return zonedDateTime.toInstant().toEpochMilli();
+    }
+  }
+
+  /**
+   * DTO object used to store dependencies to Cassandra, see {@link com.datastax.spark.connector.mapper.JavaBeanColumnMapper}
+   */
+  public final static class CassandraDependenciesV2 implements Serializable {
+    private static final long serialVersionUID = 0L;
+
+    private List<Dependency> dependencies;
+    private ZonedDateTime zonedDateTime;
+
+    public CassandraDependenciesV2(List<Dependency> dependencies, ZonedDateTime ts) {
+      this.dependencies = dependencies;
+      this.zonedDateTime = ts;
+    }
+
+    public List<Dependency> getDependencies() {
+      return dependencies;
+    }
+
+    public Long getTs() {
+      return zonedDateTime.toInstant().toEpochMilli();
+    }
+
+    public Long getTsBucket() {
       return zonedDateTime.toInstant().toEpochMilli();
     }
   }
