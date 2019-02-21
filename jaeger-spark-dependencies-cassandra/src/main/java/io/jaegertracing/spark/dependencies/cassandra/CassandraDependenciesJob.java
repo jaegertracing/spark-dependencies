@@ -32,6 +32,8 @@ import java.time.LocalDate;
 import java.time.Period;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalUnit;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -269,7 +271,7 @@ public final class CassandraDependenciesJob {
     }
 
     public Long getTsBucket() {
-      return zonedDateTime.toInstant().toEpochMilli();
+      return zonedDateTime.toInstant().truncatedTo(ChronoUnit.DAYS).toEpochMilli();
     }
   }
 }
