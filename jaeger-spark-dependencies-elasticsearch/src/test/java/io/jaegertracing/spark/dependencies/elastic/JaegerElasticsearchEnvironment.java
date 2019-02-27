@@ -87,14 +87,15 @@ public class JaegerElasticsearchEnvironment {
     queryUrl = String.format("http://%s:%d", jaegerQuery.getContainerIpAddress(), jaegerQuery.getMappedPort(16686));
   }
 
-  public void cleanUp(String spanIndex, String dependenciesIndex) throws IOException {
+  public void cleanUp(String[] spanIndex, String[] dependenciesIndex) throws IOException {
       String matchAllQuery = "{\"query\": {\"match_all\":{} }}";
       Request request = new Request.Builder()
           .url(String.format("http://%s:%d/%s,%s/_delete_by_query?conflicts=proceed",
               elasticsearch.getContainerIpAddress(),
               elasticsearch.getMappedPort(9200),
-              spanIndex,
-              dependenciesIndex))
+              // we don't use index prefix
+              spanIndex[0],
+              dependenciesIndex[0]))
           .post(
               RequestBody.create(MediaType.parse("application/json; charset=utf-8"), matchAllQuery))
           .build();
