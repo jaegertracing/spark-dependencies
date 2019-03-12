@@ -71,7 +71,7 @@ public class ElasticsearchDependenciesJobTest extends DependenciesTest {
         .nodes("http://" + jaegerElasticsearchEnvironment.getElasticsearchIPPort())
         .day(LocalDate.now())
         .build();
-    dependenciesJob.run();
+    dependenciesJob.run("peer.service");
   }
 
   @Override

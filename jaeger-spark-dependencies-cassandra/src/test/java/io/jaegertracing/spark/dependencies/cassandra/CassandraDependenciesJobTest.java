@@ -120,7 +120,7 @@ public class CassandraDependenciesJobTest extends DependenciesTest {
         .day(LocalDate.now())
         .keyspace("jaeger_v1_dc1")
         .build()
-        .run();
+        .run("peer.service");
   }
 
   @Override

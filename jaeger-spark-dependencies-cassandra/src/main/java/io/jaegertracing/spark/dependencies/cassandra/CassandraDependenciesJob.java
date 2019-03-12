@@ -126,6 +126,7 @@ public final class CassandraDependenciesJob {
     public CassandraDependenciesJob build() {
       return new CassandraDependenciesJob(this);
     }
+
   }
 
   private final String keyspace;
@@ -153,7 +154,7 @@ public final class CassandraDependenciesJob {
     }
   }
 
-  public void run() {
+  public void run(String peerServiceTag) {
     long microsLower = day.toInstant().toEpochMilli() * 1000;
     long microsUpper = day.plus(Period.ofDays(1)).toInstant().toEpochMilli() * 1000 - 1;
 
@@ -167,7 +168,7 @@ public final class CassandraDependenciesJob {
           .mapValues(span -> (Span) span)
           .groupByKey();
 
-      List<Dependency> dependencyLinks = DependenciesSparkHelper.derive(traces);
+      List<Dependency> dependencyLinks = DependenciesSparkHelper.derive(traces,peerServiceTag);
       store(sc, dependencyLinks);
       log.info("Done, {} dependency objects created", dependencyLinks.size());
     } finally {

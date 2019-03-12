@@ -19,6 +19,8 @@ import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.time.LocalDate;
+import java.util.HashMap;
+import java.util.Map;
 
 public final class DependenciesSparkJob {
 
@@ -39,19 +41,23 @@ public final class DependenciesSparkJob {
   }
 
   private static void run(String storage, LocalDate localDate) throws UnsupportedEncodingException {
+    String peerServiceTag = System.getenv("PEER_SERVICE_TAG");
+    if (peerServiceTag == null){
+      peerServiceTag = "peer.service";
+    }
     String jarPath = pathToUberJar();
     if ("elasticsearch".equalsIgnoreCase(storage)) {
       ElasticsearchDependenciesJob.builder()
           .jars(jarPath)
           .day(localDate)
           .build()
-          .run();
+          .run(peerServiceTag);
     } else if ("cassandra".equalsIgnoreCase(storage)) {
       CassandraDependenciesJob.builder()
           .jars(jarPath)
           .day(localDate)
           .build()
-          .run();
+          .run(peerServiceTag);
     } else {
       throw new IllegalArgumentException("Unsupported storage: " + storage);
     }

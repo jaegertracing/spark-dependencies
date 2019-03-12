@@ -35,8 +35,8 @@ public class DependenciesSparkHelper {
    *                     spans with that traceId.
    * @return Aggregated dependency links for all traces.
    */
-  public static List<Dependency> derive(JavaPairRDD<String, Iterable<Span>> traceIdSpans) {
-    return traceIdSpans.flatMapValues(new SpansToDependencyLinks())
+  public static List<Dependency> derive(JavaPairRDD<String, Iterable<Span>> traceIdSpans,String peerServiceTag) {
+    return traceIdSpans.flatMapValues(new SpansToDependencyLinks(peerServiceTag))
         .values()
         .mapToPair(dependency -> new Tuple2<>(new Tuple2<>(dependency.getParent(), dependency.getChild()), dependency))
         .reduceByKey((v1, v2) -> new Dependency(v1.getParent(), v1.getChild(), v1.getCallCount() + v2.getCallCount()))
