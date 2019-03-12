@@ -42,11 +42,16 @@ public class SpansToDependencyLinks implements Function<Iterable<Span>, Iterable
      * @throws Exception
      */
 
+    public String peerServiceTag = "";
+
+    public SpansToDependencyLinks(String peerServiceTag){
+        this.peerServiceTag = peerServiceTag;
+    }
+
     @Override
     public Iterable<Dependency> call(Iterable<Span> trace) throws Exception {
         Map<Long, Set<Span>> spanMap = new LinkedHashMap<>();
         Map<Long, Set<Span>> spanChildrenMap = new LinkedHashMap<>();
-        String uninstrumentedKey = SparkEnv.get().conf().get("jaeger.uninstrumented_key","peer.service");
         for (Span span: trace) {
             // Map of children
             for (Reference ref: span.getRefs()){
@@ -101,7 +106,7 @@ public class SpansToDependencyLinks implements Function<Iterable<Span>, Iterable
             }
             // We are on a leaf so we try to add a dependency for calls to components that calls remote components not instrumented
             if (spanChildrenMap.get(span.getSpanId()) == null ){
-              String targetName = span.getTag(uninstrumentedKey);
+              String targetName = span.getTag(peerServiceTag);
               if (targetName != null) {
                 result.add(new Dependency(span.getProcess().getServiceName(), targetName));
               }

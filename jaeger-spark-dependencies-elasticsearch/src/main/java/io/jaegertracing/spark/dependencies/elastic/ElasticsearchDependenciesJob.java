@@ -117,11 +117,6 @@ public class ElasticsearchDependenciesJob {
       return this;
     }
 
-    public Builder properties(Map<String,String> properties){
-      sparkProperties.putAll(properties);
-      return this;
-    }
-
     public ElasticsearchDependenciesJob build() {
       return new ElasticsearchDependenciesJob(this);
     }
@@ -173,8 +168,8 @@ public class ElasticsearchDependenciesJob {
     return prefix != null ? String.format("%s-", prefix) : "";
   }
 
-  public void run() {
-    run(indexDate("jaeger-span"), indexDate("jaeger-dependencies"));
+  public void run(String peerServiceTag) {
+    run(indexDate("jaeger-span"), indexDate("jaeger-dependencies") ,peerServiceTag);
   }
 
   String[] indexDate(String index) {
@@ -186,7 +181,7 @@ public class ElasticsearchDependenciesJob {
     return new String[]{String.format("%s-%s", index, date)};
   }
 
-  void run(String[] spanIndices, String[] depIndices) {
+  void run(String[] spanIndices, String[] depIndices,String peerServiceTag) {
     JavaSparkContext sc = new JavaSparkContext(conf);
     try {
       for (int i = 0; i < spanIndices.length; i++) {
@@ -196,7 +191,7 @@ public class ElasticsearchDependenciesJob {
         JavaPairRDD<String, Iterable<Span>> traces = JavaEsSpark.esJsonRDD(sc, spanIndex)
             .map(new ElasticTupleToSpan())
             .groupBy(Span::getTraceId);
-        List<Dependency> dependencyLinks = DependenciesSparkHelper.derive(traces);
+        List<Dependency> dependencyLinks = DependenciesSparkHelper.derive(traces,peerServiceTag);
         store(sc, dependencyLinks, depIndex + "/dependencies");
         log.info("Done, {} dependency objects created", dependencyLinks.size());
         if (dependencyLinks.size() > 0) {
@@ -204,7 +199,6 @@ public class ElasticsearchDependenciesJob {
           break;
         }
       }
-
     } finally {
       sc.stop();
     }

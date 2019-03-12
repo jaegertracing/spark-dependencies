@@ -41,35 +41,26 @@ public final class DependenciesSparkJob {
   }
 
   private static void run(String storage, LocalDate localDate) throws UnsupportedEncodingException {
-
+    String peerServiceTag = System.getenv("PEER_SERVICE_TAG");
+    if (peerServiceTag == null){
+      peerServiceTag = "peer.service";
+    }
     String jarPath = pathToUberJar();
     if ("elasticsearch".equalsIgnoreCase(storage)) {
       ElasticsearchDependenciesJob.builder()
           .jars(jarPath)
           .day(localDate)
-          .properties(prepareJobProperties())
           .build()
-          .run();
+          .run(peerServiceTag);
     } else if ("cassandra".equalsIgnoreCase(storage)) {
       CassandraDependenciesJob.builder()
           .jars(jarPath)
           .day(localDate)
-          .properties(prepareJobProperties())
           .build()
-          .run();
+          .run(peerServiceTag);
     } else {
       throw new IllegalArgumentException("Unsupported storage: " + storage);
     }
-  }
-
-  static Map<String,String> prepareJobProperties(){
-    Map<String,String> properties = new HashMap<>();
-    // Key for naming external services as dependencies
-    String uninstrumentedKey = System.getenv("UNINSTRUMENTED_DEPENDENCIES_KEY");
-    if (uninstrumentedKey != null){
-      properties.put("jaeger.uninstrumented_key",uninstrumentedKey);
-    }
-    return properties;
   }
 
   static String pathToUberJar() throws UnsupportedEncodingException {
