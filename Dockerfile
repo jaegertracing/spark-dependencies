@@ -30,4 +30,10 @@ COPY mvnw $APP_HOME
 WORKDIR $APP_HOME
 RUN ./mvnw package -Dlicense.skip=true -DskipTests && rm -rf ~/.m2
 
+COPY entrypoint.sh /
+
+RUN chgrp root /etc/passwd && chmod g+rw /etc/passwd
+USER 185
+
+ENTRYPOINT ["/entrypoint.sh"]
 CMD java ${JAVA_OPTS} -jar jaeger-spark-dependencies/target/jaeger-spark-dependencies-0.0.1-SNAPSHOT.jar
