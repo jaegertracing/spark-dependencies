@@ -78,6 +78,14 @@ Elasticsearch is used when `STORAGE=elasticsearch`.
                              If your elasticsearch cluster's data nodes only listen on loopback ip, set this to true. 
                              Defaults to false
     * `ES_INDEX_PREFIX`: index prefix of Jaeger indices. By default unset.
+    * `ES_HTTP_TIMEOUT`: Timeout for HTTP/REST connections to Elasticsearch.
+    * `ES_HTTP_RETRIES`: Number of retries for establishing a (broken) http connection.
+                         The retries are applied for each conversation with an Elasticsearch node.
+                         Once the retries are depleted, the connection will automatically be re-reouted
+                         to the next available Elasticsearch node (based on the declaration of es.nodes,
+                         followed by the discovered nodes - if enabled).
+    * `ES_SCROLL_KEEPALIVE`: The maximum duration of result scrolls between query requests.
+    * `ES_SCROLL_SIZE`: Number of results/items returned by each individual per request.
 
 Example usage:
 
