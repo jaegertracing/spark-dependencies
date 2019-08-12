@@ -31,6 +31,7 @@ import java.util.Map;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.spark.rdd.api.java.JavaEsSpark;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,6 +55,7 @@ public class ElasticsearchDependenciesJob {
     Boolean clientNodeOnly = Boolean.parseBoolean(Utils.getEnv("ES_CLIENT_NODE_ONLY", "false"));
     String indexPrefix = Utils.getEnv("ES_INDEX_PREFIX", null);
 
+
     final Map<String, String> sparkProperties = new LinkedHashMap<>();
 
     Builder() {
@@ -69,6 +71,15 @@ public class ElasticsearchDependenciesJob {
           getSystemPropertyAsFileResource("javax.net.ssl.trustStore"));
       sparkProperties.put("es.net.ssl.truststore.pass",
           System.getProperty("javax.net.ssl.trustStorePassword", ""));
+
+      sparkProperties.put(ConfigurationOptions.ES_HTTP_TIMEOUT,
+              Utils.getEnv("ES_HTTP_TIMEOUT", ConfigurationOptions.ES_HTTP_TIMEOUT_DEFAULT));
+      sparkProperties.put(ConfigurationOptions.ES_HTTP_RETRIES,
+              Utils.getEnv("ES_HTTP_RETRIES", ConfigurationOptions.ES_HTTP_RETRIES_DEFAULT));
+      sparkProperties.put(ConfigurationOptions.ES_SCROLL_KEEPALIVE,
+              Utils.getEnv("ES_SCROLL_KEEPALIVE", ConfigurationOptions.ES_SCROLL_KEEPALIVE_DEFAULT));
+      sparkProperties.put(ConfigurationOptions.ES_SCROLL_SIZE,
+              Utils.getEnv("ES_SCROLL_SIZE", ConfigurationOptions.ES_SCROLL_SIZE_DEFAULT));
     }
 
     // local[*] master lets us run & test the job locally without setting a Spark cluster
