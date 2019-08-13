@@ -46,9 +46,14 @@ public class JaegerElasticsearchEnvironment {
   private String collectorUrl;
   private String zipkinCollectorUrl;
 
-  public void start(Map<String, String> jaegerEnvs, String jaegerVersion) {
+  public static String elasticsearchVersion() {
+    String version = System.getProperty("elasticsearch.version", System.getenv("ELASTICSEARCH_VERSION"));
+    return version != null ? version : "5.6.16";
+  }
+
+  public void start(Map<String, String> jaegerEnvs, String jaegerVersion, String elasticsearchVersion) {
     network = Network.newNetwork();
-    elasticsearch = new GenericContainer<>("docker.elastic.co/elasticsearch/elasticsearch:5.6.9")
+    elasticsearch = new GenericContainer<>(String.format("docker.elastic.co/elasticsearch/elasticsearch:%s", elasticsearchVersion))
         .withNetwork(network)
         .withNetworkAliases("elasticsearch")
         .waitingFor(new BoundPortHttpWaitStrategy(9200).forStatusCode(200))

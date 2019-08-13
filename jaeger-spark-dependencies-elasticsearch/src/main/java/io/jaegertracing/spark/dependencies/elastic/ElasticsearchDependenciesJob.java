@@ -192,6 +192,7 @@ public class ElasticsearchDependenciesJob {
             .map(new ElasticTupleToSpan())
             .groupBy(Span::getTraceId);
         List<Dependency> dependencyLinks = DependenciesSparkHelper.derive(traces,peerServiceTag);
+        // TODO the type names are deprecated (in ES7) and will be removed in a later release.
         store(sc, dependencyLinks, depIndex + "/dependencies");
         log.info("Done, {} dependency objects created", dependencyLinks.size());
         if (dependencyLinks.size() > 0) {

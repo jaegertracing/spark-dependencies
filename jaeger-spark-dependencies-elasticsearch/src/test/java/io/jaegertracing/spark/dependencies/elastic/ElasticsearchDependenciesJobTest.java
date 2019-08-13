@@ -41,7 +41,7 @@ public class ElasticsearchDependenciesJobTest extends DependenciesTest {
   @BeforeClass
   public static void beforeClass() {
     jaegerElasticsearchEnvironment = new JaegerElasticsearchEnvironment();
-    jaegerElasticsearchEnvironment.start(new HashMap<>(), jaegerVersion());
+    jaegerElasticsearchEnvironment.start(new HashMap<>(), jaegerVersion(), JaegerElasticsearchEnvironment.elasticsearchVersion());
     collectorUrl = jaegerElasticsearchEnvironment.getCollectorUrl();
     zipkinCollectorUrl = jaegerElasticsearchEnvironment.getZipkinCollectorUrl();
     queryUrl = jaegerElasticsearchEnvironment.getQueryUrl();
