@@ -72,7 +72,7 @@ public class JaegerElasticsearchEnvironment {
         .withEnv("COLLECTOR_ZIPKIN_HTTP_PORT", "9411")
         .withEnv("COLLECTOR_QUEUE_SIZE", "100000")
         .withEnv(jaegerEnvs)
-        .waitingFor(new BoundPortHttpWaitStrategy(14269).forStatusCode(204))
+        .waitingFor(new BoundPortHttpWaitStrategy(14269).forStatusCodeMatching(statusCode -> statusCode >= 200 && statusCode < 300))
         // the first one is health check
         .withExposedPorts(14269, 14268, 9411);
     jaegerCollector.start();
@@ -83,7 +83,7 @@ public class JaegerElasticsearchEnvironment {
         .withEnv("ES_TAGS_AS_FIELDS_ALL", "true")
         .withNetwork(network)
         .withEnv(jaegerEnvs)
-        .waitingFor(new BoundPortHttpWaitStrategy(16687).forStatusCode(204))
+        .waitingFor(new BoundPortHttpWaitStrategy(16687).forStatusCodeMatching(statusCode -> statusCode >= 200 && statusCode < 300))
         .withExposedPorts(16687, 16686);
     jaegerQuery.start();
 
