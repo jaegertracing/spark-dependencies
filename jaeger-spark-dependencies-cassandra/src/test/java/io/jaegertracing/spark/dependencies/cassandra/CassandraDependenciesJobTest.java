@@ -16,7 +16,6 @@ package io.jaegertracing.spark.dependencies.cassandra;
 import static org.awaitility.Awaitility.await;
 
 import com.datastax.driver.core.Cluster;
-import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 import io.jaegertracing.spark.dependencies.test.DependenciesTest;
 import java.time.LocalDate;
@@ -24,7 +23,6 @@ import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -45,7 +43,7 @@ public class CassandraDependenciesJobTest extends DependenciesTest {
   private static int cassandraPort;
 
   @BeforeClass
-  public static void beforeClass() throws TimeoutException {
+  public static void beforeClass() {
     network = Network.newNetwork();
     cassandra = new CassandraContainer("cassandra:3.11")
         .withNetwork(network)
@@ -113,7 +111,7 @@ public class CassandraDependenciesJobTest extends DependenciesTest {
   }
 
   @Override
-  protected void deriveDependencies() throws Exception {
+  protected void deriveDependencies() {
     CassandraDependenciesJob.builder()
         .contactPoints("localhost:" + cassandraPort)
         .day(LocalDate.now())
