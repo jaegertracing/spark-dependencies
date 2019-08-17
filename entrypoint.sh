@@ -34,5 +34,5 @@ function patch_uid {
 
 patch_uid
 
-exec  "$@"
+exec $@
 exit $?
