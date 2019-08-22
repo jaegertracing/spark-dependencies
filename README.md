@@ -89,6 +89,7 @@ $ STORAGE=elasticsearch ES_NODES=http://localhost:9200 java -jar jaeger-spark-de
 To build the job locally and run tests:
 ```bash
 ./mvnw clean install # if failed add SPARK_LOCAL_IP=127.0.0.1
+STORAGE=elasticsearch ES_NODES=http://localhost:9200 java -jar jaeger-spark-dependencies/target/jaeger-spark-dependencies-0.0.1-SNAPSHOT.jar
 docker build -t jaegertracing/spark-dependencies:latest .
 ```
 

@@ -16,7 +16,6 @@ package io.jaegertracing.spark.dependencies.cassandra;
 import static org.awaitility.Awaitility.await;
 
 import com.datastax.driver.core.Cluster;
-import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 import io.jaegertracing.spark.dependencies.test.DependenciesTest;
 import java.time.LocalDate;
@@ -24,7 +23,6 @@ import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -45,9 +43,9 @@ public class CassandraDependenciesJobTest extends DependenciesTest {
   private static int cassandraPort;
 
   @BeforeClass
-  public static void beforeClass() throws TimeoutException {
+  public static void beforeClass() {
     network = Network.newNetwork();
-    cassandra = new CassandraContainer("cassandra:3.9")
+    cassandra = new CassandraContainer("cassandra:3.11")
         .withNetwork(network)
         .withNetworkAliases("cassandra")
         .withExposedPorts(9042);
@@ -68,7 +66,8 @@ public class CassandraDependenciesJobTest extends DependenciesTest {
         .withEnv("CASSANDRA_KEYSPACE", "jaeger_v1_dc1")
         .withEnv("COLLECTOR_ZIPKIN_HTTP_PORT", "9411")
         .withEnv("COLLECTOR_QUEUE_SIZE", "100000")
-        .waitingFor(new BoundPortHttpWaitStrategy(14269).forStatusCode(204))
+        // older versions of jaeger were using 204 status code, now changed to 200
+        .waitingFor(new BoundPortHttpWaitStrategy(14269).forStatusCodeMatching(statusCode -> statusCode >= 200 && statusCode < 300))
         // the first one is health check
         .withExposedPorts(14269, 14268, 9411);
     jaegerCollector.start();
@@ -77,9 +76,7 @@ public class CassandraDependenciesJobTest extends DependenciesTest {
         .withNetwork(network)
         .withEnv("CASSANDRA_SERVERS", "cassandra")
         .withEnv("CASSANDRA_KEYSPACE", "jaeger_v1_dc1")
-        // TODO remove after https://github.com/jaegertracing/jaeger/pull/1364 is merged
-        .withEnv("CASSANDRA_ENABLE_DEPENDENCIES_V2", "true")
-        .waitingFor(new BoundPortHttpWaitStrategy(16687).forStatusCode(204))
+        .waitingFor(new BoundPortHttpWaitStrategy(16687).forStatusCodeMatching(statusCode -> statusCode >= 200 && statusCode < 300))
         .withExposedPorts(16687, 16686);
     jaegerQuery.start();
 
@@ -114,7 +111,7 @@ public class CassandraDependenciesJobTest extends DependenciesTest {
   }
 
   @Override
-  protected void deriveDependencies() throws Exception {
+  protected void deriveDependencies() {
     CassandraDependenciesJob.builder()
         .contactPoints("localhost:" + cassandraPort)
         .day(LocalDate.now())

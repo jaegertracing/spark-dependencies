@@ -31,6 +31,9 @@ import java.util.Map;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
+import org.elasticsearch.hadoop.rest.RestClient;
+import org.elasticsearch.hadoop.util.EsMajorVersion;
+import org.elasticsearch.spark.cfg.SparkSettings;
 import org.elasticsearch.spark.rdd.api.java.JavaEsSpark;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -192,7 +195,14 @@ public class ElasticsearchDependenciesJob {
             .map(new ElasticTupleToSpan())
             .groupBy(Span::getTraceId);
         List<Dependency> dependencyLinks = DependenciesSparkHelper.derive(traces,peerServiceTag);
-        store(sc, dependencyLinks, depIndex + "/dependencies");
+        EsMajorVersion esMajorVersion = getEsVersion();
+        // Add type for ES < 7
+        // WARN log is produced for older ES versions, however it's produced by spark-es library and not ES itself, it cannot be disabled
+        //  WARN Resource: Detected type name in resource [jaeger-dependencies-2019-08-14/dependencies]. Type names are deprecated and will be removed in a later release.
+        if (esMajorVersion.before(EsMajorVersion.V_7_X)) {
+          depIndex = depIndex + "/dependencies";
+        }
+        store(sc, dependencyLinks, depIndex);
         log.info("Done, {} dependency objects created", dependencyLinks.size());
         if (dependencyLinks.size() > 0) {
           // we do not derive dependencies for old prefix "prefix:" if new prefix "prefix-" contains data
@@ -201,6 +211,15 @@ public class ElasticsearchDependenciesJob {
       }
     } finally {
       sc.stop();
+    }
+  }
+
+  private EsMajorVersion getEsVersion() {
+    RestClient client = new RestClient(new SparkSettings(conf));
+    try {
+      return client.mainInfo().getMajorVersion();
+    } finally {
+      client.close();
     }
   }
 

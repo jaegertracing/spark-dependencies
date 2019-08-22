@@ -46,9 +46,14 @@ public class JaegerElasticsearchEnvironment {
   private String collectorUrl;
   private String zipkinCollectorUrl;
 
-  public void start(Map<String, String> jaegerEnvs, String jaegerVersion) {
+  public static String elasticsearchVersion() {
+    String version = System.getProperty("elasticsearch.version", System.getenv("ELASTICSEARCH_VERSION"));
+    return version != null ? version : "5.6.9";
+  }
+
+  public void start(Map<String, String> jaegerEnvs, String jaegerVersion, String elasticsearchVersion) {
     network = Network.newNetwork();
-    elasticsearch = new GenericContainer<>("docker.elastic.co/elasticsearch/elasticsearch:5.6.9")
+    elasticsearch = new GenericContainer<>(String.format("docker.elastic.co/elasticsearch/elasticsearch:%s", elasticsearchVersion))
         .withNetwork(network)
         .withNetworkAliases("elasticsearch")
         .waitingFor(new BoundPortHttpWaitStrategy(9200).forStatusCode(200))
@@ -67,7 +72,7 @@ public class JaegerElasticsearchEnvironment {
         .withEnv("COLLECTOR_ZIPKIN_HTTP_PORT", "9411")
         .withEnv("COLLECTOR_QUEUE_SIZE", "100000")
         .withEnv(jaegerEnvs)
-        .waitingFor(new BoundPortHttpWaitStrategy(14269).forStatusCode(204))
+        .waitingFor(new BoundPortHttpWaitStrategy(14269).forStatusCodeMatching(statusCode -> statusCode >= 200 && statusCode < 300))
         // the first one is health check
         .withExposedPorts(14269, 14268, 9411);
     jaegerCollector.start();
@@ -78,7 +83,7 @@ public class JaegerElasticsearchEnvironment {
         .withEnv("ES_TAGS_AS_FIELDS_ALL", "true")
         .withNetwork(network)
         .withEnv(jaegerEnvs)
-        .waitingFor(new BoundPortHttpWaitStrategy(16687).forStatusCode(204))
+        .waitingFor(new BoundPortHttpWaitStrategy(16687).forStatusCodeMatching(statusCode -> statusCode >= 200 && statusCode < 300))
         .withExposedPorts(16687, 16686);
     jaegerQuery.start();
 
