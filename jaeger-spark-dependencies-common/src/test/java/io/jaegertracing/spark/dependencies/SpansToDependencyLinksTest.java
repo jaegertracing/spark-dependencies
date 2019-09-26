@@ -50,7 +50,7 @@ public class SpansToDependencyLinksTest {
         sharedSpans.add(createSpan("producerName", Tags.SPAN_KIND_PRODUCER));
         Optional<Dependency> result = spansToDependencyLinks.sharedSpanDependency(sharedSpans);
         assertTrue(result.isPresent());
-        assertEquals(new Dependency("consumerName", "producerName"), result.get());
+        assertEquals(new Dependency("producerName", "consumerName"), result.get());
     }
 
     @Test
