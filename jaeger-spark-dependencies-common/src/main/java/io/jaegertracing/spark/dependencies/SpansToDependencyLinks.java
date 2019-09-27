@@ -26,7 +26,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import org.apache.spark.SparkEnv;
 import org.apache.spark.api.java.function.Function;
 
 /**
@@ -49,7 +48,7 @@ public class SpansToDependencyLinks implements Function<Iterable<Span>, Iterable
     }
 
     @Override
-    public Iterable<Dependency> call(Iterable<Span> trace) throws Exception {
+    public Iterable<Dependency> call(Iterable<Span> trace) {
         Map<Long, Set<Span>> spanMap = new LinkedHashMap<>();
         Map<Long, Set<Span>> spanChildrenMap = new LinkedHashMap<>();
         for (Span span: trace) {
@@ -143,14 +142,14 @@ public class SpansToDependencyLinks implements Function<Iterable<Span>, Iterable
         return dependencies;
     }
 
-    private Optional<Dependency> sharedSpanDependency(Set<Span> sharedSpans) {
+    protected Optional<Dependency> sharedSpanDependency(Set<Span> sharedSpans) {
         String clientService = null;
         String serverService = null;
         for (Span span: sharedSpans) {
             for (KeyValue tag: span.getTags()) {
-                if (Tags.SPAN_KIND_CLIENT.equals(tag.getValueString())) {
+                if (Tags.SPAN_KIND_CLIENT.equals(tag.getValueString()) || Tags.SPAN_KIND_PRODUCER.equals(tag.getValueString())) {
                     clientService = span.getProcess().getServiceName();
-                } else if (Tags.SPAN_KIND_SERVER.equals(tag.getValueString())) {
+                } else if (Tags.SPAN_KIND_SERVER.equals(tag.getValueString()) || Tags.SPAN_KIND_CONSUMER.equals(tag.getValueString())) {
                     serverService = span.getProcess().getServiceName();
                 }
 

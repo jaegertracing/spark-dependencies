@@ -85,4 +85,13 @@ public class Dependency implements Serializable {
     h *= 1000003;
     return h;
   }
+
+  @Override
+  public String toString() {
+    return "Dependency{" +
+            "parent='" + parent + '\'' +
+            ", child='" + child + '\'' +
+            ", callCount=" + callCount +
+            '}';
+  }
 }
