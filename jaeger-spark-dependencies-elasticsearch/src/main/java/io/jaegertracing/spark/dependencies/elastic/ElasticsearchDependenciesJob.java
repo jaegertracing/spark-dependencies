@@ -28,6 +28,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
@@ -44,6 +45,7 @@ import org.slf4j.LoggerFactory;
  */
 public class ElasticsearchDependenciesJob {
   private static final Logger log = LoggerFactory.getLogger(ElasticsearchDependenciesJob.class);
+  private static final Pattern PORT_PATTERN = Pattern.compile(":\\d+");
 
   public static Builder builder() {
     return new Builder();
@@ -55,6 +57,7 @@ public class ElasticsearchDependenciesJob {
     String username = Utils.getEnv("ES_USERNAME", null);
     String password = Utils.getEnv("ES_PASSWORD", null);
     Boolean clientNodeOnly = Boolean.parseBoolean(Utils.getEnv("ES_CLIENT_NODE_ONLY", "false"));
+    Boolean nodesWanOnly = Boolean.parseBoolean(Utils.getEnv("ES_NODES_WAN_ONLY", "false"));
     String indexPrefix = Utils.getEnv("ES_INDEX_PREFIX", null);
 
     final Map<String, String> sparkProperties = new LinkedHashMap<>();
@@ -63,7 +66,6 @@ public class ElasticsearchDependenciesJob {
       sparkProperties.put("spark.ui.enabled", "false");
       // don't die if there are no spans
       sparkProperties.put("es.index.read.missing.as.empty", "true");
-      sparkProperties.put("es.nodes.wan.only", Utils.getEnv("ES_NODES_WAN_ONLY", "false"));
       sparkProperties.put("es.net.ssl.keystore.location",
           getSystemPropertyAsFileResource("javax.net.ssl.keyStore"));
       sparkProperties.put("es.net.ssl.keystore.pass",
@@ -72,6 +74,7 @@ public class ElasticsearchDependenciesJob {
           getSystemPropertyAsFileResource("javax.net.ssl.trustStore"));
       sparkProperties.put("es.net.ssl.truststore.pass",
           System.getProperty("javax.net.ssl.trustStorePassword", ""));
+
     }
 
     // local[*] master lets us run & test the job locally without setting a Spark cluster
@@ -92,7 +95,7 @@ public class ElasticsearchDependenciesJob {
     public Builder nodes(String hosts) {
       Utils.checkNoTNull(hosts, "nodes");
       this.hosts = hosts;
-      sparkProperties.put("es.nodes.wan.only", "true");
+      this.nodesWanOnly = true;
       return this;
     }
 
@@ -120,7 +123,29 @@ public class ElasticsearchDependenciesJob {
       return this;
     }
 
+    /** Whether the connector is used against an Elasticsearch instance in a cloud/restricted
+     *  environment over the WAN, such as Amazon Web Services. In this mode, the
+     *  connector disables discovery and only connects through the declared es.nodes during all operations,
+     *  including reads and writes. Note that in this mode, performance is highly affected. */
+    public Builder nodesWanOnly(boolean wanOnly) {
+      this.nodesWanOnly = wanOnly;
+      return this;
+    }
+
+    private static void logIfNoPort(String hosts) {
+      if (!PORT_PATTERN.matcher(hosts).find()) {
+        log.warn("Port is not specified, default port 9200 will be used");
+      }
+    }
+
     public ElasticsearchDependenciesJob build() {
+      String hosts = System.getenv("ES_NODES");
+      String wanOnly = System.getenv("ES_NODES_WAN_ONLY");
+      // Optimize user configuration - nodes specified but wan only not
+      if (hosts != null && wanOnly == null) {
+        this.nodesWanOnly = true;
+      }
+      logIfNoPort(this.hosts);
       return new ElasticsearchDependenciesJob(this);
     }
   }
@@ -149,6 +174,9 @@ public class ElasticsearchDependenciesJob {
     conf.set("es.nodes", builder.hosts);
     if (builder.hosts.indexOf("https") != -1) {
       conf.set("es.net.ssl", "true");
+    }
+    if (builder.nodesWanOnly) {
+      conf.set("es.nodes.wan.only", "true");
     }
     if (builder.clientNodeOnly) {
       conf.set("es.nodes.discovery", "0");
