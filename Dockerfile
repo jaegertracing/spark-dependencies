@@ -16,8 +16,6 @@ FROM openjdk:8u232-jdk-slim-buster
 
 MAINTAINER Pavol Loffay <ploffay@redhat.com>
 
-MAINTAINER Pavol Loffay <ploffay@redhat.com>
-
 ENV APP_HOME /app/
 
 COPY pom.xml $APP_HOME
