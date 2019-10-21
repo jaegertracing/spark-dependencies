@@ -12,7 +12,9 @@
 # the License.
 #
 
-FROM openjdk:alpine
+FROM openjdk:8u232-jdk-slim-buster
+
+MAINTAINER Pavol Loffay <ploffay@redhat.com>
 
 MAINTAINER Pavol Loffay <ploffay@redhat.com>
 
