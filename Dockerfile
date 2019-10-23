@@ -12,9 +12,7 @@
 # the License.
 #
 
-FROM openjdk:8u232-jdk-slim-buster
-
-MAINTAINER Pavol Loffay <ploffay@redhat.com>
+FROM openjdk:8u232-jdk-slim-buster as builder
 
 ENV APP_HOME /app/
 
@@ -30,10 +28,20 @@ COPY mvnw $APP_HOME
 WORKDIR $APP_HOME
 RUN ./mvnw package -Dlicense.skip=true -DskipTests && rm -rf ~/.m2
 
+FROM openjdk:8u232-jre-slim-buster
+
+MAINTAINER Pavol Loffay <ploffay@redhat.com>
+
+ENV APP_HOME /app/
+
 COPY entrypoint.sh /
+
+COPY --from=builder $APP_HOME/jaeger-spark-dependencies/target/jaeger-spark-dependencies-0.0.1-SNAPSHOT.jar $APP_HOME/
 
 RUN chgrp root /etc/passwd && chmod g+rw /etc/passwd
 USER 185
 
+WORKDIR $APP_HOME
+
 ENTRYPOINT ["/entrypoint.sh"]
-CMD java ${JAVA_OPTS} -jar jaeger-spark-dependencies/target/jaeger-spark-dependencies-0.0.1-SNAPSHOT.jar
+CMD java ${JAVA_OPTS} -jar $APP_HOME/jaeger-spark-dependencies-0.0.1-SNAPSHOT.jar
