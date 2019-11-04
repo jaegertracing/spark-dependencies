@@ -16,7 +16,7 @@
 
 # Taken from https://github.com/radanalyticsio/openshift-spark/blob/2.4/modules/common/added/scripts/entrypoint#L50
 # OpenShift passes random UID and spark requires it to be present in /etc/passwd
-function patch_uid {
+patch_uid() {
     # Check whether there is a passwd entry for the container UID
     myuid=$(id -u)
     mygid=$(id -g)
