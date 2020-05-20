@@ -44,6 +44,7 @@ The following variables are common to all storage layers:
 
     * `SPARK_MASTER`: Spark master to submit the job to; Defaults to `local[*]`
     * `DATE`: Date in YYYY-mm-dd format. Denotes a day for which dependency links will be created.
+    * `DATE_MINUS_DAYS`: If `DATE` is not set or passed in, this value is subtracted from the current date to determine the day for which dependency links will be created.
 
 ### Cassandra
 Cassandra is used when `STORAGE=cassandra`.
