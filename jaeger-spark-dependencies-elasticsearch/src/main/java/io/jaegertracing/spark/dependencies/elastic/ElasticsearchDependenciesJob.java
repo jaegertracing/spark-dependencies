@@ -59,6 +59,7 @@ public class ElasticsearchDependenciesJob {
     Boolean clientNodeOnly = Boolean.parseBoolean(Utils.getEnv("ES_CLIENT_NODE_ONLY", "false"));
     Boolean nodesWanOnly = Boolean.parseBoolean(Utils.getEnv("ES_NODES_WAN_ONLY", "false"));
     String indexPrefix = Utils.getEnv("ES_INDEX_PREFIX", null);
+    String spanRange = Utils.getEnv("ES_TIME_RANGE", "24h");
 
     final Map<String, String> sparkProperties = new LinkedHashMap<>();
 
@@ -117,6 +118,12 @@ public class ElasticsearchDependenciesJob {
       return this;
     }
 
+     /** span range for Jaeger indices. By default 24h */
+    public Builder spanRange(String spanRange) {
+      this.spanRange = spanRange;
+      return this;
+    }
+
     /** Day to process dependencies for. Defaults to today. */
     public Builder day(LocalDate day) {
       this.day = day.atStartOfDay(ZoneOffset.UTC);
@@ -158,6 +165,7 @@ public class ElasticsearchDependenciesJob {
   private final ZonedDateTime day;
   private final SparkConf conf;
   private final String indexPrefix;
+  private final String spanRange;
 
   ElasticsearchDependenciesJob(Builder builder) {
     this.day = builder.day;
@@ -186,6 +194,7 @@ public class ElasticsearchDependenciesJob {
       conf.set(entry.getKey(), entry.getValue());
     }
     this.indexPrefix = builder.indexPrefix;
+    this.spanRange = builder.spanRange;
   }
 
   /**
@@ -219,7 +228,10 @@ public class ElasticsearchDependenciesJob {
         String spanIndex = spanIndices[i];
         String depIndex = depIndices[i];
         log.info("Running Dependencies job for {}, reading from {} index, result storing to {}", day, spanIndex, depIndex);
-        JavaPairRDD<String, Iterable<Span>> traces = JavaEsSpark.esJsonRDD(sc, spanIndex)
+        // Send raw query to ES to select only the docs / spans we want to consider for this job
+        // This doesn't change the default behavior as the daily indexes only contain up to 24h of data
+        String esQuery = String.format("{\"range\": {\"startTimeMillis\": { \"gte\": \"now-%s\" }}}", spanRange);
+        JavaPairRDD<String, Iterable<Span>> traces = JavaEsSpark.esJsonRDD(sc, spanIndex, esQuery)
             .map(new ElasticTupleToSpan())
             .groupBy(Span::getTraceId);
         List<Dependency> dependencyLinks = DependenciesSparkHelper.derive(traces,peerServiceTag);
