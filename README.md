@@ -1,4 +1,4 @@
-[![Build Status][ci-img]][ci] [![Docker Build Status](https://img.shields.io/docker/build/jaegertracing/spark-dependencies.svg)](https://hub.docker.com/r/jaegertracing/spark-dependencies/builds/) 
+[![Build Status][ci-img]][ci] [![Docker Build Status](https://img.shields.io/docker/build/jaegertracing/spark-dependencies.svg)](https://hub.docker.com/r/jaegertracing/spark-dependencies/builds/)
 [![Docker Pulls](https://img.shields.io/docker/pulls/jaegertracing/spark-dependencies.svg)](https://hub.docker.com/r/jaegertracing/spark-dependencies/)
 
 # Jaeger Spark dependencies
@@ -74,10 +74,12 @@ Elasticsearch is used when `STORAGE=elasticsearch`.
     * `ES_USERNAME` and `ES_PASSWORD`: Elasticsearch basic authentication. Use when X-Pack security
                                        (formerly Shield) is in place. By default no username or
                                        password is provided to elasticsearch.
-    * `ES_CLIENT_NODE_ONLY`: Set to true to disable elasticsearch cluster nodes.discovery and enable nodes.client.only. 
-                             If your elasticsearch cluster's data nodes only listen on loopback ip, set this to true. 
+    * `ES_CLIENT_NODE_ONLY`: Set to true to disable elasticsearch cluster nodes.discovery and enable nodes.client.only.
+                             If your elasticsearch cluster's data nodes only listen on loopback ip, set this to true.
                              Defaults to false
     * `ES_INDEX_PREFIX`: index prefix of Jaeger indices. By default unset.
+    * `ES_TIME_RANGE`: How far in the past the job should look to for spans, the maximum and default is `24h`.
+                       Any value accepted by [date-math](https://www.elastic.co/guide/en/elasticsearch/reference/current/common-options.html#date-math) can be used here, but the anchor is always `now`.
 
 Example usage:
 
@@ -93,11 +95,11 @@ STORAGE=elasticsearch ES_NODES=http://localhost:9200 java -jar jaeger-spark-depe
 docker build -t jaegertracing/spark-dependencies:latest .
 ```
 
-In tests it's possible to specify version of Jaeger images by env variable `JAEGER_VERSION` 
+In tests it's possible to specify version of Jaeger images by env variable `JAEGER_VERSION`
 or system property `jaeger.version`. By default tests are using latest images.
 
 ## License
-  
+
 [Apache 2.0 License](./LICENSE).
 
 
