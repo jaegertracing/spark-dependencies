@@ -29,6 +29,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
@@ -60,6 +62,7 @@ public class ElasticsearchDependenciesJob {
     Boolean nodesWanOnly = Boolean.parseBoolean(Utils.getEnv("ES_NODES_WAN_ONLY", "false"));
     String indexPrefix = Utils.getEnv("ES_INDEX_PREFIX", null);
     String spanRange = Utils.getEnv("ES_TIME_RANGE", "24h");
+    String servicesIgnore = Utils.getEnv("ES_SERVICES_IGNORE", null);
 
     final Map<String, String> sparkProperties = new LinkedHashMap<>();
 
@@ -124,6 +127,12 @@ public class ElasticsearchDependenciesJob {
       return this;
     }
 
+    /** Ignore services by name. By default empty */
+    public Builder servicesIgnore(String servicesIgnore) {
+      this.servicesIgnore = servicesIgnore;
+      return this;
+    }
+
     /** Day to process dependencies for. Defaults to today. */
     public Builder day(LocalDate day) {
       this.day = day.atStartOfDay(ZoneOffset.UTC);
@@ -166,6 +175,7 @@ public class ElasticsearchDependenciesJob {
   private final SparkConf conf;
   private final String indexPrefix;
   private final String spanRange;
+  private final String servicesIgnore;
 
   ElasticsearchDependenciesJob(Builder builder) {
     this.day = builder.day;
@@ -195,6 +205,8 @@ public class ElasticsearchDependenciesJob {
     }
     this.indexPrefix = builder.indexPrefix;
     this.spanRange = builder.spanRange;
+    this.servicesIgnore = builder.servicesIgnore;
+
   }
 
   /**
@@ -228,10 +240,7 @@ public class ElasticsearchDependenciesJob {
         String spanIndex = spanIndices[i];
         String depIndex = depIndices[i];
         log.info("Running Dependencies job for {}, reading from {} index, result storing to {}", day, spanIndex, depIndex);
-        // Send raw query to ES to select only the docs / spans we want to consider for this job
-        // This doesn't change the default behavior as the daily indexes only contain up to 24h of data
-        String esQuery = String.format("{\"range\": {\"startTimeMillis\": { \"gte\": \"now-%s\" }}}", spanRange);
-        JavaPairRDD<String, Iterable<Span>> traces = JavaEsSpark.esJsonRDD(sc, spanIndex, esQuery)
+        JavaPairRDD<String, Iterable<Span>> traces = JavaEsSpark.esJsonRDD(sc, spanIndex, esQuery())
             .map(new ElasticTupleToSpan())
             .groupBy(Span::getTraceId);
         List<Dependency> dependencyLinks = DependenciesSparkHelper.derive(traces,peerServiceTag);
@@ -252,6 +261,25 @@ public class ElasticsearchDependenciesJob {
     } finally {
       sc.stop();
     }
+  }
+
+  /**
+   * Create ElasticSearch query to be applied by the job while retrieving the spans.
+   * @return ElasticSearch query to be applied by the job while retrieving the spans.
+   */
+  private String esQuery() {
+    // Send raw query to ES to select only the docs / spans we want to consider for this job
+    // This doesn't change the default behavior as the daily indexes only contain up to 24h of data
+    String esMustQuery = String.format("{\"range\": {\"startTimeMillis\": { \"gte\": \"now-%s\" }}}", spanRange);
+    String esMustNotQuery = "";
+    if (servicesIgnore != null) {
+      esMustNotQuery = Stream.of(servicesIgnore.split(","))
+          .filter(serviceName -> !serviceName.trim().isEmpty())
+          .map(serviceName -> String.format("{\"match_phrase\":{\"process.serviceName\":{\"query\":\"%s\"}}}", serviceName.trim()))
+          .collect(Collectors.toList())
+          .toString();
+    }
+    return String.format("{\"bool\":{\"must_not\":[%s],\"must\":[%s]}}", esMustNotQuery, esMustQuery);
   }
 
   private EsMajorVersion getEsVersion() {
