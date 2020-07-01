@@ -19,7 +19,7 @@ import static org.junit.Assert.assertEquals;
 import brave.Tracing;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.jaegertracing.Tracer;
+import io.jaegertracing.internal.JaegerTracer;
 import io.jaegertracing.spark.dependencies.test.TracersGenerator.Flushable;
 import io.jaegertracing.spark.dependencies.test.TracersGenerator.Tuple;
 import io.jaegertracing.spark.dependencies.test.rest.DependencyLink;
@@ -74,7 +74,7 @@ public abstract class DependenciesTest {
 
   @Test
   public void testJaegerOneTrace() throws Exception {
-    TreeGenerator<Tracer> treeGenerator = new TreeGenerator(
+    TreeGenerator<JaegerTracer> treeGenerator = new TreeGenerator(
         TracersGenerator.generateJaeger(5, collectorUrl));
     Node<JaegerWrapper> root = treeGenerator.generateTree(50, 3);
     Traversals.postOrder(root, (node, parent) -> node.getTracingWrapper().get().getSpan().finish());
@@ -91,7 +91,7 @@ public abstract class DependenciesTest {
 
   @Test
   public void testJaegerMultipleTraces() throws Exception {
-    TreeGenerator<Tracer> treeGenerator = new TreeGenerator(
+    TreeGenerator<JaegerTracer> treeGenerator = new TreeGenerator(
         TracersGenerator.generateJaeger(50, collectorUrl));
     Map<String, Map<String, Long>> expectedDependencies = new LinkedHashMap<>();
     for (int i = 0; i < 20; i++) {
@@ -171,9 +171,9 @@ public abstract class DependenciesTest {
 
   @Test
   public void testMultipleReferences() throws Exception {
-    Tuple<Tracer, Flushable> s1Tuple = TracersGenerator.createJaeger("S1", collectorUrl);
-    Tuple<Tracer, Flushable> s2Tuple = TracersGenerator.createJaeger("S2", collectorUrl);
-    Tuple<Tracer, Flushable> s3Tuple = TracersGenerator.createJaeger("S3", collectorUrl);
+    Tuple<JaegerTracer, Flushable> s1Tuple = TracersGenerator.createJaeger("S1", collectorUrl);
+    Tuple<JaegerTracer, Flushable> s2Tuple = TracersGenerator.createJaeger("S2", collectorUrl);
+    Tuple<JaegerTracer, Flushable> s3Tuple = TracersGenerator.createJaeger("S3", collectorUrl);
 
     Span s1Span = s1Tuple.getA().buildSpan("foo")
         .ignoreActiveSpan()
