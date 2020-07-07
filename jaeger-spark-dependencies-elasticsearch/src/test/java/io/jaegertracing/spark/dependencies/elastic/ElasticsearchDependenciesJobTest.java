@@ -14,7 +14,7 @@
 package io.jaegertracing.spark.dependencies.elastic;
 
 
-import io.jaegertracing.Tracer;
+import io.jaegertracing.internal.JaegerTracer;
 import io.jaegertracing.spark.dependencies.test.DependenciesTest;
 import io.jaegertracing.spark.dependencies.test.TracersGenerator;
 import java.io.IOException;
@@ -49,7 +49,7 @@ public class ElasticsearchDependenciesJobTest extends DependenciesTest {
 
   @Before
   public void before() {
-    Tracer initStorageTracer = TracersGenerator.createJaeger(UUID.randomUUID().toString(), collectorUrl).getA();
+    JaegerTracer initStorageTracer = TracersGenerator.createJaeger(UUID.randomUUID().toString(), collectorUrl).getA();
     initStorageTracer.buildSpan(UUID.randomUUID().toString()).withTag("foo", "bar").start().finish();
     initStorageTracer.close();
     waitJaegerQueryContains(initStorageTracer.getServiceName(), "foo");

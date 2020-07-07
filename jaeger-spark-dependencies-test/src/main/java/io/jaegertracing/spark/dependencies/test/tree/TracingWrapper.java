@@ -15,8 +15,8 @@ package io.jaegertracing.spark.dependencies.test.tree;
 
 import brave.Span.Kind;
 import brave.Tracing;
-import io.jaegertracing.Span;
-import io.jaegertracing.Tracer;
+import io.jaegertracing.internal.JaegerSpan;
+import io.jaegertracing.internal.JaegerTracer;
 import java.util.UUID;
 
 /**
@@ -34,10 +34,10 @@ public interface TracingWrapper<T extends TracingWrapper> {
   void createChildSpan(TracingWrapper<T> parent);
 
   class JaegerWrapper implements TracingWrapper<JaegerWrapper> {
-    private final Tracer tracer;
-    private Span span;
+    private final JaegerTracer tracer;
+    private JaegerSpan span;
 
-    public JaegerWrapper(Tracer tracer) {
+    public JaegerWrapper(JaegerTracer tracer) {
       this.tracer = tracer;
     }
 
@@ -62,10 +62,10 @@ public interface TracingWrapper<T extends TracingWrapper> {
       if (parent != null) {
         spanBuilder.asChildOf(parent.get().span);
       }
-      span = (Span)spanBuilder.startManual();
+      span = (JaegerSpan)spanBuilder.startManual();
     }
 
-    public Span getSpan() {
+    public JaegerSpan getSpan() {
       return span;
     }
   }

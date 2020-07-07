@@ -15,16 +15,16 @@ package io.jaegertracing.spark.dependencies.test;
 
 import brave.Tracing;
 import brave.sampler.Sampler;
-import io.jaegertracing.Tracer;
-import io.jaegertracing.Tracer.Builder;
-import io.jaegertracing.exceptions.SenderException;
-import io.jaegertracing.metrics.Metrics;
-import io.jaegertracing.reporters.RemoteReporter;
-import io.jaegertracing.samplers.ConstSampler;
-import io.jaegertracing.senders.HttpSender;
+import io.jaegertracing.internal.JaegerTracer;
+import io.jaegertracing.internal.JaegerTracer.Builder;
+import io.jaegertracing.internal.exceptions.SenderException;
+import io.jaegertracing.internal.metrics.Metrics;
+import io.jaegertracing.internal.reporters.RemoteReporter;
+import io.jaegertracing.internal.samplers.ConstSampler;
 import io.jaegertracing.spark.dependencies.test.tree.TracingWrapper;
 import io.jaegertracing.spark.dependencies.test.tree.TracingWrapper.JaegerWrapper;
 import io.jaegertracing.spark.dependencies.test.tree.TracingWrapper.ZipkinWrapper;
+import io.jaegertracing.thrift.internal.senders.HttpSender;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -81,7 +81,7 @@ public class TracersGenerator {
       if (tracer instanceof Tracing) {
         return new ZipkinWrapper((brave.Tracing)tracer, serviceName);
       }
-      return new JaegerWrapper((io.jaegertracing.Tracer)tracer);
+      return new JaegerWrapper((io.jaegertracing.internal.JaegerTracer)tracer);
     }
 
     public Flushable flushable() {
@@ -89,17 +89,17 @@ public class TracersGenerator {
     }
   }
 
-  public static List<TracerHolder<Tracer>> generateJaeger(int number, String collectorUrl) {
-    List<TracerHolder<Tracer>> tracers = new ArrayList<>(number);
+  public static List<TracerHolder<JaegerTracer>> generateJaeger(int number, String collectorUrl) {
+    List<TracerHolder<JaegerTracer>> tracers = new ArrayList<>(number);
     for (int i = 0; i < number; i++) {
       String serviceName = serviceName();
-      Tuple<Tracer, Flushable> jaegerTracer = createJaeger(serviceName, collectorUrl);
+      Tuple<JaegerTracer, Flushable> jaegerTracer = createJaeger(serviceName, collectorUrl);
       tracers.add(new TracerHolder<>(jaegerTracer.getA(), serviceName, jaegerTracer.getB()));
     }
     return tracers;
   }
 
-  public static Tuple<Tracer, Flushable> createJaeger(String serviceName, String collectorUrl) {
+  public static Tuple<JaegerTracer, Flushable> createJaeger(String serviceName, String collectorUrl) {
     HttpSender sender = new HttpSender.Builder(collectorUrl + "/api/traces").build();
     RemoteReporter reporter = new RemoteReporter.Builder()
         .withSender(sender)
