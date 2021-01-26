@@ -1,0 +1,702 @@
+[
+  {
+    "traceID": "6d4eb560b6582434",
+    "spanID": "a23e6b3fef786f41",
+    "flags": 1,
+    "operationName": "delay1",
+    "references": [
+      {
+        "refType": "CHILD_OF",
+        "traceID": "6d4eb560b6582434",
+        "spanID": "7462df3f4a265d2e"
+      }
+    ],
+    "startTime": 1611677021714352,
+    "startTimeMillis": 1611677021714,
+    "duration": 5000397,
+    "tags": [],
+    "tag": {
+      "component": "camel-delay",
+      "internal@span@format": "proto"
+    },
+    "logs": [],
+    "process": {
+      "serviceName": "prod-crm-database",
+      "tags": [],
+      "tag": {
+        "hostname": "crm-database-74b7569f9-pllnz",
+        "ip": "100.104.0.5",
+        "jaeger@version": "Java-1.5.0"
+      }
+    }
+  },
+  {
+    "traceID": "6d4eb560b6582434",
+    "spanID": "2728cbf7f073bd97",
+    "flags": 1,
+    "operationName": "log1",
+    "references": [
+      {
+        "refType": "CHILD_OF",
+        "traceID": "6d4eb560b6582434",
+        "spanID": "7462df3f4a265d2e"
+      }
+    ],
+    "startTime": 1611677021714135,
+    "startTimeMillis": 1611677021714,
+    "duration": 144,
+    "tags": [],
+    "tag": {
+      "component": "camel-log",
+      "internal@span@format": "proto"
+    },
+    "logs": [],
+    "process": {
+      "serviceName": "prod-crm-database",
+      "tags": [],
+      "tag": {
+        "hostname": "crm-database-74b7569f9-pllnz",
+        "ip": "100.104.0.5",
+        "jaeger@version": "Java-1.5.0"
+      }
+    }
+  },
+  {
+    "traceID": "6d4eb560b6582434",
+    "spanID": "9ffd438aa3312821",
+    "flags": 1,
+    "operationName": "to1",
+    "references": [
+      {
+        "refType": "CHILD_OF",
+        "traceID": "6d4eb560b6582434",
+        "spanID": "fd2cba5a8f200853"
+      }
+    ],
+    "startTime": 1611677021713833,
+    "startTimeMillis": 1611677021713,
+    "duration": 5001315,
+    "tags": [],
+    "tag": {
+      "component": "camel-to",
+      "internal@span@format": "proto"
+    },
+    "logs": [],
+    "process": {
+      "serviceName": "prod-crm-database",
+      "tags": [],
+      "tag": {
+        "hostname": "crm-database-74b7569f9-pllnz",
+        "ip": "100.104.0.5",
+        "jaeger@version": "Java-1.5.0"
+      }
+    }
+  },
+  {
+    "traceID": "6d4eb560b6582434",
+    "spanID": "2c2f57152495c702",
+    "flags": 1,
+    "operationName": "process2",
+    "references": [
+      {
+        "refType": "CHILD_OF",
+        "traceID": "6d4eb560b6582434",
+        "spanID": "79bdfa1c6658b222"
+      }
+    ],
+    "startTime": 1611677021713375,
+    "startTimeMillis": 1611677021713,
+    "duration": 286,
+    "tags": [],
+    "tag": {
+      "component": "camel-process",
+      "internal@span@format": "proto"
+    },
+    "logs": [],
+    "process": {
+      "serviceName": "prod-crm-database",
+      "tags": [],
+      "tag": {
+        "hostname": "crm-database-74b7569f9-pllnz",
+        "ip": "100.104.0.5",
+        "jaeger@version": "Java-1.5.0"
+      }
+    }
+  },
+  {
+    "traceID": "6d4eb560b6582434",
+    "spanID": "7462df3f4a265d2e",
+    "flags": 1,
+    "operationName": "get_accounts",
+    "references": [
+      {
+        "refType": "CHILD_OF",
+        "traceID": "6d4eb560b6582434",
+        "spanID": "9ffd438aa3312821"
+      }
+    ],
+    "startTime": 1611677021713917,
+    "startTimeMillis": 1611677021713,
+    "duration": 5001167,
+    "tags": [],
+    "tag": {
+      "camel@uri": "direct://get_accounts",
+      "component": "camel-direct",
+      "internal@span@format": "proto"
+    },
+    "logs": [
+      {
+        "timestamp": 1611677021714159,
+        "fields": [
+          {
+            "key": "message",
+            "type": "string",
+            "value": "Delaying for 5 seconds..."
+          }
+        ]
+      }
+    ],
+    "process": {
+      "serviceName": "prod-crm-database",
+      "tags": [],
+      "tag": {
+        "hostname": "crm-database-74b7569f9-pllnz",
+        "ip": "100.104.0.5",
+        "jaeger@version": "Java-1.5.0"
+      }
+    }
+  },
+  {
+    "traceID": "6d4eb560b6582434",
+    "spanID": "61242cfebfa300d8",
+    "flags": 1,
+    "operationName": "setHeader6",
+    "references": [
+      {
+        "refType": "CHILD_OF",
+        "traceID": "6d4eb560b6582434",
+        "spanID": "79bdfa1c6658b222"
+      }
+    ],
+    "startTime": 1611677021713218,
+    "startTimeMillis": 1611677021713,
+    "duration": 43,
+    "tags": [],
+    "tag": {
+      "component": "camel-setHeader",
+      "internal@span@format": "proto"
+    },
+    "logs": [],
+    "process": {
+      "serviceName": "prod-crm-database",
+      "tags": [],
+      "tag": {
+        "hostname": "crm-database-74b7569f9-pllnz",
+        "ip": "100.104.0.5",
+        "jaeger@version": "Java-1.5.0"
+      }
+    }
+  },
+  {
+    "traceID": "6d4eb560b6582434",
+    "spanID": "79bdfa1c6658b222",
+    "flags": 1,
+    "operationName": "interceptFrom1",
+    "references": [
+      {
+        "refType": "CHILD_OF",
+        "traceID": "6d4eb560b6582434",
+        "spanID": "fd2cba5a8f200853"
+      }
+    ],
+    "startTime": 1611677021713017,
+    "startTimeMillis": 1611677021713,
+    "duration": 750,
+    "tags": [],
+    "tag": {
+      "component": "camel-interceptFrom",
+      "internal@span@format": "proto"
+    },
+    "logs": [],
+    "process": {
+      "serviceName": "prod-crm-database",
+      "tags": [],
+      "tag": {
+        "hostname": "crm-database-74b7569f9-pllnz",
+        "ip": "100.104.0.5",
+        "jaeger@version": "Java-1.5.0"
+      }
+    }
+  },
+  {
+    "traceID": "6d4eb560b6582434",
+    "spanID": "fd2cba5a8f200853",
+    "flags": 1,
+    "operationName": "/accounts",
+    "references": [
+      {
+        "refType": "CHILD_OF",
+        "traceID": "6d4eb560b6582434",
+        "spanID": "e205b58e5060b5f9"
+      }
+    ],
+    "startTime": 1611677021712493,
+    "startTimeMillis": 1611677021712,
+    "duration": 5002929,
+    "tags": [],
+    "tag": {
+      "camel@uri": "rest://get:/accounts?consumerComponentName=undertow&produces=application%2Fjson&routeId=get-accounts",
+      "component": "camel-rest",
+      "http@method": "GET",
+      "http@url": "http://crm-database.prod.svc.cluster.local:9000/api/accounts",
+      "internal@span@format": "proto",
+      "span@kind": "server"
+    },
+    "logs": [],
+    "process": {
+      "serviceName": "prod-crm-database",
+      "tags": [],
+      "tag": {
+        "hostname": "crm-database-74b7569f9-pllnz",
+        "ip": "100.104.0.5",
+        "jaeger@version": "Java-1.5.0"
+      }
+    }
+  },
+  {
+    "traceID": "6d4eb560b6582434",
+    "spanID": "538ecc56541fd9b5",
+    "flags": 1,
+    "operationName": "salesforce",
+    "references": [
+      {
+        "refType": "CHILD_OF",
+        "traceID": "6d4eb560b6582434",
+        "spanID": "dbb75b85afba411b"
+      }
+    ],
+    "startTime": 1611677021708326,
+    "startTimeMillis": 1611677021708,
+    "duration": 310996,
+    "tags": [],
+    "tag": {
+      "camel@uri": "salesforce://query?sObjectQuery=SELECT+Id%2C+Name%2C+Type%2C+Industry%2C+BillingAddress%2C+Fax%2C+Phone%2C+Website+FROM+Account",
+      "component": "camel-salesforce",
+      "internal@span@format": "proto",
+      "span@kind": "client"
+    },
+    "logs": [],
+    "process": {
+      "serviceName": "prod-crm-salesforce",
+      "tags": [],
+      "tag": {
+        "hostname": "crm-salesforce-5f9948dc9f-s8jhg",
+        "ip": "100.104.0.4",
+        "jaeger@version": "Java-1.5.0"
+      }
+    }
+  },
+  {
+    "traceID": "6d4eb560b6582434",
+    "spanID": "41c29b58335dc241",
+    "flags": 1,
+    "operationName": "/accounts",
+    "references": [
+      {
+        "refType": "CHILD_OF",
+        "traceID": "6d4eb560b6582434",
+        "spanID": "37487449aedd94a0"
+      }
+    ],
+    "startTime": 1611677021707212,
+    "startTimeMillis": 1611677021707,
+    "duration": 322206,
+    "tags": [],
+    "tag": {
+      "camel@uri": "rest://get:/accounts?consumerComponentName=undertow&produces=application%2Fjson&routeId=get-accounts",
+      "component": "camel-rest",
+      "http@method": "GET",
+      "http@status_code": 200,
+      "http@url": "http://crm-salesforce.prod.svc.cluster.local:9000/api/accounts",
+      "internal@span@format": "proto",
+      "span@kind": "server"
+    },
+    "logs": [],
+    "process": {
+      "serviceName": "prod-crm-salesforce",
+      "tags": [],
+      "tag": {
+        "hostname": "crm-salesforce-5f9948dc9f-s8jhg",
+        "ip": "100.104.0.4",
+        "jaeger@version": "Java-1.5.0"
+      }
+    }
+  },
+  {
+    "traceID": "6d4eb560b6582434",
+    "spanID": "dbb75b85afba411b",
+    "flags": 1,
+    "operationName": "get-accounts",
+    "references": [
+      {
+        "refType": "CHILD_OF",
+        "traceID": "6d4eb560b6582434",
+        "spanID": "41c29b58335dc241"
+      }
+    ],
+    "startTime": 1611677021707992,
+    "startTimeMillis": 1611677021707,
+    "duration": 321098,
+    "tags": [],
+    "tag": {
+      "camel@uri": "direct://get-accounts",
+      "component": "camel-direct",
+      "internal@span@format": "proto"
+    },
+    "logs": [
+      {
+        "timestamp": 1611677021708078,
+        "fields": [
+          {
+            "key": "message",
+            "type": "string",
+            "value": "Calling salesforce query..."
+          }
+        ]
+      }
+    ],
+    "process": {
+      "serviceName": "prod-crm-salesforce",
+      "tags": [],
+      "tag": {
+        "hostname": "crm-salesforce-5f9948dc9f-s8jhg",
+        "ip": "100.104.0.4",
+        "jaeger@version": "Java-1.5.0"
+      }
+    }
+  },
+  {
+    "traceID": "6d4eb560b6582434",
+    "spanID": "e205b58e5060b5f9",
+    "operationName": "crm-database.prod.svc.cluster.local:9000",
+    "references": [
+      {
+        "refType": "CHILD_OF",
+        "traceID": "6d4eb560b6582434",
+        "spanID": "d8af75b0c35d068d"
+      }
+    ],
+    "startTime": 1611677021706928,
+    "startTimeMillis": 1611677021706,
+    "duration": 5009616,
+    "tags": [],
+    "tag": {
+      "component": "proxy",
+      "downstream_cluster": "-",
+      "guid:x-request-id": "339a6844-f04e-9637-8cb1-edfb8e536b2a",
+      "http@method": "GET",
+      "http@protocol": "HTTP/2",
+      "http@status_code": "204",
+      "http@url": "https://crm-database.prod.svc.cluster.local:9000/api/accounts?",
+      "internal@span@format": "zipkin",
+      "node_id": "prod.crm-database-74b7569f9-pllnz.prod",
+      "peer@address": "100.104.0.2",
+      "request_size": "0",
+      "response_flags": "-",
+      "response_size": "0",
+      "span@kind": "server",
+      "upstream_cluster": "localhost:9000",
+      "user_agent": "PostmanRuntime/7.26.8"
+    },
+    "logs": [],
+    "process": {
+      "serviceName": "crm-database_prod_svc_8080",
+      "tags": [],
+      "tag": {
+        "ip": 1684537349
+      }
+    }
+  },
+  {
+    "traceID": "6d4eb560b6582434",
+    "spanID": "37487449aedd94a0",
+    "operationName": "crm-salesforce.prod.svc.cluster.local:9000",
+    "references": [
+      {
+        "refType": "CHILD_OF",
+        "traceID": "6d4eb560b6582434",
+        "spanID": "d8af75b0c35d068d"
+      }
+    ],
+    "startTime": 1611677021705674,
+    "startTimeMillis": 1611677021705,
+    "duration": 325070,
+    "tags": [],
+    "tag": {
+      "component": "proxy",
+      "downstream_cluster": "-",
+      "guid:x-request-id": "339a6844-f04e-9637-8cb1-edfb8e536b2a",
+      "http@method": "GET",
+      "http@protocol": "HTTP/2",
+      "http@status_code": "200",
+      "http@url": "https://crm-salesforce.prod.svc.cluster.local:9000/api/accounts?",
+      "internal@span@format": "zipkin",
+      "node_id": "prod.crm-salesforce-5f9948dc9f-s8jhg.prod",
+      "peer@address": "100.104.0.2",
+      "request_size": "0",
+      "response_flags": "-",
+      "response_size": "4956",
+      "span@kind": "server",
+      "upstream_cluster": "localhost:9000",
+      "user_agent": "PostmanRuntime/7.26.8"
+    },
+    "logs": [],
+    "process": {
+      "serviceName": "crm-salesforce_prod_svc_8080",
+      "tags": [],
+      "tag": {
+        "ip": 1684537348
+      }
+    }
+  },
+  {
+    "traceID": "6d4eb560b6582434",
+    "spanID": "e205b58e5060b5f9",
+    "operationName": "crm-database.prod.svc.cluster.local:9000",
+    "references": [
+      {
+        "refType": "CHILD_OF",
+        "traceID": "6d4eb560b6582434",
+        "spanID": "d8af75b0c35d068d"
+      }
+    ],
+    "startTime": 1611677021703482,
+    "startTimeMillis": 1611677021703,
+    "duration": 5013968,
+    "tags": [],
+    "tag": {
+      "component": "proxy",
+      "downstream_cluster": "-",
+      "guid:x-request-id": "339a6844-f04e-9637-8cb1-edfb8e536b2a",
+      "http@method": "GET",
+      "http@protocol": "HTTP/1.1",
+      "http@status_code": "204",
+      "http@url": "https://crm-database.prod.svc.cluster.local:9000/api/accounts?",
+      "internal@span@format": "zipkin",
+      "node_id": "prod.crm-conductor-7658b6f4d9-9jpmx.prod",
+      "peer@address": "100.104.0.2",
+      "request_size": "0",
+      "response_flags": "-",
+      "response_size": "0",
+      "span@kind": "client",
+      "upstream_cluster": "crm-database_prod_svc_9000",
+      "user_agent": "PostmanRuntime/7.26.8"
+    },
+    "logs": [],
+    "process": {
+      "serviceName": "crm-conductor_prod_svc_8080",
+      "tags": [],
+      "tag": {
+        "ip": 1684537346
+      }
+    }
+  },
+  {
+    "traceID": "6d4eb560b6582434",
+    "spanID": "37487449aedd94a0",
+    "operationName": "crm-salesforce.prod.svc.cluster.local:9000",
+    "references": [
+      {
+        "refType": "CHILD_OF",
+        "traceID": "6d4eb560b6582434",
+        "spanID": "d8af75b0c35d068d"
+      }
+    ],
+    "startTime": 1611677021702335,
+    "startTimeMillis": 1611677021702,
+    "duration": 328683,
+    "tags": [],
+    "tag": {
+      "component": "proxy",
+      "downstream_cluster": "-",
+      "guid:x-request-id": "339a6844-f04e-9637-8cb1-edfb8e536b2a",
+      "http@method": "GET",
+      "http@protocol": "HTTP/1.1",
+      "http@status_code": "200",
+      "http@url": "https://crm-salesforce.prod.svc.cluster.local:9000/api/accounts?",
+      "internal@span@format": "zipkin",
+      "node_id": "prod.crm-conductor-7658b6f4d9-9jpmx.prod",
+      "peer@address": "100.104.0.2",
+      "request_size": "0",
+      "response_flags": "-",
+      "response_size": "4956",
+      "span@kind": "client",
+      "upstream_cluster": "crm-salesforce_prod_svc_9000",
+      "user_agent": "PostmanRuntime/7.26.8"
+    },
+    "logs": [],
+    "process": {
+      "serviceName": "crm-conductor_prod_svc_8080",
+      "tags": [],
+      "tag": {
+        "ip": 1684537346
+      }
+    }
+  },
+  {
+    "traceID": "6d4eb560b6582434",
+    "spanID": "d8af75b0c35d068d",
+    "operationName": "crm-conductor.prod.svc.cluster.local:9000",
+    "references": [
+      {
+        "refType": "CHILD_OF",
+        "traceID": "6d4eb560b6582434",
+        "spanID": "6d4eb560b6582434"
+      }
+    ],
+    "startTime": 1611677021672401,
+    "startTimeMillis": 1611677021672,
+    "duration": 5047572,
+    "tags": [],
+    "tag": {
+      "component": "proxy",
+      "downstream_cluster": "-",
+      "guid:x-request-id": "339a6844-f04e-9637-8cb1-edfb8e536b2a",
+      "http@method": "GET",
+      "http@protocol": "HTTP/2",
+      "http@status_code": "200",
+      "http@url": "https://crm-conductor.prod.svc.cluster.local:9000/api/accounts?",
+      "internal@span@format": "zipkin",
+      "node_id": "prod.crm-conductor-7658b6f4d9-9jpmx.prod",
+      "peer@address": "100.104.0.6",
+      "request_size": "0",
+      "response_flags": "-",
+      "response_size": "4956",
+      "span@kind": "server",
+      "upstream_cluster": "localhost:9000",
+      "user_agent": "PostmanRuntime/7.26.8"
+    },
+    "logs": [],
+    "process": {
+      "serviceName": "crm-conductor_prod_svc_8080",
+      "tags": [],
+      "tag": {
+        "ip": 1684537346
+      }
+    }
+  },
+  {
+    "traceID": "6d4eb560b6582434",
+    "spanID": "d8af75b0c35d068d",
+    "operationName": "crm-conductor.prod.svc.cluster.local:9000",
+    "references": [
+      {
+        "refType": "CHILD_OF",
+        "traceID": "6d4eb560b6582434",
+        "spanID": "6d4eb560b6582434"
+      }
+    ],
+    "startTime": 1611677021668687,
+    "startTimeMillis": 1611677021668,
+    "duration": 5052178,
+    "tags": [],
+    "tag": {
+      "component": "proxy",
+      "downstream_cluster": "-",
+      "guid:x-request-id": "339a6844-f04e-9637-8cb1-edfb8e536b2a",
+      "http@method": "GET",
+      "http@protocol": "HTTP/1.1",
+      "http@status_code": "200",
+      "http@url": "https://crm-conductor.prod.svc.cluster.local:9000/api/accounts?",
+      "internal@span@format": "zipkin",
+      "node_id": "prod.crm-mobile-68cb8c4d46-68g56.prod",
+      "peer@address": "100.104.0.6",
+      "request_size": "0",
+      "response_flags": "-",
+      "response_size": "4956",
+      "span@kind": "client",
+      "upstream_cluster": "crm-conductor_prod_svc_9000",
+      "user_agent": "PostmanRuntime/7.26.8"
+    },
+    "logs": [],
+    "process": {
+      "serviceName": "crm-mobile_prod_svc_8080",
+      "tags": [],
+      "tag": {
+        "ip": 1684537350
+      }
+    }
+  },
+  {
+    "traceID": "6d4eb560b6582434",
+    "spanID": "6d4eb560b6582434",
+    "operationName": "apps.tavros.mtk.ms3-inc.com",
+    "references": [],
+    "startTime": 1611677021627568,
+    "startTimeMillis": 1611677021627,
+    "duration": 5096262,
+    "tags": [],
+    "tag": {
+      "component": "proxy",
+      "downstream_cluster": "-",
+      "guid:x-request-id": "339a6844-f04e-9637-8cb1-edfb8e536b2a",
+      "http@method": "GET",
+      "http@protocol": "HTTP/2",
+      "http@status_code": "200",
+      "http@url": "https://apps.tavros.mtk.ms3-inc.com/api/accounts",
+      "internal@span@format": "zipkin",
+      "node_id": "prod.crm-mobile-68cb8c4d46-68g56.prod",
+      "peer@address": "100.120.0.9",
+      "request_size": "0",
+      "response_flags": "-",
+      "response_size": "4956",
+      "span@kind": "server",
+      "upstream_cluster": "localhost:9000",
+      "user_agent": "PostmanRuntime/7.26.8"
+    },
+    "logs": [],
+    "process": {
+      "serviceName": "crm-mobile_prod_svc_8080",
+      "tags": [],
+      "tag": {
+        "ip": 1684537350
+      }
+    }
+  },
+  {
+    "traceID": "6d4eb560b6582434",
+    "spanID": "6d4eb560b6582434",
+    "operationName": "apps.tavros.mtk.ms3-inc.com",
+    "references": [],
+    "startTime": 1611677021592818,
+    "startTimeMillis": 1611677021592,
+    "duration": 5218805,
+    "tags": [],
+    "tag": {
+      "component": "proxy",
+      "downstream_cluster": "-",
+      "guid:x-request-id": "339a6844-f04e-9637-8cb1-edfb8e536b2a",
+      "http@method": "GET",
+      "http@protocol": "HTTP/1.1",
+      "http@status_code": "200",
+      "http@url": "https://apps.tavros.mtk.ms3-inc.com/api/accounts",
+      "internal@span@format": "zipkin",
+      "node_id": "prod.kong-prod-kong-5fd5894f8b-xq7jb.kong",
+      "peer@address": "100.120.0.9",
+      "request_size": "0",
+      "response_flags": "-",
+      "response_size": "4956",
+      "span@kind": "client",
+      "upstream_cluster": "crm-mobile_prod_svc_9000",
+      "user_agent": "PostmanRuntime/7.26.8"
+    },
+    "logs": [],
+    "process": {
+      "serviceName": "kong-prod-kong-admin_kong_svc_8001",
+      "tags": [],
+      "tag": {
+        "ip": 1685585929
+      }
+    }
+  }
+]
