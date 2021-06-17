@@ -29,7 +29,7 @@ jobs:
 
     - stage: test
       env: [ NAME=Jaeger latest, ES7 ]
-      script: ELASTICSEARCH_VERSION=7.3.0 ./mvnw clean test -pl jaeger-spark-dependencies-elasticsearch
+      script: ELASTICSEARCH_VERSION=7.6.2 ./mvnw clean test -pl jaeger-spark-dependencies-elasticsearch
 
 # Don't build release tags. This avoids publish conflicts because the version commit exists both on master and the release tag.
 # See https://github.com/travis-ci/travis-ci/issues/1532
