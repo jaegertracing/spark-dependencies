@@ -80,6 +80,7 @@ Elasticsearch is used when `STORAGE=elasticsearch`.
     * `ES_INDEX_PREFIX`: index prefix of Jaeger indices. By default unset.
     * `ES_TIME_RANGE`: How far in the past the job should look to for spans, the maximum and default is `24h`.
                        Any value accepted by [date-math](https://www.elastic.co/guide/en/elasticsearch/reference/current/common-options.html#date-math) can be used here, but the anchor is always `now`.
+    * `ES_SERVICES_IGNORE`: Comma seperated (,) names of the services that will be ignored by the job (e.g. `serviceX,serviceY`). 
 
 Example usage:
 
