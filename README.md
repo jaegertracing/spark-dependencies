@@ -78,6 +78,8 @@ Elasticsearch is used when `STORAGE=elasticsearch`.
                              If your elasticsearch cluster's data nodes only listen on loopback ip, set this to true.
                              Defaults to false
     * `ES_INDEX_PREFIX`: index prefix of Jaeger indices. By default unset.
+    * `ES_INDEX_DATE_SEPARATOR`: index date separator of Jaeger indices. The default value is `-`. 
+                                 For example `.` will find index "jaeger-span-2020.11.25". 
     * `ES_TIME_RANGE`: How far in the past the job should look to for spans, the maximum and default is `24h`.
                        Any value accepted by [date-math](https://www.elastic.co/guide/en/elasticsearch/reference/current/common-options.html#date-math) can be used here, but the anchor is always `now`.
 
