@@ -34,5 +34,7 @@ jobs:
       # TODO remove once testcontainers are updated
       - name: pull ryuk image
         run: docker pull quay.io/testcontainers/ryuk:0.2.3
+      - name: compile
+        run: ./mvnw clean install -DskipTests
       - name: test
         run: ELASTICSEARCH_VERSION=7.3.0 ./mvnw clean test -pl jaeger-spark-dependencies-elasticsearch
