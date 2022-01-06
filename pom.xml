@@ -182,6 +182,7 @@
             <exclude>mvnw</exclude>
             <exclude>mvnw.cmd</exclude>
             <exclude>travis/publish.sh</exclude>
+            <exclude>.github/**</exclude>
             <exclude>.mvn/wrapper/maven-wrapper.properties</exclude>
             <exclude>pom.xml</exclude>
             <exclude>**/ElasticsearchDependenciesJob.java</exclude>

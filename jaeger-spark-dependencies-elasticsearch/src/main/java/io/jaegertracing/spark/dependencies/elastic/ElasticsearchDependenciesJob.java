@@ -32,6 +32,7 @@ import java.util.regex.Pattern;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
+import org.apache.spark.api.java.function.Function;
 import org.elasticsearch.hadoop.rest.RestClient;
 import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.spark.cfg.SparkSettings;
