@@ -1,6 +1,3 @@
-[![Build Status][ci-img]][ci] [![Docker Build Status](https://img.shields.io/docker/build/jaegertracing/spark-dependencies.svg)](https://hub.docker.com/r/jaegertracing/spark-dependencies/builds/)
-[![Docker Pulls](https://img.shields.io/docker/pulls/jaegertracing/spark-dependencies.svg)](https://hub.docker.com/r/jaegertracing/spark-dependencies/)
-
 # Jaeger Spark dependencies
 This is a Spark job that collects spans from storage, analyze links between services,
 and stores them for later presentation in the UI. Note that it is needed for the production deployment.
@@ -101,7 +98,3 @@ or system property `jaeger.version`. By default tests are using latest images.
 ## License
 
 [Apache 2.0 License](./LICENSE).
-
-
-   [ci-img]: https://travis-ci.org/jaegertracing/spark-dependencies.svg?branch=master
-   [ci]: https://travis-ci.org/jaegertracing/spark-dependencies
