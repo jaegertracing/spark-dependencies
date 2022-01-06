@@ -64,7 +64,7 @@ public class CassandraDependenciesJobTest extends DependenciesTest {
         .withNetwork(network)
         .withEnv("CASSANDRA_SERVERS", "cassandra")
         .withEnv("CASSANDRA_KEYSPACE", "jaeger_v1_dc1")
-        .withEnv("COLLECTOR_ZIPKIN_HTTP_PORT", "9411")
+        .withEnv("COLLECTOR_ZIPKIN_HOST_PORT", ":9411")
         .withEnv("COLLECTOR_QUEUE_SIZE", "100000")
         // older versions of jaeger were using 204 status code, now changed to 200
         .waitingFor(new BoundPortHttpWaitStrategy(14269).forStatusCodeMatching(statusCode -> statusCode >= 200 && statusCode < 300))

@@ -69,7 +69,7 @@ public class JaegerElasticsearchEnvironment {
         .withNetwork(network)
         .withEnv("SPAN_STORAGE_TYPE", "elasticsearch")
         .withEnv("ES_SERVER_URLS", "http://elasticsearch:9200")
-        .withEnv("COLLECTOR_ZIPKIN_HTTP_PORT", "9411")
+        .withEnv("COLLECTOR_ZIPKIN_HOST_PORT", ":9411")
         .withEnv("COLLECTOR_QUEUE_SIZE", "100000")
         .withEnv(jaegerEnvs)
         .waitingFor(new BoundPortHttpWaitStrategy(14269).forStatusCodeMatching(statusCode -> statusCode >= 200 && statusCode < 300))
@@ -108,7 +108,8 @@ public class JaegerElasticsearchEnvironment {
 
       try (Response response =  okHttpClient.newCall(request).execute()) {
         if (!response.isSuccessful()) {
-          throw new IllegalStateException("Could not remove data from ES");
+          String body = response.body().string();
+          throw new IllegalStateException(String.format("Could not remove data from ES: %s, %s", response, body));
         }
       }
   }
