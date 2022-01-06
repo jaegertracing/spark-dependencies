@@ -37,14 +37,14 @@
     <project.build.resourceEncoding>UTF-8</project.build.resourceEncoding>
 
     <version.scala.binary>2.11</version.scala.binary>
-    <version.org.apache.spark>2.3.0</version.org.apache.spark>
+    <version.org.apache.spark>2.4.8</version.org.apache.spark>
     <version.io.jaegertracing>0.34.0</version.io.jaegertracing>
     <version.io.opentracing>0.31.0</version.io.opentracing>
     <version.io.zipkin.brave-brave>4.6.0</version.io.zipkin.brave-brave>
     <version.io.zipkin.reporter-zipkin-sender-okhttp3>1.0.2</version.io.zipkin.reporter-zipkin-sender-okhttp3>
     <version.junit>4.13.2</version.junit>
     <version.org.assertj>3.22.0</version.org.assertj>
-    <version.org.testcontainers>1.12.5</version.org.testcontainers>
+    <version.org.testcontainers>1.14.3</version.org.testcontainers>
     <version.com.squareup.okhttp3-okhttp>3.14.9</version.com.squareup.okhttp3-okhttp>
     <version.org.awaitility-awaitility>4.1.1</version.org.awaitility-awaitility>
 
