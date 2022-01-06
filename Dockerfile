@@ -12,7 +12,7 @@
 # the License.
 #
 
-FROM eclipse-temurin:17 as builder
+FROM eclipse-temurin:11 as builder
 
 ENV APP_HOME /app/
 
@@ -28,7 +28,7 @@ COPY mvnw $APP_HOME
 WORKDIR $APP_HOME
 RUN ./mvnw package -Dlicense.skip=true -DskipTests && rm -rf ~/.m2
 
-FROM eclipse-temurin:17-jre
+FROM eclipse-temurin:11-jre
 MAINTAINER Pavol Loffay <ploffay@redhat.com>
 ENV APP_HOME /app/
 COPY --from=builder $APP_HOME/jaeger-spark-dependencies/target/jaeger-spark-dependencies-0.0.1-SNAPSHOT.jar $APP_HOME/
