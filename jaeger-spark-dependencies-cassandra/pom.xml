@@ -25,7 +25,7 @@
   <artifactId>jaeger-spark-dependencies-cassandra</artifactId>
 
   <properties>
-    <spark-cassandra-connector.version>2.3.3</spark-cassandra-connector.version>
+    <spark-cassandra-connector.version>2.4.3</spark-cassandra-connector.version>
   </properties>
 
   <dependencies>
