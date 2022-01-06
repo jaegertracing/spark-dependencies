@@ -36,7 +36,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.build.resourceEncoding>UTF-8</project.build.resourceEncoding>
 
-    <version.scala.binary>2.11</version.scala.binary>
+    <version.scala.binary>2.12</version.scala.binary>
     <version.org.apache.spark>2.4.8</version.org.apache.spark>
     <version.io.jaegertracing>0.34.0</version.io.jaegertracing>
     <version.io.opentracing>0.31.0</version.io.opentracing>
