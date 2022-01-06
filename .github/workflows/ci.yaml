@@ -23,7 +23,7 @@ jobs:
         run: ./mvnw clean test
 
   latest-jaeger-es7:
-    name: Latest Jaeger
+    name: Latest Jaeger and ES7
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
