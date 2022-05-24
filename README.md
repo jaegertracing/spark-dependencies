@@ -77,6 +77,8 @@ Elasticsearch is used when `STORAGE=elasticsearch`.
     * `ES_INDEX_PREFIX`: index prefix of Jaeger indices. By default unset.
     * `ES_TIME_RANGE`: How far in the past the job should look to for spans, the maximum and default is `24h`.
                        Any value accepted by [date-math](https://www.elastic.co/guide/en/elasticsearch/reference/current/common-options.html#date-math) can be used here, but the anchor is always `now`.
+    * `ES_USE_ALIASES`: Set to true to use index alias names to read from and write to.
+                        Usually required when using rollover indices.
 
 Example usage:
 
