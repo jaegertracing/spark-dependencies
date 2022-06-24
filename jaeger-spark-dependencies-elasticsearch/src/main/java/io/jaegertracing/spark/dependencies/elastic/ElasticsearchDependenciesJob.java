@@ -59,6 +59,7 @@ public class ElasticsearchDependenciesJob {
     Boolean clientNodeOnly = Boolean.parseBoolean(Utils.getEnv("ES_CLIENT_NODE_ONLY", "false"));
     Boolean nodesWanOnly = Boolean.parseBoolean(Utils.getEnv("ES_NODES_WAN_ONLY", "false"));
     String indexPrefix = Utils.getEnv("ES_INDEX_PREFIX", null);
+    String indexDatePattern = datePattern(Utils.getEnv("ES_INDEX_DATE_SEPARATOR", "-"));
     String spanRange = Utils.getEnv("ES_TIME_RANGE", "24h");
     Boolean useAliases = Boolean.parseBoolean(Utils.getEnv("ES_USE_ALIASES", "false"));
 
@@ -119,6 +120,12 @@ public class ElasticsearchDependenciesJob {
       return this;
     }
 
+    /** index date pattern for Jaeger indices. By default yyyy-MM-dd */
+    public Builder indexDatePattern(String indexDatePattern) {
+      this.indexDatePattern = indexDatePattern;
+      return this;
+    }
+
      /** span range for Jaeger indices. By default 24h */
     public Builder spanRange(String spanRange) {
       this.spanRange = spanRange;
@@ -166,6 +173,7 @@ public class ElasticsearchDependenciesJob {
   private final ZonedDateTime day;
   private final SparkConf conf;
   private final String indexPrefix;
+  private final String indexDatePattern;
   private final String spanRange;
   private final Boolean useAliases;
 
@@ -196,6 +204,7 @@ public class ElasticsearchDependenciesJob {
       conf.set(entry.getKey(), entry.getValue());
     }
     this.indexPrefix = builder.indexPrefix;
+    this.indexDatePattern = builder.indexDatePattern;
     this.spanRange = builder.spanRange;
     this.useAliases = builder.useAliases;
   }
@@ -209,6 +218,17 @@ public class ElasticsearchDependenciesJob {
 
   private static String prefix(String prefix) {
     return prefix != null ? String.format("%s-", prefix) : "";
+  }
+
+  private static String datePattern(String separator) {
+    if (separator.equals("")) {
+      return "yyyyMMdd";
+    }
+    // ' is escape character in date format, we should double it here.
+    if (separator.contains("'")) {
+      separator = separator.replace("'", "''");
+    }
+    return String.format("yyyy'%s'MM'%s'dd", separator, separator);
   }
 
   public void run(String peerServiceTag) {
@@ -230,7 +250,7 @@ public class ElasticsearchDependenciesJob {
   }
 
   String[] indexDate(String index) {
-    String date = day.toLocalDate().format(DateTimeFormatter.ISO_LOCAL_DATE);
+    String date = day.toLocalDate().format(DateTimeFormatter.ofPattern(indexDatePattern));
     if (indexPrefix != null && indexPrefix.length() > 0) {
       return new String[]{String.format("%s%s-%s", prefix(indexPrefix), index, date), String.format("%s%s-%s", prefixBefore19(indexPrefix), index, date)};
     }
