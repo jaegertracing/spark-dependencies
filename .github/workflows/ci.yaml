@@ -38,3 +38,20 @@ jobs:
         run: ./mvnw clean install -DskipTests
       - name: test
         run: ELASTICSEARCH_VERSION=7.3.0 ./mvnw clean test -pl jaeger-spark-dependencies-elasticsearch
+
+  latest-jaeger-es8:
+    name: Latest Jaeger and ES8
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-java@v2
+        with:
+          distribution: temurin
+          java-version: '11'
+      # TODO remove once testcontainers are updated
+      - name: pull ryuk image
+        run: docker pull testcontainersofficial/ryuk:0.3.0
+      - name: compile
+        run: ./mvnw clean install -DskipTests
+      - name: test
+        run: ELASTICSEARCH_VERSION=8.3.1 ./mvnw clean test -pl jaeger-spark-dependencies-elasticsearch
