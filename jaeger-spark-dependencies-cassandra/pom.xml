@@ -37,6 +37,12 @@
     <dependency>
       <groupId>org.apache.spark</groupId>
       <artifactId>spark-core_${version.scala.binary}</artifactId>
+      <exclusions>
+        <exclusion>
+          <groupId>com.fasterxml.jackson.core</groupId>
+          <artifactId>jackson-annotations</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
 
     <dependency>

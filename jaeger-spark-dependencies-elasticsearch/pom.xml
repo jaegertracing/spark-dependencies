@@ -30,12 +30,18 @@
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>jaeger-spark-dependencies-common</artifactId>
+      <exclusions>
+        <exclusion>
+          <groupId>com.fasterxml.jackson.core</groupId>
+          <artifactId>jackson-annotations</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
 
     <dependency>
       <groupId>org.elasticsearch</groupId>
       <artifactId>elasticsearch-spark-20_${version.scala.binary}</artifactId>
-      <version>7.13.4</version>
+      <version>7.17.10</version>
     </dependency>
 
     <dependency>
