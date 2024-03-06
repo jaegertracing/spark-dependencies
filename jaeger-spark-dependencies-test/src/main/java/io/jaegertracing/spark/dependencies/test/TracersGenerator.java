@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import org.apache.thrift.transport.TTransportException;
 import zipkin.Span;
 import zipkin.reporter.AsyncReporter;
 import zipkin.reporter.Encoding;
@@ -89,7 +90,7 @@ public class TracersGenerator {
     }
   }
 
-  public static List<TracerHolder<JaegerTracer>> generateJaeger(int number, String collectorUrl) {
+  public static List<TracerHolder<JaegerTracer>> generateJaeger(int number, String collectorUrl) throws TTransportException {
     List<TracerHolder<JaegerTracer>> tracers = new ArrayList<>(number);
     for (int i = 0; i < number; i++) {
       String serviceName = serviceName();
@@ -99,7 +100,7 @@ public class TracersGenerator {
     return tracers;
   }
 
-  public static Tuple<JaegerTracer, Flushable> createJaeger(String serviceName, String collectorUrl) {
+  public static Tuple<JaegerTracer, Flushable> createJaeger(String serviceName, String collectorUrl) throws TTransportException {
     HttpSender sender = new HttpSender.Builder(collectorUrl + "/api/traces").build();
     RemoteReporter reporter = new RemoteReporter.Builder()
         .withSender(sender)

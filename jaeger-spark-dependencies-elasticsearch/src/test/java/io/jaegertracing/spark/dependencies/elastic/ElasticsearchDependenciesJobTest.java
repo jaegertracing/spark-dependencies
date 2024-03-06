@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import org.apache.thrift.transport.TTransportException;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -48,7 +49,7 @@ public class ElasticsearchDependenciesJobTest extends DependenciesTest {
   }
 
   @Before
-  public void before() {
+  public void before() throws TTransportException {
     JaegerTracer initStorageTracer = TracersGenerator.createJaeger(UUID.randomUUID().toString(), collectorUrl).getA();
     initStorageTracer.buildSpan(UUID.randomUUID().toString()).withTag("foo", "bar").start().finish();
     initStorageTracer.close();
