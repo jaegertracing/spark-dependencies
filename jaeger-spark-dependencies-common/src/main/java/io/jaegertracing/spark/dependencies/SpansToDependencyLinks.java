@@ -26,12 +26,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import org.apache.spark.api.java.function.Function;
+import org.apache.spark.api.java.function.FlatMapFunction;
 
 /**
  * @author Pavol Loffay
  */
-public class SpansToDependencyLinks implements Function<Iterable<Span>, Iterable<Dependency>>{
+public class SpansToDependencyLinks implements FlatMapFunction<Iterable<Span>, Dependency>{
 
     /**
      * Derives dependency links based on supplied spans.
@@ -48,7 +48,7 @@ public class SpansToDependencyLinks implements Function<Iterable<Span>, Iterable
     }
 
     @Override
-    public Iterable<Dependency> call(Iterable<Span> trace) {
+    public java.util.Iterator<Dependency> call(Iterable<Span> trace) {
         Map<Long, Set<Span>> spanMap = new LinkedHashMap<>();
         Map<Long, Set<Span>> spanChildrenMap = new LinkedHashMap<>();
         for (Span span: trace) {
@@ -111,7 +111,7 @@ public class SpansToDependencyLinks implements Function<Iterable<Span>, Iterable
               }
             }
         }
-        return result;
+        return result.iterator();
     }
 
     static Optional<Span> serverSpan(Set<Span> sharedSpans) {

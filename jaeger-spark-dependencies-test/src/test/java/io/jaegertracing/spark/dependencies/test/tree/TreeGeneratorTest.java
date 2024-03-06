@@ -22,6 +22,7 @@ import io.jaegertracing.spark.dependencies.test.tree.TracingWrapper.JaegerWrappe
 import io.jaegertracing.spark.dependencies.test.tree.TracingWrapper.ZipkinWrapper;
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.thrift.transport.TTransportException;
 import org.junit.Test;
 
 /**
@@ -30,7 +31,7 @@ import org.junit.Test;
 public class TreeGeneratorTest {
 
   @Test
-  public void testGenerateOne() {
+  public void testGenerateOne() throws TTransportException {
     Node<JaegerWrapper> root = new TreeGenerator(TracersGenerator.generateJaeger(1, "http://localhost"))
         .generateTree(1, 3);
     assertEquals(0, root.getDescendants().size());
@@ -40,7 +41,7 @@ public class TreeGeneratorTest {
   }
 
   @Test
-  public void testBranchingFactorOne() {
+  public void testBranchingFactorOne() throws TTransportException {
     Node<JaegerWrapper> root = new TreeGenerator(TracersGenerator.generateJaeger(1, "http://localhost"))
         .generateTree(16, 3);
     List<Node> nodes = new ArrayList<>();

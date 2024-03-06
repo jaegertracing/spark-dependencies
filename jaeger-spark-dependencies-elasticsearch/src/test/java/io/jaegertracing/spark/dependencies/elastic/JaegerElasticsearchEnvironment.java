@@ -48,7 +48,7 @@ public class JaegerElasticsearchEnvironment {
 
   public static String elasticsearchVersion() {
     String version = System.getProperty("elasticsearch.version", System.getenv("ELASTICSEARCH_VERSION"));
-    return version != null ? version : "5.6.9";
+    return version != null ? version : "7.17.10";
   }
 
   public void start(Map<String, String> jaegerEnvs, String jaegerVersion, String elasticsearchVersion) {

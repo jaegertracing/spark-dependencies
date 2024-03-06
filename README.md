@@ -88,6 +88,15 @@ Example usage:
 $ STORAGE=elasticsearch ES_NODES=http://localhost:9200 java -jar jaeger-spark-dependencies.jar
 ```
 
+## Design
+
+At a high-level, this job does the following:
+  * read lots of spans from a time period
+  * group them by traceId
+  * construct a graph using parent-child relationships expressed in span references
+  * for each edge `(parent span, child span)` output `(parent service, child service, count)`
+  * write the results to the database (e.g. `dependencies_v2` table in [Cassandra](https://github.com/jaegertracing/jaeger/blob/12e44faabf10cdd866391b78933eec5d6ac50fa9/plugin/storage/cassandra/schema/v004.cql.tmpl#L186))
+
 ## Building locally
 To build the job locally and run tests:
 ```bash
