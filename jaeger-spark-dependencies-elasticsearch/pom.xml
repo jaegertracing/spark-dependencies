@@ -30,6 +30,12 @@
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>jaeger-spark-dependencies-common</artifactId>
+      <exclusions>
+        <exclusion>
+          <groupId>com.fasterxml.jackson.core</groupId>
+          <artifactId>jackson-annotations</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
 
     <dependency>
