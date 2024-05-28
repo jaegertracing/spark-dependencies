@@ -6,17 +6,20 @@ and stores them for later presentation in the UI. Note that it is needed for the
 This job parses all traces on a given day, based on UTC. By default, it processes the current day,
 but other days can be explicitly specified.
 
-This repository is based on [zipkin-dependencies](https://github.com/openzipkin/zipkin-dependencies).
-
 ## Quick-start
 Spark job can be run as docker container and also as java executable:
 
 Docker:
 ```bash
-$ docker run --env STORAGE=cassandra --env CASSANDRA_CONTACT_POINTS=host1,host2 jaegertracing/spark-dependencies
+$ docker run \
+  --env STORAGE=cassandra \
+  --env CASSANDRA_CONTACT_POINTS=host1,host2 \
+  ghcr.io/jaegertracing/spark-dependencies/spark-dependencies
 ```
 
 Use `--env JAVA_OPTS=-Djavax.net.ssl.` to set trust store and other Java properties.
+
+Note: the latest vesions are hosted on `ghcr.io`, not on Docker Hub.
 
 As jar file:
 ```bash
