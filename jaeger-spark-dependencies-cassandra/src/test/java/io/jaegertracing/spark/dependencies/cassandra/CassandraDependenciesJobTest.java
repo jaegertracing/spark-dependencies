@@ -53,6 +53,7 @@ public class CassandraDependenciesJobTest extends DependenciesTest {
     cassandraPort = cassandra.getMappedPort(9042);
 
     jaegerCassandraSchema = new GenericContainer<>("jaegertracing/jaeger-cassandra-schema:" + jaegerVersion())
+        .withLogConsumer(frame -> System.out.print(frame.getUtf8String()))
         .withNetwork(network);
     jaegerCassandraSchema.start();
     /**
