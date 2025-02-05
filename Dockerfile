@@ -26,7 +26,7 @@ COPY .mvn $APP_HOME/.mvn
 COPY mvnw $APP_HOME
 
 WORKDIR $APP_HOME
-RUN ./mvnw package -Dlicense.skip=true -DskipTests && rm -rf ~/.m2
+RUN --mount=type=cache,target=/root/.m2 ./mvnw package -Dlicense.skip=true -DskipTests
 
 FROM eclipse-temurin:11-jre
 MAINTAINER Pavol Loffay <ploffay@redhat.com>
