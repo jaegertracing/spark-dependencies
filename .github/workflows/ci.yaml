@@ -20,7 +20,7 @@ jobs:
       - name: pull ryuk image
         run: docker pull testcontainersofficial/ryuk:0.3.0
       - name: test
-        run: ./mvnw clean test
+        run: ./mvnw --batch-mode clean test
 
   latest-jaeger-es7:
     name: Latest Jaeger and ES7
@@ -35,9 +35,9 @@ jobs:
       - name: pull ryuk image
         run: docker pull testcontainersofficial/ryuk:0.3.0
       - name: compile
-        run: ./mvnw clean install -DskipTests
+        run: ./mvnw --batch-mode clean install -DskipTests
       - name: test
-        run: ELASTICSEARCH_VERSION=7.3.0 ./mvnw clean test -pl jaeger-spark-dependencies-elasticsearch
+        run: ELASTICSEARCH_VERSION=7.3.0 ./mvnw --batch-mode clean test -pl jaeger-spark-dependencies-elasticsearch
 
   latest-jaeger-es8:
     name: Latest Jaeger and ES8
@@ -52,6 +52,6 @@ jobs:
       - name: pull ryuk image
         run: docker pull testcontainersofficial/ryuk:0.3.0
       - name: compile
-        run: ./mvnw clean install -DskipTests
+        run: ./mvnw --batch-mode clean install -DskipTests
       - name: test
-        run: ELASTICSEARCH_VERSION=8.3.1 ./mvnw clean test -pl jaeger-spark-dependencies-elasticsearch
+        run: ELASTICSEARCH_VERSION=8.3.1 ./mvnw --batch-mode clean test -pl jaeger-spark-dependencies-elasticsearch
