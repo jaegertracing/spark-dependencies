@@ -20,7 +20,8 @@ jobs:
       - name: pull ryuk image
         run: docker pull testcontainersofficial/ryuk:0.3.0
       - name: test
-        run: ./mvnw clean test
+        # pin Jaeger version temporarily to work around build failures
+        run: JAEGER_VERSION=1.52.0 ./mvnw clean test
 
   latest-jaeger-es7:
     name: Latest Jaeger and ES7
