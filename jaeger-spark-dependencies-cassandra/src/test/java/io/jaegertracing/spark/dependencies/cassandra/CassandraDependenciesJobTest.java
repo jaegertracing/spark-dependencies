@@ -45,7 +45,7 @@ public class CassandraDependenciesJobTest extends DependenciesTest {
   @BeforeClass
   public static void beforeClass() {
     network = Network.newNetwork();
-    cassandra = new CassandraContainer("cassandra:3.11")
+    cassandra = new CassandraContainer("cassandra:4.1")
         .withNetwork(network)
         .withNetworkAliases("cassandra")
         .withExposedPorts(9042);
@@ -53,6 +53,7 @@ public class CassandraDependenciesJobTest extends DependenciesTest {
     cassandraPort = cassandra.getMappedPort(9042);
 
     jaegerCassandraSchema = new GenericContainer<>("jaegertracing/jaeger-cassandra-schema:" + jaegerVersion())
+        .withLogConsumer(frame -> System.out.print(frame.getUtf8String()))
         .withNetwork(network);
     jaegerCassandraSchema.start();
     /**
