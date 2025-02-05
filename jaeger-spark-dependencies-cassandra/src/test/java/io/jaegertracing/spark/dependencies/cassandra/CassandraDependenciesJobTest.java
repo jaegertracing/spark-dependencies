@@ -26,6 +26,7 @@ import java.util.concurrent.TimeUnit;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.testcontainers.containers.CassandraContainer;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
@@ -45,7 +46,7 @@ public class CassandraDependenciesJobTest extends DependenciesTest {
   @BeforeClass
   public static void beforeClass() {
     network = Network.newNetwork();
-    cassandra = new CassandraContainer("cassandra:4.1")
+    cassandra = new CassandraContainer<>("cassandra:4.1")
         .withNetwork(network)
         .withNetworkAliases("cassandra")
         .withExposedPorts(9042);
@@ -117,6 +118,8 @@ public class CassandraDependenciesJobTest extends DependenciesTest {
         .contactPoints("localhost:" + cassandraPort)
         .day(LocalDate.now())
         .keyspace("jaeger_v1_dc1")
+        .username(cassandra.getUsername())
+        .password(cassandra.getPassword())
         .build()
         .run("peer.service");
   }
