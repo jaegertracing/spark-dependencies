@@ -66,6 +66,8 @@ public final class CassandraDependenciesJob {
     String localDc = Utils.getEnv("CASSANDRA_LOCAL_DC", null);
     // local[*] master lets us run & test the job locally without setting a Spark cluster
     String sparkMaster = Utils.getEnv("SPARK_MASTER", "local[*]");
+    String username = Utils.getEnv("CASSANDRA_USERNAME", "");
+    String password = Utils.getEnv("CASSANDRA_PASSWORD", "");
     // needed when not in local mode
     String[] jars;
 
@@ -88,8 +90,6 @@ public final class CassandraDependenciesJob {
     		  System.getProperty("javax.net.ssl.keyStore", ""));
       sparkProperties.put("spark.cassandra.connection.ssl.keyStore.password", 
     		  System.getProperty("javax.net.ssl.keyStorePassword", ""));
-      sparkProperties.put("spark.cassandra.auth.username", Utils.getEnv("CASSANDRA_USERNAME", ""));
-      sparkProperties.put("spark.cassandra.auth.password", Utils.getEnv("CASSANDRA_PASSWORD", ""));
     }
 
     /** When set, this indicates which jars to distribute to the cluster. */
@@ -102,6 +102,20 @@ public final class CassandraDependenciesJob {
     public Builder keyspace(String keyspace) {
       Utils.checkNoTNull("keyspace", keyspace);
       this.keyspace = keyspace;
+      return this;
+    }
+
+    /** Cassandra username. */
+    public Builder username(String username) {
+      Utils.checkNoTNull("username", username);
+      this.username = username;
+      return this;
+    }
+
+    /** Cassandra username. */
+    public Builder password(String password) {
+      Utils.checkNoTNull("password", password);
+      this.password = password;
       return this;
     }
 
@@ -143,6 +157,8 @@ public final class CassandraDependenciesJob {
         .setAppName(getClass().getName());
     conf.set("spark.cassandra.connection.host", parseHosts(builder.contactPoints));
     conf.set("spark.cassandra.connection.port", parsePort(builder.contactPoints));
+    conf.set("spark.cassandra.auth.username", builder.username);
+    conf.set("spark.cassandra.auth.password", builder.password);
     if (builder.localDc != null) {
       conf.set("connection.local_dc", builder.localDc);
     }
@@ -196,7 +212,7 @@ public final class CassandraDependenciesJob {
     List<String> result = new LinkedList<>();
     for (String contactPoint : contactPoints.split(",")) {
       HostAndPort parsed = HostAndPort.fromString(contactPoint);
-      result.add(parsed.getHostText());
+      result.add(parsed.getHost());
     }
     return Joiner.on(',').join(result);
   }

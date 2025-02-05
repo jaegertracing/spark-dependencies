@@ -25,7 +25,7 @@
   <artifactId>jaeger-spark-dependencies-cassandra</artifactId>
 
   <properties>
-    <spark-cassandra-connector.version>2.4.3</spark-cassandra-connector.version>
+    <spark-cassandra-connector.version>3.4.1</spark-cassandra-connector.version>
   </properties>
 
   <dependencies>
@@ -47,7 +47,7 @@
 
     <dependency>
       <groupId>com.datastax.spark</groupId>
-      <artifactId>spark-cassandra-connector-unshaded_${version.scala.binary}</artifactId>
+      <artifactId>spark-cassandra-connector_${version.scala.binary}</artifactId>
       <version>${spark-cassandra-connector.version}</version>
     </dependency>
     
@@ -73,10 +73,13 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>com.codahale.metrics</groupId>
-      <artifactId>metrics-core</artifactId>
-      <version>3.0.2</version>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>cassandra</artifactId>
       <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
     </dependency>
     <dependency>
       <groupId>commons-lang</groupId>
