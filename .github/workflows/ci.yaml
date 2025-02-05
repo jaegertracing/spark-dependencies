@@ -8,7 +8,7 @@ on:
 
 jobs:
   latest-jaeger:
-    name: Latest Jaeger
+    name: Latest Jaeger and Cassandra 4.x
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
