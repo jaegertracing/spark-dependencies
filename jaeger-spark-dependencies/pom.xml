@@ -68,6 +68,13 @@
                   </includes>
                 </filter>
                 <filter>
+                  <!-- Keep classes from Cassandra Java Driver -->
+                  <artifact>com.datastax.oss:*</artifact>
+                  <includes>
+                    <include>**</include>
+                  </includes>
+                </filter>
+                <filter>
                   <artifact>log4j:log4j</artifact>
                   <includes>
                     <include>org/apache/log4j/spi/LoggingEvent.class</include>
