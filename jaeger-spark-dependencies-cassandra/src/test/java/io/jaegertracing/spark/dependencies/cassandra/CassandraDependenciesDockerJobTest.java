@@ -31,6 +31,7 @@ public class CassandraDependenciesDockerJobTest extends CassandraDependenciesJob
 
   @Override
   protected void deriveDependencies() {
+    System.out.println("::group::🚧 🚧 🚧 CassandraDependenciesDockerJob logs");
     try (GenericContainer<?> sparkDependenciesJob = new GenericContainer<>(
             DockerImageName.parse("ghcr.io/jaegertracing/spark-dependencies/spark-dependencies:" + dependenciesJobTag()))
             .withNetwork(network)
@@ -46,6 +47,8 @@ public class CassandraDependenciesDockerJobTest extends CassandraDependenciesJob
       await("spark-dependencies-job execution")
               .atMost(3, TimeUnit.MINUTES)
               .until(() -> !sparkDependenciesJob.isRunning());
+    } finally {
+        System.out.println("::endgroup::");
     }
   }
 }

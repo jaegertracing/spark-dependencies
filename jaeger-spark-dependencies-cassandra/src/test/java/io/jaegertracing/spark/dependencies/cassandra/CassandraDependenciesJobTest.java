@@ -116,14 +116,19 @@ public class CassandraDependenciesJobTest extends DependenciesTest {
 
   @Override
   protected void deriveDependencies() {
-    CassandraDependenciesJob.builder()
-        .contactPoints("localhost:" + cassandraPort)
-        .day(LocalDate.now())
-        .keyspace("jaeger_v1_dc1")
-        .username(cassandra.getUsername())
-        .password(cassandra.getPassword())
-        .build()
-        .run("peer.service");
+    System.out.println("::group::🚧 🚧 🚧 CassandraDependenciesJob logs");
+    try {
+      CassandraDependenciesJob.builder()
+          .contactPoints("localhost:" + cassandraPort)
+          .day(LocalDate.now())
+          .keyspace("jaeger_v1_dc1")
+          .username(cassandra.getUsername())
+          .password(cassandra.getPassword())
+          .build()
+          .run("peer.service");
+    } finally {
+      System.out.println("::endgroup::");
+    }
   }
 
   @Override
