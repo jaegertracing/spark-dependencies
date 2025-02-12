@@ -19,6 +19,13 @@ jobs:
       # TODO remove once testcontainers are updated
       - name: pull ryuk image
         run: docker pull testcontainersofficial/ryuk:0.3.0
+      - name: Build docker image
+        uses: docker/build-push-action@v2.7.0
+        # We need the image for the tests
+        with:
+          context: .
+          push: false
+          tags: ghcr.io/jaegertracing/spark-dependencies/spark-dependencies
       - name: test
         # pin Jaeger version temporarily to work around build failures
         run: JAEGER_VERSION=1.52.0 ./mvnw --batch-mode clean test
