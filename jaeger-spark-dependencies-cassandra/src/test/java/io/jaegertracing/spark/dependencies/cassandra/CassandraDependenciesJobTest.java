@@ -15,8 +15,7 @@ package io.jaegertracing.spark.dependencies.cassandra;
 
 import static org.awaitility.Awaitility.await;
 
-import com.datastax.driver.core.Cluster;
-import com.datastax.driver.core.Session;
+import com.datastax.oss.driver.api.core.CqlSession;
 import io.jaegertracing.spark.dependencies.test.DependenciesTest;
 import java.time.LocalDate;
 import java.util.Collections;
@@ -26,7 +25,7 @@ import java.util.concurrent.TimeUnit;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.testcontainers.containers.CassandraContainer;
+import org.testcontainers.cassandra.CassandraContainer;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
@@ -36,17 +35,17 @@ import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
  */
 public class CassandraDependenciesJobTest extends DependenciesTest {
 
-  private static Network network;
-  private static CassandraContainer cassandra;
-  private static GenericContainer jaegerCollector;
-  private static GenericContainer jaegerQuery;
-  private static GenericContainer jaegerCassandraSchema;
+  protected static Network network;
+  protected static CassandraContainer cassandra;
+  protected static GenericContainer jaegerCollector;
+  protected static GenericContainer jaegerQuery;
+  protected static GenericContainer jaegerCassandraSchema;
   private static int cassandraPort;
 
   @BeforeClass
   public static void beforeClass() {
     network = Network.newNetwork();
-    cassandra = new CassandraContainer<>("cassandra:4.1")
+    cassandra = new CassandraContainer("cassandra:4.1")
         .withNetwork(network)
         .withNetworkAliases("cassandra")
         .withExposedPorts(9042);
@@ -54,7 +53,7 @@ public class CassandraDependenciesJobTest extends DependenciesTest {
     cassandraPort = cassandra.getMappedPort(9042);
 
     jaegerCassandraSchema = new GenericContainer<>("jaegertracing/jaeger-cassandra-schema:" + jaegerVersion())
-        .withLogConsumer(frame -> System.out.print(frame.getUtf8String()))
+        .withLogConsumer(new LogToConsolePrinter("[jaeger-cassandra-schema] "))
         .withNetwork(network);
     jaegerCassandraSchema.start();
     /**
@@ -97,13 +96,16 @@ public class CassandraDependenciesJobTest extends DependenciesTest {
 
   @After
   public void after() {
-    try (Cluster cluster = cassandra.getCluster(); Session session = cluster.newSession()) {
+    try (CqlSession session = CqlSession.builder()
+            .addContactPoint(cassandra.getContactPoint())
+            .withLocalDatacenter(cassandra.getLocalDatacenter())
+            .build()) {
       session.execute("TRUNCATE jaeger_v1_dc1.traces");
       session.execute(String.format("TRUNCATE jaeger_v1_dc1.%s", dependenciesTable(session)));
     }
   }
 
-  private String dependenciesTable(Session session) {
+  private String dependenciesTable(CqlSession session) {
     try {
       session.execute("SELECT ts from jaeger_v1_dc1.dependencies_v2 limit 1;");
     } catch (Exception ex) {
@@ -114,14 +116,19 @@ public class CassandraDependenciesJobTest extends DependenciesTest {
 
   @Override
   protected void deriveDependencies() {
-    CassandraDependenciesJob.builder()
-        .contactPoints("localhost:" + cassandraPort)
-        .day(LocalDate.now())
-        .keyspace("jaeger_v1_dc1")
-        .username(cassandra.getUsername())
-        .password(cassandra.getPassword())
-        .build()
-        .run("peer.service");
+    System.out.println("::group::🚧 🚧 🚧 CassandraDependenciesJob logs");
+    try {
+      CassandraDependenciesJob.builder()
+          .contactPoints("localhost:" + cassandraPort)
+          .day(LocalDate.now())
+          .keyspace("jaeger_v1_dc1")
+          .username(cassandra.getUsername())
+          .password(cassandra.getPassword())
+          .build()
+          .run("peer.service");
+    } finally {
+      System.out.println("::endgroup::");
+    }
   }
 
   @Override

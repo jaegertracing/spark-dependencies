@@ -141,6 +141,13 @@
         <groupId>org.testcontainers</groupId>
         <artifactId>cassandra</artifactId>
         <version>${version.org.testcontainers}</version>
+        <exclusions>
+          <exclusion>
+            <!-- We want Cassandra Java 4 driver rather than the one included with testcontainers-cassandra -->
+            <groupId>com.datastax.cassandra</groupId>
+            <artifactId>cassandra-driver-core</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
       <dependency>
         <groupId>com.google.guava</groupId>
