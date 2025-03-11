@@ -1,3 +1,5 @@
+[![Latest image](https://ghcr-badge.egpl.dev/jaegertracing/spark-dependencies/spark-dependencies/latest_tag?trim=major&label=latest)](.)
+
 # Jaeger Spark dependencies
 This is a Spark job that collects spans from storage, analyze links between services,
 and stores them for later presentation in the UI. Note that it is needed for the production deployment.
@@ -14,7 +16,7 @@ Docker:
 $ docker run \
   --env STORAGE=cassandra \
   --env CASSANDRA_CONTACT_POINTS=host1,host2 \
-  ghcr.io/jaegertracing/spark-dependencies/spark-dependencies
+  ghcr.io/jaegertracing/spark-dependencies/spark-dependencies:VERSION
 ```
 
 Use `--env JAVA_OPTS=-Djavax.net.ssl.` to set trust store and other Java properties.
