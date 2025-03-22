@@ -18,6 +18,7 @@ import io.jaegertracing.spark.dependencies.elastic.ElasticsearchDependenciesJob;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
@@ -35,6 +36,9 @@ public final class DependenciesSparkJob {
       date = parseZonedDateTime(args[0]);
     } else if (System.getenv("DATE") != null) {
       date = parseZonedDateTime(System.getenv("DATE"));
+    } else if (System.getenv("DATE_MINUS_DAYS") != null && System.getenv("DATE_MINUS_DAYS").trim() != "") {
+      long days = Long.parseLong(System.getenv("DATE_MINUS_DAYS"));
+      date = date.minusDays(days);
     }
 
     run(storage, date);
