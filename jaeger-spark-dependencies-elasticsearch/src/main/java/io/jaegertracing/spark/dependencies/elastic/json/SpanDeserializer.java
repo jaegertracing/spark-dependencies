@@ -96,8 +96,11 @@ public class SpanDeserializer extends StdDeserializer<Span> {
       references.add(reference);
     }
 
-    Reference[] referencesArr = objectMapper.treeToValue(node.get("references"), Reference[].class);
-    references.addAll(Arrays.asList(referencesArr));
+    JsonNode referencesNode = node.get("references");
+    if (referencesNode != null && !referencesNode.isNull()) {
+        Reference[] referencesArr = objectMapper.treeToValue(referencesNode, Reference[].class);
+        references.addAll(Arrays.asList(referencesArr));
+    }
 
     return references;
   }
