@@ -9,7 +9,7 @@ on:
 jobs:
   latest-jaeger:
     name: Latest Jaeger and Cassandra 4.x
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-java@v2
@@ -34,7 +34,7 @@ jobs:
 
   latest-jaeger-es7:
     name: Latest Jaeger and ES7
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-java@v2
@@ -51,7 +51,7 @@ jobs:
 
   latest-jaeger-es8:
     name: Latest Jaeger and ES8
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-java@v2
