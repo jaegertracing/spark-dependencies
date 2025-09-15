@@ -40,7 +40,7 @@
 
     <dependency>
       <groupId>org.elasticsearch</groupId>
-      <artifactId>elasticsearch-spark-20_${version.scala.binary}</artifactId>
+      <artifactId>elasticsearch-spark-30_${version.scala.binary}</artifactId>
       <version>9.1.3</version>
     </dependency>
 
