@@ -19,12 +19,17 @@ import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
+import io.jaegertracing.spark.dependencies.Utils;
 import io.jaegertracing.spark.dependencies.model.KeyValue;
 import io.jaegertracing.spark.dependencies.model.Process;
 import io.jaegertracing.spark.dependencies.model.Reference;
 import io.jaegertracing.spark.dependencies.model.Span;
+import org.apache.parquet.Files;
+
+import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -38,9 +43,28 @@ public class SpanDeserializer extends StdDeserializer<Span> {
 
   // TODO Spark incorrectly serializes object mapper, therefore reinitializing here
   private ObjectMapper objectMapper = JsonHelper.configure(new ObjectMapper());
+  private final boolean tagsAsFieldsAll;
+  private final List<String> tagsAsFields;
+  private final String tagsAsFieldsDotReplacement;
 
-  public SpanDeserializer() {
+  public SpanDeserializer() throws IOException {
     super(Span.class);
+
+    tagsAsFieldsAll = Boolean.parseBoolean(Utils.getEnv("ES_TAGS_AS_FIELDS_ALL", "false"));
+    tagsAsFieldsDotReplacement = Utils.getEnv("ES_TAGS_AS_FIELDS_DOT_REPLACEMENT", "@");
+    tagsAsFields = new ArrayList<>();
+
+    if (!tagsAsFieldsAll) {
+      String configFile = Utils.getEnv("ES_TAGS_AS_FIELDS_CONFIG_FILE", null);
+      if (configFile != null) {
+        tagsAsFields.addAll(Files.readAllLines(new File(configFile), Charset.defaultCharset()));
+      }
+
+      String include = Utils.getEnv("ES_TAGS_AS_FIELDS_INCLUDE", null);
+      if (include != null) {
+        tagsAsFields.addAll(Arrays.asList(include.split(",")));
+      }
+    }
   }
 
   @Override
@@ -78,12 +102,24 @@ public class SpanDeserializer extends StdDeserializer<Span> {
     result.addAll(tags);
     List<KeyValue> collect = tagFields.entrySet().stream().map(stringObjectEntry -> {
       KeyValue kv = new KeyValue();
-      kv.setKey(stringObjectEntry.getKey());
+      kv.setKey(mapTag(stringObjectEntry.getKey()));
       kv.setValueString(stringObjectEntry.getValue().toString());
       return kv;
     }).collect(Collectors.toList());
     result.addAll(collect);
     return result;
+  }
+
+  private String mapTag(String value) {
+    if (tagsAsFieldsAll) {
+      return value.replaceAll(tagsAsFieldsDotReplacement, ".");
+    }
+
+    if (tagsAsFields.contains(value)) {
+      return value.replaceAll(tagsAsFieldsDotReplacement, ".");
+    }
+
+    return value;
   }
 
   private List<Reference> deserializeReferences(JsonNode node) throws JsonProcessingException {
