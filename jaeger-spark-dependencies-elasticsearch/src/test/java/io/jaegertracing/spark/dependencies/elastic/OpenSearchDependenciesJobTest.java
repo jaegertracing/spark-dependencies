@@ -116,7 +116,7 @@ public class OpenSearchDependenciesJobTest extends DependenciesTest {
   @Override
   protected void deriveDependencies() {
     dependenciesJob = ElasticsearchDependenciesJob.builder()
-        .nodes(String.format("http://localhost:%d", opensearch.getMappedPort(9200)))
+        .nodes(String.format("http://%s:%d", opensearch.getHost(), opensearch.getMappedPort(9200)))
         .day(LocalDate.now())
         .build();
     

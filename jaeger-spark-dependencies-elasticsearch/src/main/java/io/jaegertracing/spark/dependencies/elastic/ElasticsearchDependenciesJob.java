@@ -325,16 +325,22 @@ public class ElasticsearchDependenciesJob {
 
   // Visible for tests
   boolean isOpenSearchCluster() {
-  RestClient client = new RestClient(new SparkSettings(conf));
-  try {
-    return isOpenSearchFromJson(client.get("/", ""));
-  } catch (Exception e) {
-    log.warn("Could not detect cluster type, assuming Elasticsearch: {}", e.getMessage());
-    return false;
-  } finally {
-    try { client.close(); } catch (Exception ignore) {}
+    RestClient client = new RestClient(new SparkSettings(conf));
+    String response = null;
+    try {
+      response = client.get("/", "");
+      log.info("Successfully received cluster info response for backend detection: {}", response);
+      return isOpenSearchFromJson(response);
+    } catch (Exception e) {
+      log.warn("Could not detect cluster type, assuming Elasticsearch. Raw response: '{}'. Error: {}", response, e);
+      return false;
+    } finally {
+      try {
+        client.close();
+      } catch (Exception ignore) {
+      }
+    }
   }
-}
 
 
    boolean isOpenSearchFromJson(String clusterInfo) throws IOException {
