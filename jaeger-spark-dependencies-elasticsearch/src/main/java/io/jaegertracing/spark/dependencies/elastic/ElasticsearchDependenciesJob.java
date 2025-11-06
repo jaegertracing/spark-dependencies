@@ -20,6 +20,7 @@ import io.jaegertracing.spark.dependencies.DependenciesSparkHelper;
 import io.jaegertracing.spark.dependencies.Utils;
 import io.jaegertracing.spark.dependencies.model.Dependency;
 import io.jaegertracing.spark.dependencies.model.Span;
+import java.io.IOException;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -36,6 +37,7 @@ import org.elasticsearch.hadoop.rest.RestClient;
 import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.spark.cfg.SparkSettings;
 import org.elasticsearch.spark.rdd.api.java.JavaEsSpark;
+import org.opensearch.spark.rdd.api.java.JavaOpenSearchSpark;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -200,6 +202,20 @@ public class ElasticsearchDependenciesJob {
       conf.set("es.nodes.discovery", "0");
       conf.set("es.nodes.client.only", "1");
     }
+    // Mirror configuration for OpenSearch connector (dual-backend support)
+    if (builder.username != null) {
+      conf.set("opensearch.net.http.auth.user", builder.username);
+    }
+    if (builder.password != null) {
+      conf.set("opensearch.net.http.auth.pass", builder.password);
+    }
+    conf.set("opensearch.nodes", builder.hosts);
+    if (builder.hosts.indexOf("https") != -1) {
+      conf.set("opensearch.net.ssl", "true");
+    }
+    if (builder.nodesWanOnly) {
+      conf.set("opensearch.nodes.wan.only", "true");
+    } 
     for (Map.Entry<String, String> entry : builder.sparkProperties.entrySet()) {
       conf.set(entry.getKey(), entry.getValue());
     }
@@ -268,18 +284,34 @@ public class ElasticsearchDependenciesJob {
         // Send raw query to ES to select only the docs / spans we want to consider for this job
         // This doesn't change the default behavior as the daily indexes only contain up to 24h of data
         String esQuery = String.format("{\"range\": {\"startTimeMillis\": { \"gte\": \"now-%s\" }}}", spanRange);
-        JavaPairRDD<String, Iterable<Span>> traces = JavaEsSpark.esJsonRDD(sc, spanIndex, esQuery)
-            .map(new ElasticTupleToSpan())
-            .groupBy(Span::getTraceId);
-        List<Dependency> dependencyLinks = DependenciesSparkHelper.derive(traces,peerServiceTag);
-        EsMajorVersion esMajorVersion = getEsVersion();
-        // Add type for ES < 7
-        // WARN log is produced for older ES versions, however it's produced by spark-es library and not ES itself, it cannot be disabled
-        //  WARN Resource: Detected type name in resource [jaeger-dependencies-2019-08-14/dependencies]. Type names are deprecated and will be removed in a later release.
-        if (esMajorVersion.before(EsMajorVersion.V_7_X)) {
-          depIndex = depIndex + "/dependencies";
+        JavaPairRDD<String, Iterable<Span>> traces;
+        boolean isOpenSearch = isOpenSearchCluster();
+        if (isOpenSearch) {
+          // Use OpenSearch connector for reads
+    traces = JavaOpenSearchSpark.openSearchJsonRDD(sc, spanIndex, esQuery)
+              .map(new ElasticTupleToSpan())
+              .groupBy(Span::getTraceId);
+        } else {
+          traces = JavaEsSpark.esJsonRDD(sc, spanIndex, esQuery)
+              .map(new ElasticTupleToSpan())
+              .groupBy(Span::getTraceId);
         }
-        store(sc, dependencyLinks, depIndex);
+        List<Dependency> dependencyLinks = DependenciesSparkHelper.derive(traces,peerServiceTag);
+        if (!isOpenSearch) {
+          EsMajorVersion esMajorVersion = getEsVersion();
+          // Add type for ES < 7
+          // WARN log is produced for older ES versions, however it's produced by spark-es library and not ES itself, it cannot be disabled
+          //  WARN Resource: Detected type name in resource [jaeger-dependencies-2019-08-14/dependencies]. Type names are deprecated and will be removed in a later release.
+          if (esMajorVersion.before(EsMajorVersion.V_7_X)) {
+            depIndex = depIndex + "/dependencies";
+          }
+        }
+        if (isOpenSearch) {
+          // Always no types on OpenSearch
+          storeToOpenSearch(sc, dependencyLinks, depIndex);
+        } else {
+          store(sc, dependencyLinks, depIndex);
+        }
         log.info("Done, {} dependency objects created", dependencyLinks.size());
         if (dependencyLinks.size() > 0) {
           // we do not derive dependencies for old prefix "prefix:" if new prefix "prefix-" contains data
@@ -291,10 +323,47 @@ public class ElasticsearchDependenciesJob {
     }
   }
 
+  // Visible for tests
+  boolean isOpenSearchCluster() {
+  RestClient client = new RestClient(new SparkSettings(conf));
+  try {
+    return isOpenSearchFromJson(client.get("/", ""));
+  } catch (Exception e) {
+    log.warn("Could not detect cluster type, assuming Elasticsearch: {}", e.getMessage());
+    return false;
+  } finally {
+    try { client.close(); } catch (Exception ignore) {}
+  }
+}
+
+
+   boolean isOpenSearchFromJson(String clusterInfo) throws IOException {
+    if (clusterInfo == null || clusterInfo.isEmpty()) return false;
+    ObjectMapper mapper = new ObjectMapper();
+    Map<?, ?> root = mapper.readValue(clusterInfo, Map.class);
+    Object verObj = root.get("version");
+    if (verObj instanceof Map) {
+      Map<?, ?> version = (Map<?, ?>) verObj;
+      Object dist = version.get("distribution");
+      return dist != null && "opensearch".equalsIgnoreCase(String.valueOf(dist));
+    }
+    return false;
+  }
+
+
+  /**
+   * Detects Elasticsearch major version to determine document type behavior.
+   * Only called when backend is confirmed to be Elasticsearch (not OpenSearch).
+   * 
+   * @return EsMajorVersion indicating whether document types are needed
+   */
   private EsMajorVersion getEsVersion() {
     RestClient client = new RestClient(new SparkSettings(conf));
     try {
       return client.mainInfo().getMajorVersion();
+    } catch (Exception e) {
+      log.error("Could not detect Elasticsearch version. Ensure the cluster is accessible and GET / endpoint is not blocked.", e);
+      throw new IllegalStateException("Failed to detect Elasticsearch version", e);
     } finally {
       client.close();
     }
@@ -314,6 +383,23 @@ public class ElasticsearchDependenciesJob {
     }
 
     JavaEsSpark.saveJsonToEs(javaSparkContext.parallelize(Collections.singletonList(json)), resource);
+  }
+
+  private void storeToOpenSearch(JavaSparkContext javaSparkContext, List<Dependency> dependencyLinks, String resource) {
+    if (dependencyLinks.isEmpty()) {
+      return;
+    }
+
+    String json;
+    try {
+      ObjectMapper objectMapper = new ObjectMapper();
+      json = objectMapper.writeValueAsString(new ElasticsearchDependencies(dependencyLinks, day));
+    } catch (JsonProcessingException e) {
+      throw new IllegalStateException("Could not serialize dependencies", e);
+    }
+
+JavaOpenSearchSpark.saveJsonToOpenSearch(
+        javaSparkContext.parallelize(Collections.singletonList(json)), resource);
   }
 
   /**
