@@ -44,6 +44,13 @@
       <version>9.1.3</version>
     </dependency>
 
+    <!-- OpenSearch Hadoop Spark connector for dual-backend support (Spark 3, Scala 2.12) -->
+    <dependency>
+      <groupId>org.opensearch.client</groupId>
+      <artifactId>opensearch-spark-30_${version.scala.binary}</artifactId>
+      <version>1.3.0</version>
+    </dependency>
+
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>jaeger-spark-dependencies-test</artifactId>
