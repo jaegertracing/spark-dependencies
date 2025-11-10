@@ -26,7 +26,7 @@ public class ElasticsearchDependenciesTagFieldsJobTest extends ElasticsearchDepe
   public static void beforeClass() {
     jaegerElasticsearchEnvironment = new JaegerElasticsearchEnvironment();
     HashMap<String, String> jaegerEnvSetting = new HashMap<>();
-    jaegerEnvSetting.put("ES_TAGS__AS_FIELDS_ALL", "true");
+    jaegerEnvSetting.put("ES_TAGS__AS_FIELDS_ALL", "false");
     jaegerElasticsearchEnvironment.start(jaegerEnvSetting, jaegerVersion(), JaegerElasticsearchEnvironment.elasticsearchVersion());
     collectorUrl = jaegerElasticsearchEnvironment.getCollectorUrl();
     zipkinCollectorUrl = jaegerElasticsearchEnvironment.getZipkinCollectorUrl();
