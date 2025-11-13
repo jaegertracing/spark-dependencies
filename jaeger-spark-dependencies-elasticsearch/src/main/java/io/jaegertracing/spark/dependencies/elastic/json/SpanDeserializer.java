@@ -30,6 +30,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Pavol Loffay
@@ -38,6 +40,7 @@ public class SpanDeserializer extends StdDeserializer<Span> {
 
   // TODO Spark incorrectly serializes object mapper, therefore reinitializing here
   private ObjectMapper objectMapper = JsonHelper.configure(new ObjectMapper());
+  private static final Logger log = LoggerFactory.getLogger(SpanDeserializer.class);
 
   public SpanDeserializer() {
     super(Span.class);
@@ -47,59 +50,137 @@ public class SpanDeserializer extends StdDeserializer<Span> {
   public Span deserialize(JsonParser jp, DeserializationContext ctxt) throws IOException, JsonProcessingException {
     JsonNode node = objectMapper.getFactory().setCodec(objectMapper).getCodec().readTree(jp);
 
-    String spanIdHex = node.get("spanID").asText();
-    String traceIdHex = node.get("traceID").asText();
-    String startTimeStr = node.get("startTime").asText();
-
-    JsonNode processNode = node.get("process");
-    Process process = objectMapper.treeToValue(processNode, Process.class);
-
-    JsonNode tagsNode = node.get("tags");
-    List<KeyValue> tags = Arrays.asList(objectMapper.treeToValue(tagsNode, KeyValue[].class));
-
-    JsonNode tagFieldsNode = node.get("tag");
-    if (tagFieldsNode != null) {
-      Map<String, Object> tagFields = objectMapper.treeToValue(tagFieldsNode, Map.class);
-      tags = addTagFields(tags, tagFields);
+    String spanIdHex = null;
+    JsonNode spanIdNode = node.get("spanID");
+    if (spanIdNode != null && !spanIdNode.isNull()) {
+      spanIdHex = spanIdNode.asText();
+    }
+    String traceIdHex = null;
+    JsonNode traceIdNode = node.get("traceID");
+    if (traceIdNode != null && !traceIdNode.isNull()) {
+      traceIdHex = traceIdNode.asText();
     }
 
+    // Try startTimeMillis first (Jaeger v2), fallback to startTime (v1)
+    Long startTime = null;
+    JsonNode startTimeMillisNode = node.get("startTimeMillis");
+    if (startTimeMillisNode != null && !startTimeMillisNode.isNull()) {
+      startTime = startTimeMillisNode.asLong();
+    } else {
+      JsonNode startTimeNode = node.get("startTime");
+      if (startTimeNode != null && !startTimeNode.isNull()) {
+        try {
+          startTime = Long.parseLong(startTimeNode.asText());
+        } catch (NumberFormatException e) {
+          log.warn("Failed to parse startTime: {}", startTimeNode.asText());
+        }
+      }
+    }
+
+    // Process (null-safe)
+    Process process = null;
+    JsonNode processNode = node.get("process");
+    if (processNode != null && !processNode.isNull()) {
+      try {
+        process = objectMapper.treeToValue(processNode, Process.class);
+      } catch (Exception e) {
+        log.warn("Failed to deserialize process for span {}: {}", spanIdHex, e.getMessage());
+      }
+    }
+
+    // Tags (null-safe)
+    List<KeyValue> tags = new ArrayList<>();
+    JsonNode tagsNode = node.get("tags");
+    if (tagsNode != null && !tagsNode.isNull() && tagsNode.isArray()) {
+      try {
+        KeyValue[] tagsArray = objectMapper.treeToValue(tagsNode, KeyValue[].class);
+        if (tagsArray != null) {
+          tags.addAll(Arrays.asList(tagsArray));
+        }
+      } catch (Exception e) {
+        log.warn("Failed to deserialize tags for span {}: {}", spanIdHex, e.getMessage());
+      }
+    }
+
+    // Legacy nested tag object ("tag") support - optional
+    JsonNode tagFieldsNode = node.get("tag");
+    if (tagFieldsNode != null && !tagFieldsNode.isNull()) {
+      try {
+        Map<String, Object> tagFields = objectMapper.treeToValue(tagFieldsNode, Map.class);
+        tags = addTagFields(tags, tagFields);
+      } catch (Exception e) {
+        log.warn("Failed to deserialize 'tag' fields for span {}: {}", spanIdHex, e.getMessage());
+      }
+    }
+
+    // References (null-safe)
+    List<Reference> references = deserializeReferences(node, spanIdHex);
+
     Span span = new Span();
-    span.setSpanId(new BigInteger(spanIdHex, 16).longValue());
-    span.setTraceId(traceIdHex);
-    span.setRefs(deserializeReferences(node));
-    span.setStartTime(startTimeStr != null ? Long.parseLong(startTimeStr) : null);
+    // spanId
+    if (spanIdHex != null && !spanIdHex.isEmpty()) {
+      try {
+        span.setSpanId(new BigInteger(spanIdHex, 16).longValue());
+      } catch (NumberFormatException e) {
+        log.warn("Failed to parse spanID: {}", spanIdHex);
+      }
+    }
+    // traceId
+    if (traceIdHex != null) {
+      span.setTraceId(traceIdHex);
+    }
+    span.setRefs(references);
+    span.setStartTime(startTime);
     span.setProcess(process);
     span.setTags(tags);
     return span;
   }
 
   private List<KeyValue> addTagFields(List<KeyValue> tags, Map<String, Object> tagFields) {
-    ArrayList<KeyValue> result = new ArrayList<>(tags.size() + tagFields.size());
+    ArrayList<KeyValue> result = new ArrayList<>(tags.size() + (tagFields != null ? tagFields.size() : 0));
     result.addAll(tags);
-    List<KeyValue> collect = tagFields.entrySet().stream().map(stringObjectEntry -> {
-      KeyValue kv = new KeyValue();
-      kv.setKey(stringObjectEntry.getKey());
-      kv.setValueString(stringObjectEntry.getValue().toString());
-      return kv;
-    }).collect(Collectors.toList());
-    result.addAll(collect);
+    if (tagFields != null) {
+      List<KeyValue> collect = tagFields.entrySet().stream().map(stringObjectEntry -> {
+        KeyValue kv = new KeyValue();
+        kv.setKey(stringObjectEntry.getKey());
+        kv.setValueString(stringObjectEntry.getValue() != null ? stringObjectEntry.getValue().toString() : null);
+        return kv;
+      }).collect(Collectors.toList());
+      result.addAll(collect);
+    }
     return result;
   }
 
-  private List<Reference> deserializeReferences(JsonNode node) throws JsonProcessingException {
+  private List<Reference> deserializeReferences(JsonNode node, String spanIdHex) throws JsonProcessingException {
     List<Reference> references = new ArrayList<>();
-    JsonNode parentSpanID = node.get("parentSpanID");
-    if (parentSpanID != null) {
-      BigInteger bigInteger = new BigInteger(parentSpanID.asText(), 16);
-      Reference reference = new Reference();
-      reference.setSpanId(bigInteger.longValue());
-      references.add(reference);
+
+    // Legacy parentSpanID
+    JsonNode parentSpanIDNode = node.get("parentSpanID");
+    if (parentSpanIDNode != null && !parentSpanIDNode.isNull()) {
+      String parentSpanIDStr = parentSpanIDNode.asText();
+      if (parentSpanIDStr != null && !parentSpanIDStr.isEmpty()) {
+        try {
+          BigInteger bigInteger = new BigInteger(parentSpanIDStr, 16);
+          Reference reference = new Reference();
+          reference.setSpanId(bigInteger.longValue());
+          references.add(reference);
+        } catch (NumberFormatException e) {
+          log.warn("Failed to parse parentSpanID: {} for span {}", parentSpanIDStr, spanIdHex);
+        }
+      }
     }
 
+    // Modern references array
     JsonNode referencesNode = node.get("references");
-    if (!referencesNode.isNull()) {
+    if (referencesNode != null && !referencesNode.isNull() && referencesNode.isArray()) {
+      try {
         Reference[] referencesArr = objectMapper.treeToValue(referencesNode, Reference[].class);
-        references.addAll(Arrays.asList(referencesArr));
+        if (referencesArr != null) {
+          references.addAll(Arrays.asList(referencesArr));
+        }
+      } catch (Exception e) {
+        log.warn("Failed to deserialize references for span {}: {}", spanIdHex, e.getMessage());
+      }
     }
 
     return references;
