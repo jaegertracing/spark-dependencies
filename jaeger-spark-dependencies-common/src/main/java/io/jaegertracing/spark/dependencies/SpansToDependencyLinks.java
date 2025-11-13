@@ -143,21 +143,40 @@ public class SpansToDependencyLinks implements FlatMapFunction<Iterable<Span>, D
     }
 
     protected Optional<Dependency> sharedSpanDependency(Set<Span> sharedSpans) {
-        String clientService = null;
-        String serverService = null;
-        for (Span span: sharedSpans) {
-            for (KeyValue tag: span.getTags()) {
-                if (Tags.SPAN_KIND_CLIENT.equals(tag.getValueString()) || Tags.SPAN_KIND_PRODUCER.equals(tag.getValueString())) {
-                    clientService = span.getProcess().getServiceName();
-                } else if (Tags.SPAN_KIND_SERVER.equals(tag.getValueString()) || Tags.SPAN_KIND_CONSUMER.equals(tag.getValueString())) {
-                    serverService = span.getProcess().getServiceName();
-                }
-
-                if (clientService != null && serverService != null) {
-                    return Optional.of(new Dependency(clientService, serverService));
-                }
+    String clientService = null;
+    String serverService = null;
+    
+    for (Span span : sharedSpans) {
+        // CRITICAL: Validate span has required data
+        if (span.getProcess() == null) {
+            continue;  // Skip spans without process
+        }
+        
+        String serviceName = span.getProcess().getServiceName();
+        if (serviceName == null || serviceName.isEmpty()) {
+            continue;  // Skip spans without service name
+        }
+        
+        // Check tags exist
+        if (span.getTags() == null) {
+            continue;
+        }
+        
+        for (KeyValue tag : span.getTags()) {
+            if (Tags.SPAN_KIND_CLIENT.equals(tag.getValueString()) ||
+                Tags.SPAN_KIND_PRODUCER.equals(tag.getValueString())) {
+                clientService = serviceName;
+            } else if (Tags.SPAN_KIND_SERVER.equals(tag.getValueString()) ||
+                       Tags.SPAN_KIND_CONSUMER.equals(tag.getValueString())) {
+                serverService = serviceName;
             }
         }
-        return Optional.empty();
     }
+    
+    if (clientService != null && serverService != null) {
+        return Optional.of(new Dependency(clientService, serverService));
+    }
+    return Optional.empty();
+}
+
 }
