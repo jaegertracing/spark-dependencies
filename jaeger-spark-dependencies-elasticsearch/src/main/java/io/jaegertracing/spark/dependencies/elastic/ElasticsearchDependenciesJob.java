@@ -20,6 +20,7 @@ import io.jaegertracing.spark.dependencies.DependenciesSparkHelper;
 import io.jaegertracing.spark.dependencies.Utils;
 import io.jaegertracing.spark.dependencies.model.Dependency;
 import io.jaegertracing.spark.dependencies.model.Span;
+import java.io.IOException;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -36,6 +37,7 @@ import org.elasticsearch.hadoop.rest.RestClient;
 import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.spark.cfg.SparkSettings;
 import org.elasticsearch.spark.rdd.api.java.JavaEsSpark;
+import org.opensearch.spark.rdd.api.java.JavaOpenSearchSpark;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,22 +64,13 @@ public class ElasticsearchDependenciesJob {
     String indexDatePattern = datePattern(Utils.getEnv("ES_INDEX_DATE_SEPARATOR", "-"));
     String spanRange = Utils.getEnv("ES_TIME_RANGE", "24h");
     Boolean useAliases = Boolean.parseBoolean(Utils.getEnv("ES_USE_ALIASES", "false"));
+    String backendType; // "elasticsearch" (default) or "opensearch"
 
     final Map<String, String> sparkProperties = new LinkedHashMap<>();
 
     Builder() {
       sparkProperties.put("spark.ui.enabled", "false");
-      // don't die if there are no spans
-      sparkProperties.put("es.index.read.missing.as.empty", "true");
-      sparkProperties.put("es.net.ssl.keystore.location",
-          getSystemPropertyAsFileResource("javax.net.ssl.keyStore"));
-      sparkProperties.put("es.net.ssl.keystore.pass",
-          System.getProperty("javax.net.ssl.keyStorePassword", ""));
-      sparkProperties.put("es.net.ssl.truststore.location",
-          getSystemPropertyAsFileResource("javax.net.ssl.trustStore"));
-      sparkProperties.put("es.net.ssl.truststore.pass",
-          System.getProperty("javax.net.ssl.trustStorePassword", ""));
-
+      // Note: vendor-specific defaults will be applied per backend in configure*()
     }
 
     // local[*] master lets us run & test the job locally without setting a Spark cluster
@@ -138,6 +131,14 @@ public class ElasticsearchDependenciesJob {
       return this;
     }
 
+    /** Backend type to use: "elasticsearch" (default) or "opensearch" */
+    public Builder backendType(String type) {
+      if (type != null) {
+        this.backendType = type.toLowerCase();
+      }
+      return this;
+    }
+
     /** Whether the connector is used against an Elasticsearch instance in a cloud/restricted
      *  environment over the WAN, such as Amazon Web Services. In this mode, the
      *  connector disables discovery and only connects through the declared es.nodes during all operations,
@@ -160,6 +161,13 @@ public class ElasticsearchDependenciesJob {
       if (hosts != null && wanOnly == null) {
         this.nodesWanOnly = true;
       }
+      // Default backend type from env if not provided, fallback to elasticsearch
+      if (this.backendType == null || this.backendType.isEmpty()) {
+        this.backendType = Utils.getEnv("BACKEND_TYPE", "elasticsearch").toLowerCase();
+      }
+      if (!"elasticsearch".equals(this.backendType) && !"opensearch".equals(this.backendType)) {
+        throw new IllegalArgumentException("Unsupported BACKEND_TYPE: " + this.backendType);
+      }
       logIfNoPort(this.hosts);
       return new ElasticsearchDependenciesJob(this);
     }
@@ -176,13 +184,37 @@ public class ElasticsearchDependenciesJob {
   private final String indexDatePattern;
   private final String spanRange;
   private final Boolean useAliases;
+  private final String backendType;
 
   ElasticsearchDependenciesJob(Builder builder) {
     this.day = builder.day;
+    this.backendType = builder.backendType;
     this.conf = new SparkConf(true).setMaster(builder.sparkMaster).setAppName(getClass().getName());
     if (builder.jars != null) {
       conf.setJars(builder.jars);
     }
+
+    // Configure connector based on explicit backend type
+    if ("opensearch".equals(this.backendType)) {
+      configureOpenSearch(builder);
+    } else {
+      configureElasticsearch(builder);
+    }
+
+    // Apply only non vendor-specific spark properties
+    for (Map.Entry<String, String> entry : builder.sparkProperties.entrySet()) {
+      if (entry.getKey().startsWith("spark.")) {
+        conf.set(entry.getKey(), entry.getValue());
+      }
+    }
+
+    this.indexPrefix = builder.indexPrefix;
+    this.indexDatePattern = builder.indexDatePattern;
+    this.spanRange = builder.spanRange;
+    this.useAliases = builder.useAliases;
+  }
+
+  private void configureElasticsearch(Builder builder) {
     if (builder.username != null) {
       conf.set("es.net.http.auth.user", builder.username);
     }
@@ -200,13 +232,38 @@ public class ElasticsearchDependenciesJob {
       conf.set("es.nodes.discovery", "0");
       conf.set("es.nodes.client.only", "1");
     }
-    for (Map.Entry<String, String> entry : builder.sparkProperties.entrySet()) {
-      conf.set(entry.getKey(), entry.getValue());
+    // defaults / SSL stores for ES
+    conf.set("es.index.read.missing.as.empty", "true");
+    conf.set("es.net.ssl.keystore.location", getSystemPropertyAsFileResource("javax.net.ssl.keyStore"));
+    conf.set("es.net.ssl.keystore.pass", System.getProperty("javax.net.ssl.keyStorePassword", ""));
+    conf.set("es.net.ssl.truststore.location", getSystemPropertyAsFileResource("javax.net.ssl.trustStore"));
+    conf.set("es.net.ssl.truststore.pass", System.getProperty("javax.net.ssl.trustStorePassword", ""));
+  }
+
+  private void configureOpenSearch(Builder builder) {
+    if (builder.username != null) {
+      conf.set("opensearch.net.http.auth.user", builder.username);
     }
-    this.indexPrefix = builder.indexPrefix;
-    this.indexDatePattern = builder.indexDatePattern;
-    this.spanRange = builder.spanRange;
-    this.useAliases = builder.useAliases;
+    if (builder.password != null) {
+      conf.set("opensearch.net.http.auth.pass", builder.password);
+    }
+    conf.set("opensearch.nodes", builder.hosts);
+    if (builder.hosts.indexOf("https") != -1) {
+      conf.set("opensearch.net.ssl", "true");
+    }
+    if (builder.nodesWanOnly) {
+      conf.set("opensearch.nodes.wan.only", "true");
+    }
+    if (builder.clientNodeOnly) {
+      conf.set("opensearch.nodes.discovery", "0");
+      conf.set("opensearch.nodes.client.only", "1");
+    }
+    // defaults / SSL stores for OpenSearch
+    conf.set("opensearch.index.read.missing.as.empty", "true");
+    conf.set("opensearch.net.ssl.keystore.location", getSystemPropertyAsFileResource("javax.net.ssl.keyStore"));
+    conf.set("opensearch.net.ssl.keystore.pass", System.getProperty("javax.net.ssl.keyStorePassword", ""));
+    conf.set("opensearch.net.ssl.truststore.location", getSystemPropertyAsFileResource("javax.net.ssl.trustStore"));
+    conf.set("opensearch.net.ssl.truststore.pass", System.getProperty("javax.net.ssl.trustStorePassword", ""));
   }
 
   /**
@@ -268,18 +325,34 @@ public class ElasticsearchDependenciesJob {
         // Send raw query to ES to select only the docs / spans we want to consider for this job
         // This doesn't change the default behavior as the daily indexes only contain up to 24h of data
         String esQuery = String.format("{\"range\": {\"startTimeMillis\": { \"gte\": \"now-%s\" }}}", spanRange);
-        JavaPairRDD<String, Iterable<Span>> traces = JavaEsSpark.esJsonRDD(sc, spanIndex, esQuery)
-            .map(new ElasticTupleToSpan())
-            .groupBy(Span::getTraceId);
-        List<Dependency> dependencyLinks = DependenciesSparkHelper.derive(traces,peerServiceTag);
-        EsMajorVersion esMajorVersion = getEsVersion();
-        // Add type for ES < 7
-        // WARN log is produced for older ES versions, however it's produced by spark-es library and not ES itself, it cannot be disabled
-        //  WARN Resource: Detected type name in resource [jaeger-dependencies-2019-08-14/dependencies]. Type names are deprecated and will be removed in a later release.
-        if (esMajorVersion.before(EsMajorVersion.V_7_X)) {
-          depIndex = depIndex + "/dependencies";
+        JavaPairRDD<String, Iterable<Span>> traces;
+        boolean isOpenSearch = "opensearch".equals(this.backendType);
+        if (isOpenSearch) {
+          // Use OpenSearch connector for reads
+          traces = JavaOpenSearchSpark.openSearchJsonRDD(sc, spanIndex, esQuery)
+              .map(new ElasticTupleToSpan())
+              .groupBy(Span::getTraceId);
+        } else {
+          traces = JavaEsSpark.esJsonRDD(sc, spanIndex, esQuery)
+              .map(new ElasticTupleToSpan())
+              .groupBy(Span::getTraceId);
         }
-        store(sc, dependencyLinks, depIndex);
+        List<Dependency> dependencyLinks = DependenciesSparkHelper.derive(traces,peerServiceTag);
+        if (!isOpenSearch) {
+          EsMajorVersion esMajorVersion = getEsVersion();
+          // Add type for ES < 7
+          // WARN log is produced for older ES versions, however it's produced by spark-es library and not ES itself, it cannot be disabled
+          //  WARN Resource: Detected type name in resource [jaeger-dependencies-2019-08-14/dependencies]. Type names are deprecated and will be removed in a later release.
+          if (esMajorVersion.before(EsMajorVersion.V_7_X)) {
+            depIndex = depIndex + "/dependencies";
+          }
+        }
+        if (isOpenSearch) {
+          // Always no types on OpenSearch
+          storeToOpenSearch(sc, dependencyLinks, depIndex);
+        } else {
+          store(sc, dependencyLinks, depIndex);
+        }
         log.info("Done, {} dependency objects created", dependencyLinks.size());
         if (dependencyLinks.size() > 0) {
           // we do not derive dependencies for old prefix "prefix:" if new prefix "prefix-" contains data
@@ -291,10 +364,21 @@ public class ElasticsearchDependenciesJob {
     }
   }
 
+
+
+  /**
+   * Detects Elasticsearch major version to determine document type behavior.
+   * Only called when backend is confirmed to be Elasticsearch (not OpenSearch).
+   * 
+   * @return EsMajorVersion indicating whether document types are needed
+   */
   private EsMajorVersion getEsVersion() {
     RestClient client = new RestClient(new SparkSettings(conf));
     try {
       return client.mainInfo().getMajorVersion();
+    } catch (Exception e) {
+      log.error("Could not detect Elasticsearch version. Ensure the cluster is accessible and GET / endpoint is not blocked.", e);
+      throw new IllegalStateException("Failed to detect Elasticsearch version", e);
     } finally {
       client.close();
     }
@@ -314,6 +398,37 @@ public class ElasticsearchDependenciesJob {
     }
 
     JavaEsSpark.saveJsonToEs(javaSparkContext.parallelize(Collections.singletonList(json)), resource);
+  }
+
+  private void storeToOpenSearch(JavaSparkContext javaSparkContext, List<Dependency> dependencyLinks, String resource) {
+    if (dependencyLinks.isEmpty()) {
+      return;
+    }
+
+    String json;
+    try {
+      ObjectMapper objectMapper = new ObjectMapper();
+      json = objectMapper.writeValueAsString(new ElasticsearchDependencies(dependencyLinks, day));
+    } catch (JsonProcessingException e) {
+      throw new IllegalStateException("Could not serialize dependencies", e);
+    }
+
+    JavaOpenSearchSpark.saveJsonToOpenSearch(
+        javaSparkContext.parallelize(Collections.singletonList(json)), resource);
+  }
+
+  // Visible for tests only
+  boolean isOpenSearchFromJson(String clusterInfo) throws IOException {
+    if (clusterInfo == null || clusterInfo.isEmpty()) return false;
+    ObjectMapper mapper = new ObjectMapper();
+    Map<?, ?> root = mapper.readValue(clusterInfo, Map.class);
+    Object verObj = root.get("version");
+    if (verObj instanceof Map) {
+      Map<?, ?> version = (Map<?, ?>) verObj;
+      Object dist = version.get("distribution");
+      return dist != null && "opensearch".equalsIgnoreCase(String.valueOf(dist));
+    }
+    return false;
   }
 
   /**

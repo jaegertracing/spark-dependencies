@@ -18,6 +18,7 @@ import static io.jaegertracing.spark.dependencies.test.DependenciesTest.jaegerVe
 
 import io.jaegertracing.spark.dependencies.elastic.ElasticsearchDependenciesJobTest.BoundPortHttpWaitStrategy;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
 import okhttp3.MediaType;
@@ -54,6 +55,7 @@ public class JaegerElasticsearchEnvironment {
   public void start(Map<String, String> jaegerEnvs, String jaegerVersion, String elasticsearchVersion) {
     network = Network.newNetwork();
     elasticsearch = new GenericContainer<>(String.format("docker.elastic.co/elasticsearch/elasticsearch:%s", elasticsearchVersion))
+        .withStartupTimeout(Duration.ofMinutes(5))
         .withNetwork(network)
         .withNetworkAliases("elasticsearch")
         .waitingFor(new BoundPortHttpWaitStrategy(9200).forStatusCode(200))
@@ -66,6 +68,7 @@ public class JaegerElasticsearchEnvironment {
     elasticsearch.start();
 
     jaegerCollector = new GenericContainer<>("jaegertracing/jaeger-collector:" + jaegerVersion)
+        .withStartupTimeout(Duration.ofMinutes(3))
         .withNetwork(network)
         .withEnv("SPAN_STORAGE_TYPE", "elasticsearch")
         .withEnv("ES_SERVER_URLS", "http://elasticsearch:9200")
@@ -78,6 +81,7 @@ public class JaegerElasticsearchEnvironment {
     jaegerCollector.start();
 
     jaegerQuery = new GenericContainer<>("jaegertracing/jaeger-query:" + jaegerVersion())
+        .withStartupTimeout(Duration.ofMinutes(3))
         .withEnv("SPAN_STORAGE_TYPE", "elasticsearch")
         .withEnv("ES_SERVER_URLS", "http://elasticsearch:9200")
         .withEnv("ES_TAGS_AS_FIELDS_ALL", "true")
@@ -87,16 +91,16 @@ public class JaegerElasticsearchEnvironment {
         .withExposedPorts(16687, 16686);
     jaegerQuery.start();
 
-    collectorUrl = String.format("http://%s:%d", jaegerCollector.getContainerIpAddress(), jaegerCollector.getMappedPort(14268));
-    zipkinCollectorUrl = String.format("http://%s:%d", jaegerCollector.getContainerIpAddress(), jaegerCollector.getMappedPort(9411));
-    queryUrl = String.format("http://%s:%d", jaegerQuery.getContainerIpAddress(), jaegerQuery.getMappedPort(16686));
+    collectorUrl = String.format("http://%s:%d", jaegerCollector.getHost(), jaegerCollector.getMappedPort(14268));
+    zipkinCollectorUrl = String.format("http://%s:%d", jaegerCollector.getHost(), jaegerCollector.getMappedPort(9411));
+    queryUrl = String.format("http://%s:%d", jaegerQuery.getHost(), jaegerQuery.getMappedPort(16686));
   }
 
   public void cleanUp(String[] spanIndex, String[] dependenciesIndex) throws IOException {
       String matchAllQuery = "{\"query\": {\"match_all\":{} }}";
       Request request = new Request.Builder()
           .url(String.format("http://%s:%d/%s,%s/_delete_by_query?conflicts=proceed",
-              elasticsearch.getContainerIpAddress(),
+              elasticsearch.getHost(),
               elasticsearch.getMappedPort(9200),
               // we don't use index prefix
               spanIndex[0],
@@ -140,6 +144,6 @@ public class JaegerElasticsearchEnvironment {
   }
 
   public String getElasticsearchIPPort() {
-    return String.format("%s:%d", elasticsearch.getContainerIpAddress(), elasticsearch.getMappedPort(9200));
+    return String.format("%s:%d", elasticsearch.getHost(), elasticsearch.getMappedPort(9200));
   }
 }

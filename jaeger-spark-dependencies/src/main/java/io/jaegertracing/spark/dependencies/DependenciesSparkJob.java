@@ -37,10 +37,20 @@ public final class DependenciesSparkJob {
       date = parseZonedDateTime(System.getenv("DATE"));
     }
 
-    run(storage, date);
+    // Read backend type for elasticsearch-based storage (default: elasticsearch)
+    String backendType = System.getenv("BACKEND_TYPE");
+    if (backendType == null || backendType.isEmpty()) {
+      backendType = "elasticsearch"; // backward compatible default
+    }
+    backendType = backendType.toLowerCase();
+    if (!"elasticsearch".equals(backendType) && !"opensearch".equals(backendType)) {
+      throw new IllegalArgumentException("Unsupported BACKEND_TYPE: " + backendType + ". Expected 'elasticsearch' or 'opensearch'.");
+    }
+
+    run(storage, date, backendType);
   }
 
-  private static void run(String storage, LocalDate localDate) throws UnsupportedEncodingException {
+  private static void run(String storage, LocalDate localDate, String backendType) throws UnsupportedEncodingException {
     String peerServiceTag = System.getenv("PEER_SERVICE_TAG");
     if (peerServiceTag == null){
       peerServiceTag = "peer.service";
@@ -48,6 +58,7 @@ public final class DependenciesSparkJob {
     String jarPath = pathToUberJar();
     if ("elasticsearch".equalsIgnoreCase(storage)) {
       ElasticsearchDependenciesJob.builder()
+          .backendType(backendType)
           .jars(jarPath)
           .day(localDate)
           .build()

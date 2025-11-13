@@ -17,6 +17,7 @@ import static org.awaitility.Awaitility.await;
 
 import com.datastax.oss.driver.api.core.CqlSession;
 import io.jaegertracing.spark.dependencies.test.DependenciesTest;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.Collections;
 import java.util.Optional;
@@ -46,6 +47,7 @@ public class CassandraDependenciesJobTest extends DependenciesTest {
   public static void beforeClass() {
     network = Network.newNetwork();
     cassandra = new CassandraContainer("cassandra:4.1")
+        .withStartupTimeout(Duration.ofMinutes(5))
         .withNetwork(network)
         .withNetworkAliases("cassandra")
         .withExposedPorts(9042);
