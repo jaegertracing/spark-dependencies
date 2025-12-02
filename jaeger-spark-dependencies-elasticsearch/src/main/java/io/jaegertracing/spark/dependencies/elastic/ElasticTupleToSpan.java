@@ -28,6 +28,23 @@ public class ElasticTupleToSpan implements Function<Tuple2<String, String>, Span
 
   @Override
   public Span call(Tuple2<String, String> tuple) throws Exception {
-    return objectMapper.readValue(tuple._2(), Span.class);
+    Span span = objectMapper.readValue(tuple._2(), Span.class);
+    String originalTraceId = span.getTraceId();
+    span.setTraceId(normalizeTraceId(originalTraceId));
+    if (span.getTags() != null) {
+      span.getTags().sort((o1, o2) -> o1.getKey().compareTo(o2.getKey()));
+    }
+    if (span.getRefs() != null) {
+      span.getRefs().sort((o1, o2) -> o1.getSpanId().compareTo(o2.getSpanId()));
+    }
+
+    return span;
+  }
+
+  private String normalizeTraceId(String traceId) {
+    if (traceId != null && traceId.length() < 32) {
+      return String.format("%32s", traceId).replace(' ', '0');
+    }
+    return traceId;
   }
 }

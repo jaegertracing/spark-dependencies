@@ -30,4 +30,23 @@ public class Reference implements Serializable {
   public void setSpanId(Long spanId) {
     this.spanId = spanId;
   }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+
+    Reference reference = (Reference) o;
+
+    return spanId != null ? spanId.equals(reference.spanId) : reference.spanId == null;
+  }
+
+  @Override
+  public int hashCode() {
+    return spanId != null ? spanId.hashCode() : 0;
+  }
 }

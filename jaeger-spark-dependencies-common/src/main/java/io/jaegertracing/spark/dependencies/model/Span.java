@@ -87,5 +87,44 @@ public class Span implements Serializable {
   public void setRefs(List<Reference> refs) {
     this.refs = refs;
   }
-}
 
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+
+    Span span = (Span) o;
+
+    if (traceId != null ? !traceId.equals(span.traceId) : span.traceId != null) {
+      return false;
+    }
+    if (spanId != null ? !spanId.equals(span.spanId) : span.spanId != null) {
+      return false;
+    }
+    if (startTime != null ? !startTime.equals(span.startTime) : span.startTime != null) {
+      return false;
+    }
+    if (process != null ? !process.equals(span.process) : span.process != null) {
+      return false;
+    }
+    if (tags != null ? !tags.equals(span.tags) : span.tags != null) {
+      return false;
+    }
+    return refs != null ? refs.equals(span.refs) : span.refs == null;
+  }
+
+  @Override
+  public int hashCode() {
+    int result = traceId != null ? traceId.hashCode() : 0;
+    result = 31 * result + (spanId != null ? spanId.hashCode() : 0);
+    result = 31 * result + (startTime != null ? startTime.hashCode() : 0);
+    result = 31 * result + (process != null ? process.hashCode() : 0);
+    result = 31 * result + (tags != null ? tags.hashCode() : 0);
+    result = 31 * result + (refs != null ? refs.hashCode() : 0);
+    return result;
+  }
+}
