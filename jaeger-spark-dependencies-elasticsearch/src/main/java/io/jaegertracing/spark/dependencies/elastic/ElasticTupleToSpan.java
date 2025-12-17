@@ -32,7 +32,8 @@ public class ElasticTupleToSpan implements Function<Tuple2<String, String>, Span
     String originalTraceId = span.getTraceId();
     span.setTraceId(normalizeTraceId(originalTraceId));
     if (span.getTags() != null) {
-      span.getTags().sort((o1, o2) -> o1.getKey().compareTo(o2.getKey()));
+      span.getTags().sort(java.util.Comparator.comparing(io.jaegertracing.spark.dependencies.model.KeyValue::getKey,
+          java.util.Comparator.nullsFirst(java.util.Comparator.naturalOrder())));
     }
     if (span.getRefs() != null) {
       span.getRefs().sort((o1, o2) -> o1.getSpanId().compareTo(o2.getSpanId()));

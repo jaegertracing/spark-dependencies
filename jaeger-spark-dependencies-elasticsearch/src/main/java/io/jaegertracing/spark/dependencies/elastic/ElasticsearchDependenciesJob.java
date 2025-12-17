@@ -277,6 +277,7 @@ public class ElasticsearchDependenciesJob {
   void run(String[] spanIndices, String[] depIndices,String peerServiceTag) {
     JavaSparkContext sc = new JavaSparkContext(conf);
     try {
+      boolean isOpenSearch = isOpenSearchCluster();
       for (int i = 0; i < spanIndices.length; i++) {
         String spanIndex = spanIndices[i];
         String depIndex = depIndices[i];
@@ -285,7 +286,6 @@ public class ElasticsearchDependenciesJob {
         // This doesn't change the default behavior as the daily indexes only contain up to 24h of data
         String esQuery = String.format("{\"range\": {\"startTimeMillis\": { \"gte\": \"now-%s\" }}}", spanRange);
         JavaPairRDD<String, Iterable<Span>> traces;
-        boolean isOpenSearch = isOpenSearchCluster();
         if (isOpenSearch) {
           // Use OpenSearch connector for reads
     traces = JavaOpenSearchSpark.openSearchJsonRDD(sc, spanIndex, esQuery)

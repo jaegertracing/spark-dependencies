@@ -48,7 +48,7 @@
     <dependency>
       <groupId>org.opensearch.client</groupId>
       <artifactId>opensearch-spark-30_${version.scala.binary}</artifactId>
-      <version>1.3.0</version>
+      <version>${version.opensearch.spark}</version>
     </dependency>
 
     <dependency>
