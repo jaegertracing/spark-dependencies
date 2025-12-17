@@ -18,7 +18,6 @@ import brave.sampler.Sampler;
 import io.jaegertracing.internal.JaegerTracer;
 import io.jaegertracing.internal.JaegerTracer.Builder;
 import io.jaegertracing.internal.exceptions.SenderException;
-import io.jaegertracing.internal.metrics.Metrics;
 import io.jaegertracing.internal.reporters.RemoteReporter;
 import io.jaegertracing.internal.samplers.ConstSampler;
 import io.jaegertracing.spark.dependencies.test.tree.TracingWrapper;
@@ -110,6 +109,7 @@ public class TracersGenerator {
     return new Tuple<>(new Builder(serviceName)
         .withReporter(reporter)
         .withSampler(new ConstSampler(true))
+        .withTraceId128Bit()
         .build(),
         () -> {
       try {

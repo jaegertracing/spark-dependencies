@@ -72,13 +72,26 @@ public class ElasticsearchDependenciesJobTest extends DependenciesTest {
         .nodes("http://" + jaegerElasticsearchEnvironment.getElasticsearchIPPort())
         .day(LocalDate.now())
         .build();
+    try {
+      jaegerElasticsearchEnvironment.refresh();
+    } catch (IOException e) {
+      throw new RuntimeException("Could not refresh Elasticsearch", e);
+    }
     dependenciesJob.run("peer.service");
+    try {
+      jaegerElasticsearchEnvironment.refresh();
+    } catch (IOException e) {
+      throw new RuntimeException("Could not refresh Elasticsearch", e);
+    }
   }
 
   @Override
   protected void waitBetweenTraces() throws InterruptedException {
-    // TODO otherwise elastic drops some spans
-    TimeUnit.SECONDS.sleep(2);
+    try {
+      jaegerElasticsearchEnvironment.refresh();
+    } catch (IOException e) {
+      throw new RuntimeException("Could not refresh Elasticsearch", e);
+    }
   }
 
   public static class BoundPortHttpWaitStrategy extends HttpWaitStrategy {

@@ -50,4 +50,32 @@ public class KeyValue implements Serializable {
   public void setValueType(String valueType) {
     this.valueType = valueType;
   }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+
+    KeyValue keyValue = (KeyValue) o;
+
+    if (key != null ? !key.equals(keyValue.key) : keyValue.key != null) {
+      return false;
+    }
+    if (valueType != null ? !valueType.equals(keyValue.valueType) : keyValue.valueType != null) {
+      return false;
+    }
+    return valueString != null ? valueString.equals(keyValue.valueString) : keyValue.valueString == null;
+  }
+
+  @Override
+  public int hashCode() {
+    int result = key != null ? key.hashCode() : 0;
+    result = 31 * result + (valueType != null ? valueType.hashCode() : 0);
+    result = 31 * result + (valueString != null ? valueString.hashCode() : 0);
+    return result;
+  }
 }
