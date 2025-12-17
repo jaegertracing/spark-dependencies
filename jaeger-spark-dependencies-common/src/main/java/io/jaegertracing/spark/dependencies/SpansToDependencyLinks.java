@@ -49,9 +49,14 @@ public class SpansToDependencyLinks implements FlatMapFunction<Iterable<Span>, D
 
     @Override
     public java.util.Iterator<Dependency> call(Iterable<Span> trace) {
+        Set<Span> uniqueSpans = new LinkedHashSet<>();
+        for (Span span : trace) {
+            uniqueSpans.add(span);
+        }
+
         Map<Long, Set<Span>> spanMap = new LinkedHashMap<>();
         Map<Long, Set<Span>> spanChildrenMap = new LinkedHashMap<>();
-        for (Span span: trace) {
+        for (Span span : uniqueSpans) {
             // Map of children
             for (Reference ref: span.getRefs()){
               Set <Span> children = spanChildrenMap.get(ref.getSpanId());
@@ -73,7 +78,7 @@ public class SpansToDependencyLinks implements FlatMapFunction<Iterable<Span>, D
         // Let's start with zipkin shared spans
         List<Dependency> result = sharedSpanDependencies(spanMap);
 
-        for (Span span: trace) {
+        for (Span span : uniqueSpans) {
             if (span.getRefs() == null || span.getRefs().isEmpty() ||
                 span.getProcess() == null || span.getProcess().getServiceName() == null) {
                 continue;

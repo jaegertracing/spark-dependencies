@@ -118,6 +118,27 @@ public class JaegerElasticsearchEnvironment {
       }
   }
 
+  /**
+   * In Elasticsearch, the _refresh endpoint is used to make recently indexed,
+   * updated, or deleted documents visible to search, as otherwise they might
+   * be still sitting in a memory buffer.
+   */
+  public void refresh() throws IOException {
+    Request request = new Request.Builder()
+        .url(String.format("http://%s:%d/_refresh",
+            elasticsearch.getContainerIpAddress(),
+            elasticsearch.getMappedPort(9200)))
+        .post(RequestBody.create(MediaType.parse("application/json; charset=utf-8"), ""))
+        .build();
+
+    try (Response response = okHttpClient.newCall(request).execute()) {
+      if (!response.isSuccessful()) {
+        String body = response.body().string();
+        throw new IllegalStateException(String.format("Could not refresh ES: %s, %s", response, body));
+      }
+    }
+  }
+
   public void stop() {
     Optional.of(jaegerCollector).ifPresent(GenericContainer::close);
     Optional.of(jaegerQuery).ifPresent(GenericContainer::close);
