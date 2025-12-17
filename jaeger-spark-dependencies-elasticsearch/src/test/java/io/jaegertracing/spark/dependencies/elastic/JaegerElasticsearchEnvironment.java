@@ -114,6 +114,11 @@ public class JaegerElasticsearchEnvironment {
       }
   }
 
+  /**
+   * In Elasticsearch, the _refresh endpoint is used to make recently indexed,
+   * updated, or deleted documents visible to search, as otherwise they might
+   * be still sitting in a memory buffer.
+   */
   public void refresh() throws IOException {
     Request request = new Request.Builder()
         .url(String.format("http://%s:%d/_refresh",
