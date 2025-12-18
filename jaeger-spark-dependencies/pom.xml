@@ -118,7 +118,7 @@
                 </filter>
                 <filter>
                   <!-- org.elasticsearch.spark.sql.SparkSQLCompatibilityLevel -->
-                  <artifact>org.elasticsearch:elasticsearch-spark-20_${version.scala.binary}</artifact>
+                  <artifact>org.elasticsearch:elasticsearch-spark-*</artifact>
                   <includes>
                     <include>**</include>
                   </includes>

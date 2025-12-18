@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package io.jaegertracing.spark.dependencies.cassandra;
+package io.jaegertracing.spark.dependencies.elastic;
 
 import org.testcontainers.containers.output.OutputFrame;
 
