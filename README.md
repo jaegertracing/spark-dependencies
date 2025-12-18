@@ -65,6 +65,14 @@ $ STORAGE=cassandra CASSANDRA_CONTACT_POINTS=localhost:9042 java -jar jaeger-spa
 ### Elasticsearch
 Elasticsearch is used when `STORAGE=elasticsearch`.
 
+#### Version Compatibility
+The default build supports Elasticsearch versions 7.17+, 8.x, and can be customized for 9.x:
+- **Elasticsearch 7.17+ and 8.x**: Use the default build (elasticsearch-spark version 8.13.4)
+- **Elasticsearch 9.x**: Build with `-Dversion.elasticsearch.spark=9.1.3` to use elasticsearch-spark version 9.1.3
+
+Note: Elasticsearch versions older than 7.17 are not supported by the default build.
+
+#### Configuration
     * `ES_NODES`: A comma separated list of elasticsearch hosts advertising http. Defaults to
                   localhost. Add port section if not listening on port 9200. Only one of these hosts
                   needs to be available to fetch the remaining nodes in the cluster. It is
