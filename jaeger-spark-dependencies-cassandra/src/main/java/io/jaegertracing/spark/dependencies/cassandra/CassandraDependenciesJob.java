@@ -309,17 +309,12 @@ public final class CassandraDependenciesJob {
       peerServiceTag = "peer.service";
     }
 
-    String jarPath = pathToUberJar();
+    String jarPath = Utils.pathToUberJar(CassandraDependenciesJob.class);
     CassandraDependenciesJob.builder()
         .jars(jarPath)
         .day(date)
         .build()
         .run(peerServiceTag);
-  }
-
-  private static String pathToUberJar() throws java.io.UnsupportedEncodingException {
-    java.net.URL jarFile = CassandraDependenciesJob.class.getProtectionDomain().getCodeSource().getLocation();
-    return java.net.URLDecoder.decode(jarFile.getPath(), "UTF-8");
   }
 }
 

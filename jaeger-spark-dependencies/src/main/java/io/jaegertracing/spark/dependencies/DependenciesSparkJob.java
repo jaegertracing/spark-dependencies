@@ -16,11 +16,7 @@ package io.jaegertracing.spark.dependencies;
 import io.jaegertracing.spark.dependencies.cassandra.CassandraDependenciesJob;
 import io.jaegertracing.spark.dependencies.elastic.ElasticsearchDependenciesJob;
 import java.io.UnsupportedEncodingException;
-import java.net.URL;
-import java.net.URLDecoder;
 import java.time.LocalDate;
-import java.util.HashMap;
-import java.util.Map;
 
 public final class DependenciesSparkJob {
 
@@ -45,7 +41,7 @@ public final class DependenciesSparkJob {
     if (peerServiceTag == null){
       peerServiceTag = "peer.service";
     }
-    String jarPath = pathToUberJar();
+    String jarPath = Utils.pathToUberJar(DependenciesSparkJob.class);
     if ("elasticsearch".equalsIgnoreCase(storage)) {
       ElasticsearchDependenciesJob.builder()
           .jars(jarPath)
@@ -61,11 +57,6 @@ public final class DependenciesSparkJob {
     } else {
       throw new IllegalArgumentException("Unsupported storage: " + storage);
     }
-  }
-
-  static String pathToUberJar() throws UnsupportedEncodingException {
-    URL jarFile = DependenciesSparkJob.class.getProtectionDomain().getCodeSource().getLocation();
-    return URLDecoder.decode(jarFile.getPath(), "UTF-8");
   }
 
   static LocalDate parseZonedDateTime(String date) {

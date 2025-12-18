@@ -71,9 +71,7 @@ if [ -n "$VARIANT_TYPE" ]; then
             esac
         done
         exec java $OPTS -cp "$JAR_PATH" "$MAIN_CLASS" "$@"
-        exit $?
     fi
 fi
 
 exec "$@"
-exit $?

@@ -13,6 +13,10 @@
  */
 package io.jaegertracing.spark.dependencies;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URL;
+import java.net.URLDecoder;
+
 /**
  * @author Pavol Loffay
  */
@@ -28,5 +32,14 @@ public class Utils {
     if (object == null) {
       throw new NullPointerException(String.format("%s is null", msg));
     }
+  }
+
+  /**
+   * Returns the path to the uber jar containing the calling class.
+   * This is used to distribute the jar to Spark workers.
+   */
+  public static String pathToUberJar(Class<?> clazz) throws UnsupportedEncodingException {
+    URL jarFile = clazz.getProtectionDomain().getCodeSource().getLocation();
+    return URLDecoder.decode(jarFile.getPath(), "UTF-8");
   }
 }
