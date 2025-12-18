@@ -13,17 +13,16 @@ Spark job can be run as docker container and also as java executable:
 
 ### Docker Image Variants
 
-Starting with version 0.5.3, Docker images are published with variant-specific tags to support different Elasticsearch versions:
+Starting with version 0.5.3, Docker images are published with variant-specific tags. **Each variant automatically uses the appropriate storage backend, so the `STORAGE` environment variable is no longer needed.**
 
-- **`VERSION-cassandra`**: For Cassandra storage (includes ES 8.13.4 connector for maximum compatibility)
-- **`VERSION-elasticsearch7`**: For Elasticsearch 7.12-7.16 (uses ES connector 7.17.29)
-- **`VERSION-elasticsearch8`**: For Elasticsearch 7.17+ and 8.x (uses ES connector 8.13.4)
-- **`VERSION-elasticsearch9`**: For Elasticsearch 9.x (uses ES connector 9.1.3) - also tagged as `:latest`
+- **`VERSION-cassandra`**: For Cassandra storage (uses CassandraDependenciesJob directly)
+- **`VERSION-elasticsearch7`**: For Elasticsearch 7.12-7.16 (uses ElasticsearchDependenciesJob with ES connector 7.17.29)
+- **`VERSION-elasticsearch8`**: For Elasticsearch 7.17+ and 8.x (uses ElasticsearchDependenciesJob with ES connector 8.13.4)
+- **`VERSION-elasticsearch9`**: For Elasticsearch 9.x (uses ElasticsearchDependenciesJob with ES connector 9.1.3) - also tagged as `:latest`
 
 Example for Cassandra:
 ```bash
 $ docker run \
-  --env STORAGE=cassandra \
   --env CASSANDRA_CONTACT_POINTS=host1,host2 \
   ghcr.io/jaegertracing/spark-dependencies/spark-dependencies:v0.5.3-cassandra
 ```
@@ -31,7 +30,6 @@ $ docker run \
 Example for Elasticsearch 8.x:
 ```bash
 $ docker run \
-  --env STORAGE=elasticsearch \
   --env ES_NODES=http://elasticsearch:9200 \
   ghcr.io/jaegertracing/spark-dependencies/spark-dependencies:v0.5.3-elasticsearch8
 ```

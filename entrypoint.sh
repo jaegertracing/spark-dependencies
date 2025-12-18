@@ -34,5 +34,46 @@ patch_uid() {
 
 patch_uid
 
-exec  "$@"
+# If VARIANT_TYPE is set, override the command to use the specific main class
+# This allows variant-specific images to bypass the unified entry point
+if [ -n "$VARIANT_TYPE" ]; then
+    case "$VARIANT_TYPE" in
+        cassandra)
+            MAIN_CLASS="io.jaegertracing.spark.dependencies.cassandra.CassandraDependenciesJob"
+            ;;
+        elasticsearch*)
+            MAIN_CLASS="io.jaegertracing.spark.dependencies.elastic.ElasticsearchDependenciesJob"
+            ;;
+        *)
+            # If unrecognized variant, fall through to default command
+            exec "$@"
+            exit $?
+            ;;
+    esac
+    
+    # Replace the jar execution command with the specific main class
+    if [ "$1" = "java" ]; then
+        shift  # Remove 'java'
+        # Extract JAVA_OPTS if present
+        OPTS=""
+        while [ $# -gt 0 ]; do
+            case "$1" in
+                -jar)
+                    shift  # Remove -jar
+                    JAR_PATH="$1"
+                    shift  # Remove jar path
+                    break
+                    ;;
+                *)
+                    OPTS="$OPTS $1"
+                    shift
+                    ;;
+            esac
+        done
+        exec java $OPTS -cp "$JAR_PATH" "$MAIN_CLASS" "$@"
+        exit $?
+    fi
+fi
+
+exec "$@"
 exit $?

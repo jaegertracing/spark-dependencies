@@ -18,6 +18,10 @@ FROM eclipse-temurin:11 as builder
 # Supported values: 7.17.29 (ES 7.12-7.16), 8.13.4 (ES 7.17+/8.x), 9.1.3 (ES 9.x)
 ARG ES_VERSION=9.1.3
 
+# Build argument to specify the variant type
+# Supported values: cassandra, elasticsearch7, elasticsearch8, elasticsearch9
+ARG VARIANT=elasticsearch9
+
 ENV APP_HOME /app/
 
 COPY pom.xml $APP_HOME
@@ -34,7 +38,13 @@ RUN --mount=type=cache,target=/root/.m2 ./mvnw package --batch-mode -Dlicense.sk
 
 FROM eclipse-temurin:11-jre
 MAINTAINER Pavol Loffay <ploffay@redhat.com>
+
+# Carry forward the VARIANT build arg to the runtime stage
+ARG VARIANT=elasticsearch9
+
 ENV APP_HOME /app/
+ENV VARIANT_TYPE=${VARIANT}
+
 COPY --from=builder $APP_HOME/jaeger-spark-dependencies/target/jaeger-spark-dependencies-0.0.1-SNAPSHOT.jar $APP_HOME/
 
 WORKDIR $APP_HOME

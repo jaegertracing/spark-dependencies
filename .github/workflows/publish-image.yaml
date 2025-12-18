@@ -84,3 +84,4 @@ jobs:
             linux/arm64
           build-args: |
             ES_VERSION=${{ matrix.es_version }}
+            VARIANT=${{ matrix.variant }}

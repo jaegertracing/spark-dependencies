@@ -337,4 +337,34 @@ public class ElasticsearchDependenciesJob {
       return ts.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX"));
     }
   }
+
+  /**
+   * Entry point for running ElasticsearchDependenciesJob directly.
+   * This is used when the Docker image variant is elasticsearch-specific.
+   */
+  public static void main(String[] args) throws java.io.UnsupportedEncodingException {
+    LocalDate date = LocalDate.now();
+    if (args.length == 1) {
+      date = LocalDate.parse(args[0]);
+    } else if (System.getenv("DATE") != null) {
+      date = LocalDate.parse(System.getenv("DATE"));
+    }
+
+    String peerServiceTag = System.getenv("PEER_SERVICE_TAG");
+    if (peerServiceTag == null) {
+      peerServiceTag = "peer.service";
+    }
+
+    String jarPath = pathToUberJar();
+    ElasticsearchDependenciesJob.builder()
+        .jars(jarPath)
+        .day(date)
+        .build()
+        .run(peerServiceTag);
+  }
+
+  private static String pathToUberJar() throws java.io.UnsupportedEncodingException {
+    java.net.URL jarFile = ElasticsearchDependenciesJob.class.getProtectionDomain().getCodeSource().getLocation();
+    return java.net.URLDecoder.decode(jarFile.getPath(), "UTF-8");
+  }
 }
