@@ -44,6 +44,13 @@ jobs:
       # TODO remove once testcontainers are updated
       - name: pull ryuk image
         run: docker pull testcontainersofficial/ryuk:0.3.0
+      - name: Build docker image
+        uses: docker/build-push-action@v2.7.0
+        # We need the image for the tests
+        with:
+          context: .
+          push: false
+          tags: ghcr.io/jaegertracing/spark-dependencies/spark-dependencies
       - name: compile
         run: ./mvnw --batch-mode clean install -DskipTests -Dversion.elasticsearch.spark=7.17.10
       - name: test
@@ -61,6 +68,13 @@ jobs:
       # TODO remove once testcontainers are updated
       - name: pull ryuk image
         run: docker pull testcontainersofficial/ryuk:0.3.0
+      - name: Build docker image
+        uses: docker/build-push-action@v2.7.0
+        # We need the image for the tests
+        with:
+          context: .
+          push: false
+          tags: ghcr.io/jaegertracing/spark-dependencies/spark-dependencies
       - name: compile
         run: ./mvnw --batch-mode clean install -DskipTests -Dversion.elasticsearch.spark=8.13.4
       - name: test
@@ -78,6 +92,13 @@ jobs:
       # TODO remove once testcontainers are updated
       - name: pull ryuk image
         run: docker pull testcontainersofficial/ryuk:0.3.0
+      - name: Build docker image
+        uses: docker/build-push-action@v2.7.0
+        # We need the image for the tests
+        with:
+          context: .
+          push: false
+          tags: ghcr.io/jaegertracing/spark-dependencies/spark-dependencies
       - name: compile
         run: ./mvnw --batch-mode clean install -DskipTests -Dversion.elasticsearch.spark=9.1.3
       - name: test

@@ -34,10 +34,10 @@ import org.testcontainers.containers.Network;
 public class JaegerElasticsearchEnvironment {
 
   private OkHttpClient okHttpClient = new OkHttpClient();
-  private Network network;
-  private GenericContainer elasticsearch;
-  private GenericContainer jaegerCollector;
-  private GenericContainer jaegerQuery;
+  Network network;
+  GenericContainer elasticsearch;
+  GenericContainer jaegerCollector;
+  GenericContainer jaegerQuery;
 
   /**
    * Set these in subclasses
