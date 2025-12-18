@@ -27,7 +27,7 @@ public final class LogToConsolePrinter implements Consumer<OutputFrame> {
     @Override
     public void accept(OutputFrame outputFrame) {
         String message = outputFrame.getUtf8String();
-        if (!message.isEmpty()) {
+        if (message != null && !message.isEmpty()) {
             System.out.print(prefix);
             System.out.print(message);
         }
