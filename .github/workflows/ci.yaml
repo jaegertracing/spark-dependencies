@@ -25,6 +25,7 @@ jobs:
         with:
           context: .
           push: false
+          load: true
           tags: ghcr.io/jaegertracing/spark-dependencies/spark-dependencies
       - name: compile
         run: ./mvnw --batch-mode clean install -DskipTests
@@ -50,6 +51,7 @@ jobs:
         with:
           context: .
           push: false
+          load: true
           tags: ghcr.io/jaegertracing/spark-dependencies/spark-dependencies
       - name: compile
         run: ./mvnw --batch-mode clean install -DskipTests -Dversion.elasticsearch.spark=7.17.10
@@ -74,6 +76,7 @@ jobs:
         with:
           context: .
           push: false
+          load: true
           tags: ghcr.io/jaegertracing/spark-dependencies/spark-dependencies
       - name: compile
         run: ./mvnw --batch-mode clean install -DskipTests -Dversion.elasticsearch.spark=8.13.4
@@ -98,6 +101,7 @@ jobs:
         with:
           context: .
           push: false
+          load: true
           tags: ghcr.io/jaegertracing/spark-dependencies/spark-dependencies
       - name: compile
         run: ./mvnw --batch-mode clean install -DskipTests -Dversion.elasticsearch.spark=9.1.3
