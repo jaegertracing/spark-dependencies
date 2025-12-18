@@ -66,11 +66,15 @@ $ STORAGE=cassandra CASSANDRA_CONTACT_POINTS=localhost:9042 java -jar jaeger-spa
 Elasticsearch is used when `STORAGE=elasticsearch`.
 
 #### Version Compatibility
-The default build supports Elasticsearch versions 7.17+, 8.x, and can be customized for 9.x:
-- **Elasticsearch 7.17+ and 8.x**: Use the default build (elasticsearch-spark version 8.13.4)
-- **Elasticsearch 9.x**: Build with `-Dversion.elasticsearch.spark=9.1.3` to use elasticsearch-spark version 9.1.3
+The default build supports a range of Elasticsearch versions. The connector version can be customized at build time:
 
-Note: Elasticsearch versions older than 7.17 are not supported by the default build.
+- **Elasticsearch 7.12-7.16**: Build with `-Dversion.elasticsearch.spark=7.17.29` (latest 7.x connector)
+- **Elasticsearch 7.17+ and 8.x**: Use the default build (elasticsearch-spark version 8.13.4)
+- **Elasticsearch 9.x**: Build with `-Dversion.elasticsearch.spark=9.1.3`
+
+**Note**: 
+- Elasticsearch versions 7.0-7.11 are not supported by the Spark 3.x connectors
+- The project uses Spark 3.5.1, which requires elasticsearch-spark-30 connectors
 
 #### Configuration
     * `ES_NODES`: A comma separated list of elasticsearch hosts advertising http. Defaults to
