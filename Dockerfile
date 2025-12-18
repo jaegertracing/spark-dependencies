@@ -23,6 +23,7 @@ ARG ES_VERSION=9.1.3
 ARG VARIANT=elasticsearch9
 
 ENV APP_HOME /app/
+ARG ELASTICSEARCH_SPARK_VERSION=9.1.3
 
 COPY pom.xml $APP_HOME
 COPY jaeger-spark-dependencies $APP_HOME/jaeger-spark-dependencies
@@ -34,7 +35,7 @@ COPY .mvn $APP_HOME/.mvn
 COPY mvnw $APP_HOME
 
 WORKDIR $APP_HOME
-RUN --mount=type=cache,target=/root/.m2 ./mvnw package --batch-mode -Dlicense.skip=true -DskipTests -Dversion.elasticsearch.spark=${ES_VERSION}
+RUN --mount=type=cache,target=/root/.m2 ./mvnw package --batch-mode -Dlicense.skip=true -DskipTests -Dversion.elasticsearch.spark=${ELASTICSEARCH_SPARK_VERSION}
 
 FROM eclipse-temurin:11-jre
 MAINTAINER Pavol Loffay <ploffay@redhat.com>
