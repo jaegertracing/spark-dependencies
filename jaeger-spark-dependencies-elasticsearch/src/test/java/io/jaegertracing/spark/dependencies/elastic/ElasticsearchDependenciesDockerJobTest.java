@@ -43,6 +43,9 @@ public class ElasticsearchDependenciesDockerJobTest extends ElasticsearchDepende
       throw new RuntimeException("Could not refresh Elasticsearch", e);
     }
     
+    // Use the same date as the test - format it as ISO-8601 date string for the DATE env var
+    String dateStr = java.time.LocalDate.now().toString();
+    
     System.out.println("::group::🚧 🚧 🚧 ElasticsearchDependenciesDockerJob logs");
     try (GenericContainer<?> sparkDependenciesJob = new GenericContainer<>(
             DockerImageName.parse("ghcr.io/jaegertracing/spark-dependencies/spark-dependencies:" + dependenciesJobTag()))
@@ -50,6 +53,7 @@ public class ElasticsearchDependenciesDockerJobTest extends ElasticsearchDepende
             .withLogConsumer(new LogToConsolePrinter("[spark-dependencies] "))
             .withEnv("STORAGE", "elasticsearch")
             .withEnv("ES_NODES", "http://elasticsearch:9200")
+            .withEnv("DATE", dateStr)
             .dependsOn(jaegerElasticsearchEnvironment.elasticsearch, jaegerElasticsearchEnvironment.jaegerCollector)) {
       sparkDependenciesJob.start();
       await("spark-dependencies-job execution")
