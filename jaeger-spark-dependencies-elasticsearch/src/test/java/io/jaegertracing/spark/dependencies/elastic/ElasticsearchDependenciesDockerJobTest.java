@@ -39,13 +39,19 @@ public class ElasticsearchDependenciesDockerJobTest extends ElasticsearchDepende
     
     try {
       jaegerElasticsearchEnvironment.refresh();
+      // Wait a bit to ensure all spans are fully indexed and visible
+      Thread.sleep(2000);
     } catch (java.io.IOException e) {
       throw new RuntimeException("Could not refresh Elasticsearch", e);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new RuntimeException("Interrupted while waiting", e);
     }
     
     // Use the same date as the test - format it as ISO-8601 date string for the DATE env var
     String dateStr = java.time.LocalDate.now().toString();
     
+    System.out.println("Running Docker spark-dependencies job with DATE=" + dateStr + ", ES_NODES=http://elasticsearch:9200");
     System.out.println("::group::🚧 🚧 🚧 ElasticsearchDependenciesDockerJob logs");
     try (GenericContainer<?> sparkDependenciesJob = new GenericContainer<>(
             DockerImageName.parse("ghcr.io/jaegertracing/spark-dependencies/spark-dependencies:" + dependenciesJobTag()))
