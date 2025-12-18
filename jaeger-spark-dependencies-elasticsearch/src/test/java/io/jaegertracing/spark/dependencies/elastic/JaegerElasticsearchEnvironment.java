@@ -36,8 +36,7 @@ public class JaegerElasticsearchEnvironment {
   private OkHttpClient okHttpClient = new OkHttpClient();
   private Network network;
   private GenericContainer elasticsearch;
-  private GenericContainer jaegerCollector;
-  private GenericContainer jaegerQuery;
+  private GenericContainer jaegerAll;
 
   /**
    * Set these in subclasses
@@ -65,31 +64,18 @@ public class JaegerElasticsearchEnvironment {
         .withEnv("network.publish_host", "_local_");
     elasticsearch.start();
 
-    jaegerCollector = new GenericContainer<>("jaegertracing/jaeger-collector:" + jaegerVersion)
+    jaegerAll = new GenericContainer<>("jaegertracing/jaeger:" + jaegerVersion)
         .withNetwork(network)
-        .withEnv("SPAN_STORAGE_TYPE", "elasticsearch")
-        .withEnv("ES_SERVER_URLS", "http://elasticsearch:9200")
-        .withEnv("COLLECTOR_ZIPKIN_HOST_PORT", ":9411")
-        .withEnv("COLLECTOR_QUEUE_SIZE", "100000")
-        .withEnv(jaegerEnvs)
-        .waitingFor(new BoundPortHttpWaitStrategy(14269).forStatusCodeMatching(statusCode -> statusCode >= 200 && statusCode < 300))
-        // the first one is health check
-        .withExposedPorts(14269, 14268, 9411);
-    jaegerCollector.start();
-
-    jaegerQuery = new GenericContainer<>("jaegertracing/jaeger-query:" + jaegerVersion())
-        .withEnv("SPAN_STORAGE_TYPE", "elasticsearch")
-        .withEnv("ES_SERVER_URLS", "http://elasticsearch:9200")
-        .withEnv("ES_TAGS_AS_FIELDS_ALL", "true")
-        .withNetwork(network)
+        .withClasspathResourceMapping("jaeger-v2-config-elasticsearch.yaml", "/etc/jaeger/config.yaml", org.testcontainers.containers.BindMode.READ_ONLY)
+        .withCommand("--config", "/etc/jaeger/config.yaml")
         .withEnv(jaegerEnvs)
         .waitingFor(new BoundPortHttpWaitStrategy(16687).forStatusCodeMatching(statusCode -> statusCode >= 200 && statusCode < 300))
-        .withExposedPorts(16687, 16686);
-    jaegerQuery.start();
+        .withExposedPorts(16687, 16686, 14268, 9411);
+    jaegerAll.start();
 
-    collectorUrl = String.format("http://%s:%d", jaegerCollector.getContainerIpAddress(), jaegerCollector.getMappedPort(14268));
-    zipkinCollectorUrl = String.format("http://%s:%d", jaegerCollector.getContainerIpAddress(), jaegerCollector.getMappedPort(9411));
-    queryUrl = String.format("http://%s:%d", jaegerQuery.getContainerIpAddress(), jaegerQuery.getMappedPort(16686));
+    collectorUrl = String.format("http://%s:%d", jaegerAll.getContainerIpAddress(), jaegerAll.getMappedPort(14268));
+    zipkinCollectorUrl = String.format("http://%s:%d", jaegerAll.getContainerIpAddress(), jaegerAll.getMappedPort(9411));
+    queryUrl = String.format("http://%s:%d", jaegerAll.getContainerIpAddress(), jaegerAll.getMappedPort(16686));
   }
 
   public void cleanUp(String[] spanIndex, String[] dependenciesIndex) throws IOException {
@@ -136,8 +122,7 @@ public class JaegerElasticsearchEnvironment {
   }
 
   public void stop() {
-    Optional.of(jaegerCollector).ifPresent(GenericContainer::close);
-    Optional.of(jaegerQuery).ifPresent(GenericContainer::close);
+    Optional.of(jaegerAll).ifPresent(GenericContainer::close);
     Optional.of(elasticsearch).ifPresent(GenericContainer::close);
     Optional.of(network).ifPresent(network1 -> {
       try {
