@@ -31,6 +31,18 @@ public class ElasticsearchDependenciesDockerJobTest extends ElasticsearchDepende
 
   @Override
   protected void deriveDependencies() {
+    // Create the dependenciesJob instance so that after() method can call indexDate() on it
+    dependenciesJob = ElasticsearchDependenciesJob.builder()
+        .nodes("http://" + jaegerElasticsearchEnvironment.getElasticsearchIPPort())
+        .day(java.time.LocalDate.now())
+        .build();
+    
+    try {
+      jaegerElasticsearchEnvironment.refresh();
+    } catch (java.io.IOException e) {
+      throw new RuntimeException("Could not refresh Elasticsearch", e);
+    }
+    
     System.out.println("::group::🚧 🚧 🚧 ElasticsearchDependenciesDockerJob logs");
     try (GenericContainer<?> sparkDependenciesJob = new GenericContainer<>(
             DockerImageName.parse("ghcr.io/jaegertracing/spark-dependencies/spark-dependencies:" + dependenciesJobTag()))
@@ -45,6 +57,12 @@ public class ElasticsearchDependenciesDockerJobTest extends ElasticsearchDepende
               .until(() -> !sparkDependenciesJob.isRunning());
     } finally {
         System.out.println("::endgroup::");
+    }
+    
+    try {
+      jaegerElasticsearchEnvironment.refresh();
+    } catch (java.io.IOException e) {
+      throw new RuntimeException("Could not refresh Elasticsearch", e);
     }
   }
 }

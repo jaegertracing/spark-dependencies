@@ -36,7 +36,7 @@ import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
  */
 public class ElasticsearchDependenciesJobTest extends DependenciesTest {
 
-  private ElasticsearchDependenciesJob dependenciesJob;
+  protected ElasticsearchDependenciesJob dependenciesJob;
   static JaegerElasticsearchEnvironment jaegerElasticsearchEnvironment;
 
   @BeforeClass
