@@ -20,7 +20,18 @@ import io.jaegertracing.spark.dependencies.DependenciesSparkHelper;
 import io.jaegertracing.spark.dependencies.Utils;
 import io.jaegertracing.spark.dependencies.model.Dependency;
 import io.jaegertracing.spark.dependencies.model.Span;
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URI;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.security.cert.X509Certificate;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -79,7 +90,14 @@ public class ElasticsearchDependenciesJob {
           getSystemPropertyAsFileResource("javax.net.ssl.trustStore"));
       sparkProperties.put("es.net.ssl.truststore.pass",
           System.getProperty("javax.net.ssl.trustStorePassword", ""));
-
+      sparkProperties.put("es.net.ssl.cert.allow.self.signed",
+          Utils.getEnv("ES_NET_SSL_CERT_ALLOW_SELF_SIGNED", "false"));
+      sparkProperties.put("opensearch.net.ssl.cert.allow.self.signed",
+          Utils.getEnv("ES_NET_SSL_CERT_ALLOW_SELF_SIGNED", "false"));
+      if (Boolean.parseBoolean(Utils.getEnv("ES_NET_SSL", "false"))) {
+        sparkProperties.put("es.net.ssl", "true");
+        sparkProperties.put("opensearch.net.ssl", "true");
+      }
     }
 
     // local[*] master lets us run & test the job locally without setting a Spark cluster
@@ -325,21 +343,111 @@ public class ElasticsearchDependenciesJob {
 
   // Visible for tests
   boolean isOpenSearchCluster() {
-    RestClient client = new RestClient(new SparkSettings(conf));
-    String response = null;
-    try {
-      response = client.get("/", "");
-      log.info("Successfully received cluster info response for backend detection: {}", response);
-      return isOpenSearchFromJson(response);
-    } catch (Exception e) {
-      log.warn("Could not detect cluster type, assuming Elasticsearch. Raw response: '{}'. Error: {}", response, e);
+    String nodes = conf.get("es.nodes", "");
+    if (nodes == null || nodes.isEmpty()) {
+      log.warn("No nodes configured, cannot detect cluster type");
       return false;
+    }
+    String[] hosts = nodes.split(",");
+    String host = hosts[0];
+    if (!host.startsWith("http")) {
+      // Assuming http for detection if not specified (SSL usually handled by
+      // es.net.ssl)
+      boolean ssl = conf.getBoolean("es.net.ssl", false) || conf.getBoolean("opensearch.net.ssl", false);
+      host = (ssl ? "https://" : "http://") + host;
+    }
+
+    HttpURLConnection connection = null;
+    log.info("Starting OpenSearch detection for host: {}", host);
+    try {
+      URL url = URI.create(host).toURL();
+      connection = (HttpURLConnection) url.openConnection();
+
+      if (connection instanceof HttpsURLConnection) {
+        boolean allowSelfSigned = conf.getBoolean("es.net.ssl.cert.allow.self.signed", false)
+            || conf.getBoolean("opensearch.net.ssl.cert.allow.self.signed", false);
+        log.info("Connection is HTTPS. Allow Self Signed: {}", allowSelfSigned);
+        if (allowSelfSigned) {
+          try {
+            TrustManager[] trustAllCerts = new TrustManager[] {
+                new X509TrustManager() {
+                  public X509Certificate[] getAcceptedIssuers() {
+                    return null;
+                  }
+
+                  public void checkClientTrusted(X509Certificate[] certs, String authType) {
+                  }
+
+                  public void checkServerTrusted(X509Certificate[] certs, String authType) {
+                  }
+                }
+            };
+            SSLContext sc = SSLContext.getInstance("SSL");
+            sc.init(null, trustAllCerts, new java.security.SecureRandom());
+            ((HttpsURLConnection) connection).setSSLSocketFactory(sc.getSocketFactory());
+            ((HttpsURLConnection) connection).setHostnameVerifier((hostname, session) -> true);
+            log.info("TrustAll SSL context configured successfully");
+          } catch (Exception e) {
+            log.warn("Failed to configure SSL for self-signed certs: {}", e.getMessage());
+          }
+        }
+      }
+
+      connection.setRequestMethod("GET");
+      connection.setConnectTimeout(5000);
+      connection.setReadTimeout(5000);
+
+      String username = conf.contains("es.net.http.auth.user") ? conf.get("es.net.http.auth.user") : null;
+      if (username == null && conf.contains("opensearch.net.http.auth.user")) {
+        username = conf.get("opensearch.net.http.auth.user");
+      }
+      String password = conf.contains("es.net.http.auth.pass") ? conf.get("es.net.http.auth.pass") : null;
+      if (password == null && conf.contains("opensearch.net.http.auth.pass")) {
+        password = conf.get("opensearch.net.http.auth.pass");
+      }
+
+      log.info("Auth configured: username={}", username);
+
+      if (username != null && password != null) {
+        String auth = username + ":" + password;
+        String encodedAuth = java.util.Base64.getEncoder()
+            .encodeToString(auth.getBytes(StandardCharsets.UTF_8));
+        connection.setRequestProperty("Authorization", "Basic " + encodedAuth);
+      }
+
+      int responseCode = connection.getResponseCode();
+      log.info("Response Code: {}", responseCode);
+      if (responseCode >= 200 && responseCode < 300) {
+        try (BufferedReader in = new BufferedReader(
+            new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8))) {
+          StringBuilder response = new StringBuilder();
+          String inputLine;
+          while ((inputLine = in.readLine()) != null) {
+            response.append(inputLine);
+          }
+          log.info("Successfully received cluster info response for backend detection: {}", response);
+          return isOpenSearchFromJson(response.toString());
+        }
+      } else {
+        log.warn("Failed to get cluster info, response code: {}", responseCode);
+        try (BufferedReader err = new BufferedReader(
+            new InputStreamReader(connection.getErrorStream(), StandardCharsets.UTF_8))) {
+          StringBuilder errParams = new StringBuilder();
+          String errLine;
+          while ((errLine = err.readLine()) != null)
+            errParams.append(errLine);
+          log.warn("Error stream: {}", errParams);
+        } catch (Exception ignore) {
+        }
+      }
+    } catch (Exception e) {
+      log.warn("Could not detect cluster type, assuming Elasticsearch. Error: {}", e.getMessage(), e);
     } finally {
-      try {
-        client.close();
-      } catch (Exception ignore) {
+      if (connection != null) {
+        connection.disconnect();
       }
     }
+    return false;
   }
 
 
