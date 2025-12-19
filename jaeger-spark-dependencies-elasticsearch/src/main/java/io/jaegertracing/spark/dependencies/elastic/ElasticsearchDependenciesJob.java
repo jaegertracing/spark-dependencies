@@ -20,6 +20,18 @@ import io.jaegertracing.spark.dependencies.DependenciesSparkHelper;
 import io.jaegertracing.spark.dependencies.Utils;
 import io.jaegertracing.spark.dependencies.model.Dependency;
 import io.jaegertracing.spark.dependencies.model.Span;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URI;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.security.cert.X509Certificate;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -36,6 +48,7 @@ import org.elasticsearch.hadoop.rest.RestClient;
 import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.spark.cfg.SparkSettings;
 import org.elasticsearch.spark.rdd.api.java.JavaEsSpark;
+import org.opensearch.spark.rdd.api.java.JavaOpenSearchSpark;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -77,7 +90,14 @@ public class ElasticsearchDependenciesJob {
           getSystemPropertyAsFileResource("javax.net.ssl.trustStore"));
       sparkProperties.put("es.net.ssl.truststore.pass",
           System.getProperty("javax.net.ssl.trustStorePassword", ""));
-
+      sparkProperties.put("es.net.ssl.cert.allow.self.signed",
+          Utils.getEnv("ES_NET_SSL_CERT_ALLOW_SELF_SIGNED", "false"));
+      sparkProperties.put("opensearch.net.ssl.cert.allow.self.signed",
+          Utils.getEnv("ES_NET_SSL_CERT_ALLOW_SELF_SIGNED", "false"));
+      if (Boolean.parseBoolean(Utils.getEnv("ES_NET_SSL", "false"))) {
+        sparkProperties.put("es.net.ssl", "true");
+        sparkProperties.put("opensearch.net.ssl", "true");
+      }
     }
 
     // local[*] master lets us run & test the job locally without setting a Spark cluster
@@ -200,6 +220,20 @@ public class ElasticsearchDependenciesJob {
       conf.set("es.nodes.discovery", "0");
       conf.set("es.nodes.client.only", "1");
     }
+    // Mirror configuration for OpenSearch connector (dual-backend support)
+    if (builder.username != null) {
+      conf.set("opensearch.net.http.auth.user", builder.username);
+    }
+    if (builder.password != null) {
+      conf.set("opensearch.net.http.auth.pass", builder.password);
+    }
+    conf.set("opensearch.nodes", builder.hosts);
+    if (builder.hosts.indexOf("https") != -1) {
+      conf.set("opensearch.net.ssl", "true");
+    }
+    if (builder.nodesWanOnly) {
+      conf.set("opensearch.nodes.wan.only", "true");
+    } 
     for (Map.Entry<String, String> entry : builder.sparkProperties.entrySet()) {
       conf.set(entry.getKey(), entry.getValue());
     }
@@ -261,6 +295,7 @@ public class ElasticsearchDependenciesJob {
   void run(String[] spanIndices, String[] depIndices,String peerServiceTag) {
     JavaSparkContext sc = new JavaSparkContext(conf);
     try {
+      boolean isOpenSearch = isOpenSearchCluster();
       for (int i = 0; i < spanIndices.length; i++) {
         String spanIndex = spanIndices[i];
         String depIndex = depIndices[i];
@@ -268,18 +303,33 @@ public class ElasticsearchDependenciesJob {
         // Send raw query to ES to select only the docs / spans we want to consider for this job
         // This doesn't change the default behavior as the daily indexes only contain up to 24h of data
         String esQuery = String.format("{\"range\": {\"startTimeMillis\": { \"gte\": \"now-%s\" }}}", spanRange);
-        JavaPairRDD<String, Iterable<Span>> traces = JavaEsSpark.esJsonRDD(sc, spanIndex, esQuery)
-            .map(new ElasticTupleToSpan())
-            .groupBy(Span::getTraceId);
-        List<Dependency> dependencyLinks = DependenciesSparkHelper.derive(traces,peerServiceTag);
-        EsMajorVersion esMajorVersion = getEsVersion();
-        // Add type for ES < 7
-        // WARN log is produced for older ES versions, however it's produced by spark-es library and not ES itself, it cannot be disabled
-        //  WARN Resource: Detected type name in resource [jaeger-dependencies-2019-08-14/dependencies]. Type names are deprecated and will be removed in a later release.
-        if (esMajorVersion.before(EsMajorVersion.V_7_X)) {
-          depIndex = depIndex + "/dependencies";
+        JavaPairRDD<String, Iterable<Span>> traces;
+        if (isOpenSearch) {
+          // Use OpenSearch connector for reads
+    traces = JavaOpenSearchSpark.openSearchJsonRDD(sc, spanIndex, esQuery)
+              .map(new ElasticTupleToSpan())
+              .groupBy(Span::getTraceId);
+        } else {
+          traces = JavaEsSpark.esJsonRDD(sc, spanIndex, esQuery)
+              .map(new ElasticTupleToSpan())
+              .groupBy(Span::getTraceId);
         }
-        store(sc, dependencyLinks, depIndex);
+        List<Dependency> dependencyLinks = DependenciesSparkHelper.derive(traces,peerServiceTag);
+        if (!isOpenSearch) {
+          EsMajorVersion esMajorVersion = getEsVersion();
+          // Add type for ES < 7
+          // WARN log is produced for older ES versions, however it's produced by spark-es library and not ES itself, it cannot be disabled
+          //  WARN Resource: Detected type name in resource [jaeger-dependencies-2019-08-14/dependencies]. Type names are deprecated and will be removed in a later release.
+          if (esMajorVersion.before(EsMajorVersion.V_7_X)) {
+            depIndex = depIndex + "/dependencies";
+          }
+        }
+        if (isOpenSearch) {
+          // Always no types on OpenSearch
+          storeToOpenSearch(sc, dependencyLinks, depIndex);
+        } else {
+          store(sc, dependencyLinks, depIndex);
+        }
         log.info("Done, {} dependency objects created", dependencyLinks.size());
         if (dependencyLinks.size() > 0) {
           // we do not derive dependencies for old prefix "prefix:" if new prefix "prefix-" contains data
@@ -291,10 +341,143 @@ public class ElasticsearchDependenciesJob {
     }
   }
 
+  // Visible for tests
+  boolean isOpenSearchCluster() {
+    String nodes = conf.get("es.nodes", "");
+    if (nodes == null || nodes.isEmpty()) {
+      log.warn("No nodes configured, cannot detect cluster type");
+      return false;
+    }
+    String[] hosts = nodes.split(",");
+    String host = hosts[0];
+    if (!host.startsWith("http")) {
+      // Assuming http for detection if not specified (SSL usually handled by
+      // es.net.ssl)
+      boolean ssl = conf.getBoolean("es.net.ssl", false) || conf.getBoolean("opensearch.net.ssl", false);
+      host = (ssl ? "https://" : "http://") + host;
+    }
+
+    HttpURLConnection connection = null;
+    log.info("Starting OpenSearch detection for host: {}", host);
+    try {
+      URL url = URI.create(host).toURL();
+      connection = (HttpURLConnection) url.openConnection();
+
+      if (connection instanceof HttpsURLConnection) {
+        boolean allowSelfSigned = conf.getBoolean("es.net.ssl.cert.allow.self.signed", false)
+            || conf.getBoolean("opensearch.net.ssl.cert.allow.self.signed", false);
+        log.info("Connection is HTTPS. Allow Self Signed: {}", allowSelfSigned);
+        if (allowSelfSigned) {
+          try {
+            TrustManager[] trustAllCerts = new TrustManager[] {
+                new X509TrustManager() {
+                  public X509Certificate[] getAcceptedIssuers() {
+                    return null;
+                  }
+
+                  public void checkClientTrusted(X509Certificate[] certs, String authType) {
+                  }
+
+                  public void checkServerTrusted(X509Certificate[] certs, String authType) {
+                  }
+                }
+            };
+            SSLContext sc = SSLContext.getInstance("SSL");
+            sc.init(null, trustAllCerts, new java.security.SecureRandom());
+            ((HttpsURLConnection) connection).setSSLSocketFactory(sc.getSocketFactory());
+            ((HttpsURLConnection) connection).setHostnameVerifier((hostname, session) -> true);
+            log.info("TrustAll SSL context configured successfully");
+          } catch (Exception e) {
+            log.warn("Failed to configure SSL for self-signed certs: {}", e.getMessage());
+          }
+        }
+      }
+
+      connection.setRequestMethod("GET");
+      connection.setConnectTimeout(5000);
+      connection.setReadTimeout(5000);
+
+      String username = conf.contains("es.net.http.auth.user") ? conf.get("es.net.http.auth.user") : null;
+      if (username == null && conf.contains("opensearch.net.http.auth.user")) {
+        username = conf.get("opensearch.net.http.auth.user");
+      }
+      String password = conf.contains("es.net.http.auth.pass") ? conf.get("es.net.http.auth.pass") : null;
+      if (password == null && conf.contains("opensearch.net.http.auth.pass")) {
+        password = conf.get("opensearch.net.http.auth.pass");
+      }
+
+      log.info("Auth configured: username={}", username);
+
+      if (username != null && password != null) {
+        String auth = username + ":" + password;
+        String encodedAuth = java.util.Base64.getEncoder()
+            .encodeToString(auth.getBytes(StandardCharsets.UTF_8));
+        connection.setRequestProperty("Authorization", "Basic " + encodedAuth);
+      }
+
+      int responseCode = connection.getResponseCode();
+      log.info("Response Code: {}", responseCode);
+      if (responseCode >= 200 && responseCode < 300) {
+        try (BufferedReader in = new BufferedReader(
+            new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8))) {
+          StringBuilder response = new StringBuilder();
+          String inputLine;
+          while ((inputLine = in.readLine()) != null) {
+            response.append(inputLine);
+          }
+          log.info("Successfully received cluster info response for backend detection: {}", response);
+          return isOpenSearchFromJson(response.toString());
+        }
+      } else {
+        log.warn("Failed to get cluster info, response code: {}", responseCode);
+        try (BufferedReader err = new BufferedReader(
+            new InputStreamReader(connection.getErrorStream(), StandardCharsets.UTF_8))) {
+          StringBuilder errParams = new StringBuilder();
+          String errLine;
+          while ((errLine = err.readLine()) != null)
+            errParams.append(errLine);
+          log.warn("Error stream: {}", errParams);
+        } catch (Exception ignore) {
+        }
+      }
+    } catch (Exception e) {
+      log.warn("Could not detect cluster type, assuming Elasticsearch. Error: {}", e.getMessage(), e);
+    } finally {
+      if (connection != null) {
+        connection.disconnect();
+      }
+    }
+    return false;
+  }
+
+
+   boolean isOpenSearchFromJson(String clusterInfo) throws IOException {
+    if (clusterInfo == null || clusterInfo.isEmpty()) return false;
+    ObjectMapper mapper = new ObjectMapper();
+    Map<?, ?> root = mapper.readValue(clusterInfo, Map.class);
+    Object verObj = root.get("version");
+    if (verObj instanceof Map) {
+      Map<?, ?> version = (Map<?, ?>) verObj;
+      Object dist = version.get("distribution");
+      return dist != null && "opensearch".equalsIgnoreCase(String.valueOf(dist));
+    }
+    return false;
+  }
+
+
+  /**
+   * Detects Elasticsearch major version to determine document type behavior.
+   * Only called when backend is confirmed to be Elasticsearch (not OpenSearch).
+   * 
+   * @return EsMajorVersion indicating whether document types are needed
+   */
   private EsMajorVersion getEsVersion() {
     RestClient client = new RestClient(new SparkSettings(conf));
     try {
       return client.mainInfo().getMajorVersion();
+    } catch (Exception e) {
+      log.error("Could not detect Elasticsearch version. Ensure the cluster is accessible and GET / endpoint is not blocked.", e);
+      throw new IllegalStateException("Failed to detect Elasticsearch version", e);
     } finally {
       client.close();
     }
@@ -314,6 +497,23 @@ public class ElasticsearchDependenciesJob {
     }
 
     JavaEsSpark.saveJsonToEs(javaSparkContext.parallelize(Collections.singletonList(json)), resource);
+  }
+
+  private void storeToOpenSearch(JavaSparkContext javaSparkContext, List<Dependency> dependencyLinks, String resource) {
+    if (dependencyLinks.isEmpty()) {
+      return;
+    }
+
+    String json;
+    try {
+      ObjectMapper objectMapper = new ObjectMapper();
+      json = objectMapper.writeValueAsString(new ElasticsearchDependencies(dependencyLinks, day));
+    } catch (JsonProcessingException e) {
+      throw new IllegalStateException("Could not serialize dependencies", e);
+    }
+
+JavaOpenSearchSpark.saveJsonToOpenSearch(
+        javaSparkContext.parallelize(Collections.singletonList(json)), resource);
   }
 
   /**

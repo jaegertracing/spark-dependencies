@@ -34,10 +34,6 @@ COPY .mvn $APP_HOME/.mvn
 COPY mvnw $APP_HOME
 
 WORKDIR $APP_HOME
-
-# Build module-specific shaded JAR based on VARIANT
-# Cassandra variant: builds only cassandra module (no elasticsearch dependencies)
-# Elasticsearch variants: build only elasticsearch module with specific connector version
 RUN --mount=type=cache,target=/root/.m2 \
     if [ "$VARIANT" = "cassandra" ]; then \
       ./mvnw package --batch-mode -Dlicense.skip=true -DskipTests -pl jaeger-spark-dependencies-cassandra -am && \
