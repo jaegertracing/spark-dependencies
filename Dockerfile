@@ -42,11 +42,11 @@ RUN --mount=type=cache,target=/root/.m2 \
     if [ "$VARIANT" = "cassandra" ]; then \
       ./mvnw package --batch-mode -Dlicense.skip=true -DskipTests -pl jaeger-spark-dependencies-cassandra -am && \
       mkdir -p /tmp/jars && \
-      cp $APP_HOME/jaeger-spark-dependencies-cassandra/target/jaeger-spark-dependencies-cassandra-*.jar /tmp/jars/app.jar; \
+      cp $APP_HOME/jaeger-spark-dependencies-cassandra/target/jaeger-spark-dependencies-cassandra-0.0.1-SNAPSHOT.jar /tmp/jars/app.jar; \
     else \
       ./mvnw package --batch-mode -Dlicense.skip=true -DskipTests -Dversion.elasticsearch.spark=${ELASTICSEARCH_SPARK_VERSION} -pl jaeger-spark-dependencies-elasticsearch -am && \
       mkdir -p /tmp/jars && \
-      cp $APP_HOME/jaeger-spark-dependencies-elasticsearch/target/jaeger-spark-dependencies-elasticsearch-*.jar /tmp/jars/app.jar; \
+      cp $APP_HOME/jaeger-spark-dependencies-elasticsearch/target/jaeger-spark-dependencies-elasticsearch-0.0.1-SNAPSHOT.jar /tmp/jars/app.jar; \
     fi
 
 FROM eclipse-temurin:11-jre
