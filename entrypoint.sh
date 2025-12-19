@@ -34,5 +34,19 @@ patch_uid() {
 
 patch_uid
 
-exec  "$@"
-exit $?
+# Use the single JAR name
+JAR_PATH="$APP_HOME/app.jar"
+
+# Determine main class based on VARIANT_TYPE
+if [ "$VARIANT_TYPE" = "cassandra" ]; then
+    MAIN_CLASS="io.jaegertracing.spark.dependencies.cassandra.CassandraDependenciesJob"
+elif [ -n "$VARIANT_TYPE" ] && [ "${VARIANT_TYPE#elasticsearch}" != "$VARIANT_TYPE" ]; then
+    # VARIANT_TYPE starts with "elasticsearch"
+    MAIN_CLASS="io.jaegertracing.spark.dependencies.elastic.ElasticsearchDependenciesJob"
+else
+    # Fallback to unified JAR (for backward compatibility or local builds)
+    MAIN_CLASS="io.jaegertracing.spark.dependencies.DependenciesSparkJob"
+fi
+
+# Execute the job with the determined main class
+exec java ${JAVA_OPTS} -cp "$JAR_PATH" "$MAIN_CLASS" "$@"

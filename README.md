@@ -11,17 +11,32 @@ but other days can be explicitly specified.
 ## Quick-start
 Spark job can be run as docker container and also as java executable:
 
-Docker:
+### Docker Image Variants
+
+Starting with version 0.5.3, Docker images are published with variant-specific tags. **Each variant automatically uses the appropriate storage backend, so the `STORAGE` environment variable is no longer needed.**
+
+- **`VERSION-cassandra`**: For Cassandra storage (uses CassandraDependenciesJob directly)
+- **`VERSION-elasticsearch7`**: For Elasticsearch 7.12-7.16 (uses ElasticsearchDependenciesJob with ES connector 7.17.29)
+- **`VERSION-elasticsearch8`**: For Elasticsearch 7.17+ and 8.x (uses ElasticsearchDependenciesJob with ES connector 8.13.4)
+- **`VERSION-elasticsearch9`**: For Elasticsearch 9.x (uses ElasticsearchDependenciesJob with ES connector 9.1.3) - also tagged as `:latest`
+
+Example for Cassandra:
 ```bash
 $ docker run \
-  --env STORAGE=cassandra \
   --env CASSANDRA_CONTACT_POINTS=host1,host2 \
-  ghcr.io/jaegertracing/spark-dependencies/spark-dependencies:VERSION
+  ghcr.io/jaegertracing/spark-dependencies/spark-dependencies:v0.5.3-cassandra
+```
+
+Example for Elasticsearch 8.x:
+```bash
+$ docker run \
+  --env ES_NODES=http://elasticsearch:9200 \
+  ghcr.io/jaegertracing/spark-dependencies/spark-dependencies:v0.5.3-elasticsearch8
 ```
 
 Use `--env JAVA_OPTS=-Djavax.net.ssl.` to set trust store and other Java properties.
 
-Note: the latest vesions are hosted on `ghcr.io`, not on Docker Hub.
+Note: the latest versions are hosted on `ghcr.io`, not on Docker Hub.
 
 As jar file:
 ```bash
@@ -65,6 +80,12 @@ $ STORAGE=cassandra CASSANDRA_CONTACT_POINTS=localhost:9042 java -jar jaeger-spa
 ### Elasticsearch
 Elasticsearch is used when `STORAGE=elasticsearch`.
 
+**Important**: Use the appropriate Docker image variant for your Elasticsearch version:
+- ES 7.12-7.16: Use `:VERSION-elasticsearch7` tag
+- ES 7.17-8.x: Use `:VERSION-elasticsearch8` tag  
+- ES 9.x: Use `:VERSION-elasticsearch9` tag (or `:latest`)
+
+#### Configuration
     * `ES_NODES`: A comma separated list of elasticsearch hosts advertising http. Defaults to
                   localhost. Add port section if not listening on port 9200. Only one of these hosts
                   needs to be available to fetch the remaining nodes in the cluster. It is

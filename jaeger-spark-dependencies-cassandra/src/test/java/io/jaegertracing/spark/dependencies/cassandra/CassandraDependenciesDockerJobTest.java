@@ -38,7 +38,6 @@ public class CassandraDependenciesDockerJobTest extends CassandraDependenciesJob
             DockerImageName.parse("ghcr.io/jaegertracing/spark-dependencies/spark-dependencies:" + dependenciesJobTag()))
             .withNetwork(network)
             .withLogConsumer(new LogToConsolePrinter("[spark-dependencies] "))
-            .withEnv("STORAGE", "cassandra")
             .withEnv("CASSANDRA_KEYSPACE", "jaeger_v1_dc1")
             .withEnv("CASSANDRA_CONTACT_POINTS", "cassandra") // This should be an address within the docker network
             .withEnv("CASSANDRA_LOCAL_DC", cassandra.getLocalDatacenter())

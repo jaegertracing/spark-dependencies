@@ -14,6 +14,20 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        include:
+          - variant: cassandra
+            description: "Cassandra storage"
+          - variant: elasticsearch7
+            es_version: "7.17.29"
+            description: "Elasticsearch 7.12-7.16"
+          - variant: elasticsearch8
+            es_version: "8.13.4"
+            description: "Elasticsearch 7.17+ and 8.x"
+          - variant: elasticsearch9
+            es_version: "9.1.3"
+            description: "Elasticsearch 9.x"
 
     steps:
       - uses: actions/checkout@v4.2.2
@@ -30,16 +44,25 @@ jobs:
         id: compute-tags
         run: |
           prefix="ghcr.io/jaegertracing/spark-dependencies/spark-dependencies"
-          tags="$prefix:latest"
+          variant="${{ matrix.variant }}"
           
-          if [[ -n "${{ inputs.tag }}" ]]; then
-            tags="$tags,$prefix:${{ inputs.tag }}"
-          elif [[ "${{ github.ref }}" == refs/tags/* ]]; then
+          # For main releases, use variant suffix
+          if [[ "${{ github.event_name }}" == "release" ]] && [[ "${{ github.ref }}" == refs/tags/* ]]; then
             release=$(echo ${{ github.ref }} | sed 's/refs\/tags\///g')
-            tags="$tags,$prefix:$release"
+            tags="$prefix:$release-$variant"
+            
+            # elasticsearch9 gets the 'latest' tag
+            if [[ "$variant" == "elasticsearch9" ]]; then
+              tags="$tags,$prefix:latest"
+            fi
+          elif [[ -n "${{ inputs.tag }}" ]]; then
+            tags="$prefix:${{ inputs.tag }}-$variant"
+          else
+            # For PR builds, use variant only
+            tags="$prefix:pr-$variant"
           fi
 
-          echo "Computed tags for publication: $tags"
+          echo "Computed tags for publication ($variant): $tags"
           echo "tags=$tags" >> $GITHUB_OUTPUT
 
       - name: Login to GitHub Package Registry
@@ -58,3 +81,6 @@ jobs:
           platforms: |
             linux/amd64
             linux/arm64
+          build-args: |
+            VARIANT=${{ matrix.variant }}
+            ${{ matrix.es_version && format('ELASTICSEARCH_SPARK_VERSION={0}', matrix.es_version) || '' }}

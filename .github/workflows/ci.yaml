@@ -27,6 +27,8 @@ jobs:
           push: false
           load: true
           tags: ghcr.io/jaegertracing/spark-dependencies/spark-dependencies:test-cassandra
+          build-args: |
+            VARIANT=cassandra
       - name: compile
         run: ./mvnw --batch-mode clean install -DskipTests
       - name: test
@@ -54,6 +56,7 @@ jobs:
           load: true
           tags: ghcr.io/jaegertracing/spark-dependencies/spark-dependencies:test-es7
           build-args: |
+            VARIANT=elasticsearch7
             ELASTICSEARCH_SPARK_VERSION=7.17.10
       - name: compile
         run: ./mvnw --batch-mode clean install -DskipTests -Dversion.elasticsearch.spark=7.17.10
@@ -81,6 +84,7 @@ jobs:
           load: true
           tags: ghcr.io/jaegertracing/spark-dependencies/spark-dependencies:test-es8
           build-args: |
+            VARIANT=elasticsearch8
             ELASTICSEARCH_SPARK_VERSION=8.13.4
       - name: compile
         run: ./mvnw --batch-mode clean install -DskipTests -Dversion.elasticsearch.spark=8.13.4
@@ -108,6 +112,7 @@ jobs:
           load: true
           tags: ghcr.io/jaegertracing/spark-dependencies/spark-dependencies:test-es9
           build-args: |
+            VARIANT=elasticsearch9
             ELASTICSEARCH_SPARK_VERSION=9.1.3
       - name: compile
         run: ./mvnw --batch-mode clean install -DskipTests -Dversion.elasticsearch.spark=9.1.3
