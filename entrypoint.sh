@@ -34,8 +34,10 @@ patch_uid() {
 
 patch_uid
 
-# If VARIANT_TYPE is set, override the command to use the specific main class
-# This allows variant-specific images to bypass the unified entry point
+# Set JAR path
+JAR_PATH="$APP_HOME/jaeger-spark-dependencies-0.0.1-SNAPSHOT.jar"
+
+# Determine main class based on VARIANT_TYPE
 if [ -n "$VARIANT_TYPE" ]; then
     case "$VARIANT_TYPE" in
         cassandra)
@@ -45,33 +47,14 @@ if [ -n "$VARIANT_TYPE" ]; then
             MAIN_CLASS="io.jaegertracing.spark.dependencies.elastic.ElasticsearchDependenciesJob"
             ;;
         *)
-            # If unrecognized variant, fall through to default command
-            exec "$@"
-            exit $?
+            # For unrecognized variant, use default entry point
+            MAIN_CLASS="io.jaegertracing.spark.dependencies.DependenciesSparkJob"
             ;;
     esac
-    
-    # Replace the jar execution command with the specific main class
-    if [ "$1" = "java" ]; then
-        shift  # Remove 'java'
-        # Extract JAVA_OPTS if present
-        OPTS=""
-        while [ $# -gt 0 ]; do
-            case "$1" in
-                -jar)
-                    shift  # Remove -jar
-                    JAR_PATH="$1"
-                    shift  # Remove jar path
-                    break
-                    ;;
-                *)
-                    OPTS="$OPTS $1"
-                    shift
-                    ;;
-            esac
-        done
-        exec java $OPTS -cp "$JAR_PATH" "$MAIN_CLASS" "$@"
-    fi
+else
+    # No variant specified, use default entry point
+    MAIN_CLASS="io.jaegertracing.spark.dependencies.DependenciesSparkJob"
 fi
 
-exec "$@"
+# Execute the job with the determined main class
+exec java ${JAVA_OPTS} -cp "$JAR_PATH" "$MAIN_CLASS" "$@"
