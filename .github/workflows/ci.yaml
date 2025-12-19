@@ -32,8 +32,7 @@ jobs:
       - name: compile
         run: ./mvnw --batch-mode clean install -DskipTests
       - name: test
-        # pin Jaeger version temporarily to work around build failures
-        run: SPARK_DEPENDENCIES_JOB_TAG=test-cassandra JAEGER_VERSION=1.52.0 ./mvnw --batch-mode test -pl jaeger-spark-dependencies-cassandra
+        run: SPARK_DEPENDENCIES_JOB_TAG=test-cassandra ./mvnw --batch-mode test -pl jaeger-spark-dependencies-cassandra
 
   latest-jaeger-es7:
     name: Latest Jaeger and ES7

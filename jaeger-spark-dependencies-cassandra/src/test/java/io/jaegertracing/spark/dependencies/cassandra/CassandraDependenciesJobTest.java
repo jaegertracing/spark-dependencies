@@ -37,8 +37,7 @@ public class CassandraDependenciesJobTest extends DependenciesTest {
 
   protected static Network network;
   protected static CassandraContainer cassandra;
-  protected static GenericContainer jaegerCollector;
-  protected static GenericContainer jaegerQuery;
+  protected static GenericContainer jaegerAll;
   protected static GenericContainer jaegerCassandraSchema;
   private static int cassandraPort;
 
@@ -61,36 +60,23 @@ public class CassandraDependenciesJobTest extends DependenciesTest {
      */
     await().until(() -> !jaegerCassandraSchema.isRunning());
 
-    jaegerCollector = new GenericContainer<>("jaegertracing/jaeger-collector:" + jaegerVersion())
+    jaegerAll = new GenericContainer<>("jaegertracing/jaeger:" + jaegerVersion())
         .withNetwork(network)
-        .withEnv("CASSANDRA_SERVERS", "cassandra")
-        .withEnv("CASSANDRA_KEYSPACE", "jaeger_v1_dc1")
-        .withEnv("COLLECTOR_ZIPKIN_HOST_PORT", ":9411")
-        .withEnv("COLLECTOR_QUEUE_SIZE", "100000")
-        // older versions of jaeger were using 204 status code, now changed to 200
-        .waitingFor(new BoundPortHttpWaitStrategy(14269).forStatusCodeMatching(statusCode -> statusCode >= 200 && statusCode < 300))
-        // the first one is health check
-        .withExposedPorts(14269, 14268, 9411);
-    jaegerCollector.start();
-
-    jaegerQuery = new GenericContainer<>("jaegertracing/jaeger-query:" + jaegerVersion())
-        .withNetwork(network)
-        .withEnv("CASSANDRA_SERVERS", "cassandra")
-        .withEnv("CASSANDRA_KEYSPACE", "jaeger_v1_dc1")
+        .withClasspathResourceMapping("jaeger-v2-config-cassandra.yaml", "/etc/jaeger/config.yaml", org.testcontainers.containers.BindMode.READ_ONLY)
+        .withCommand("--config", "/etc/jaeger/config.yaml")
         .waitingFor(new BoundPortHttpWaitStrategy(16687).forStatusCodeMatching(statusCode -> statusCode >= 200 && statusCode < 300))
-        .withExposedPorts(16687, 16686);
-    jaegerQuery.start();
+        .withExposedPorts(16687, 16686, 14268, 9411);
+    jaegerAll.start();
 
-    queryUrl = String.format("http://localhost:%d", jaegerQuery.getMappedPort(16686));
-    collectorUrl = String.format("http://localhost:%d", jaegerCollector.getMappedPort(14268));
-    zipkinCollectorUrl = String.format("http://localhost:%d", jaegerCollector.getMappedPort(9411));
+    queryUrl = String.format("http://localhost:%d", jaegerAll.getMappedPort(16686));
+    collectorUrl = String.format("http://localhost:%d", jaegerAll.getMappedPort(14268));
+    zipkinCollectorUrl = String.format("http://localhost:%d", jaegerAll.getMappedPort(9411));
   }
 
   @AfterClass
   public static void afterClass() {
     Optional.of(cassandra).ifPresent(GenericContainer::close);
-    Optional.of(jaegerCollector).ifPresent(GenericContainer::close);
-    Optional.of(jaegerQuery).ifPresent(GenericContainer::close);
+    Optional.of(jaegerAll).ifPresent(GenericContainer::close);
     Optional.of(jaegerCassandraSchema).ifPresent(GenericContainer::close);
   }
 
