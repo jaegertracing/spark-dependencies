@@ -14,13 +14,13 @@
 
 FROM eclipse-temurin:11 as builder
 
-# Build argument to specify elasticsearch-spark version
-# Supported values: 7.17.29 (ES 7.12-7.16), 8.13.4 (ES 7.17+/8.x), 9.1.3 (ES 9.x)
-ARG ELASTICSEARCH_SPARK_VERSION=9.1.3
-
 # Build argument to specify the variant type
 # Supported values: cassandra, elasticsearch7, elasticsearch8, elasticsearch9
 ARG VARIANT=elasticsearch9
+
+# Build argument to specify elasticsearch-spark version (only used for elasticsearch variants)
+# Supported values: 7.17.29 (ES 7.12-7.16), 8.13.4 (ES 7.17+/8.x), 9.1.3 (ES 9.x)
+ARG ELASTICSEARCH_SPARK_VERSION=9.1.3
 
 ENV APP_HOME /app/
 
@@ -34,7 +34,14 @@ COPY .mvn $APP_HOME/.mvn
 COPY mvnw $APP_HOME
 
 WORKDIR $APP_HOME
-RUN --mount=type=cache,target=/root/.m2 ./mvnw package --batch-mode -Dlicense.skip=true -DskipTests -Dversion.elasticsearch.spark=${ELASTICSEARCH_SPARK_VERSION}
+
+# Build only the required module based on variant
+RUN --mount=type=cache,target=/root/.m2 \
+    if [ "$VARIANT" = "cassandra" ]; then \
+      ./mvnw package --batch-mode -Dlicense.skip=true -DskipTests -pl jaeger-spark-dependencies-cassandra -am; \
+    else \
+      ./mvnw package --batch-mode -Dlicense.skip=true -DskipTests -pl jaeger-spark-dependencies-elasticsearch -am -Dversion.elasticsearch.spark=${ELASTICSEARCH_SPARK_VERSION}; \
+    fi
 
 FROM eclipse-temurin:11-jre
 MAINTAINER Pavol Loffay <ploffay@redhat.com>
@@ -45,7 +52,15 @@ ARG VARIANT=elasticsearch9
 ENV APP_HOME /app/
 ENV VARIANT_TYPE=${VARIANT}
 
-COPY --from=builder $APP_HOME/jaeger-spark-dependencies/target/jaeger-spark-dependencies-0.0.1-SNAPSHOT.jar $APP_HOME/
+# Copy the appropriate JAR based on variant
+RUN if [ "$VARIANT" = "cassandra" ]; then \
+      echo "cassandra" > /tmp/variant_type; \
+    else \
+      echo "elasticsearch" > /tmp/variant_type; \
+    fi
+
+COPY --from=builder $APP_HOME/jaeger-spark-dependencies-cassandra/target/jaeger-spark-dependencies-cassandra-*.jar $APP_HOME/jaeger-spark-dependencies-cassandra.jar 2>/dev/null || true
+COPY --from=builder $APP_HOME/jaeger-spark-dependencies-elasticsearch/target/jaeger-spark-dependencies-elasticsearch-*.jar $APP_HOME/jaeger-spark-dependencies-elasticsearch.jar 2>/dev/null || true
 
 WORKDIR $APP_HOME
 

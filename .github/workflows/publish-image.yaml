@@ -18,8 +18,7 @@ jobs:
       matrix:
         include:
           - variant: cassandra
-            es_version: "8.13.4"
-            description: "Cassandra storage (compatible with ES 7.17+/8.x)"
+            description: "Cassandra storage"
           - variant: elasticsearch7
             es_version: "7.17.29"
             description: "Elasticsearch 7.12-7.16"
@@ -83,5 +82,5 @@ jobs:
             linux/amd64
             linux/arm64
           build-args: |
-            ELASTICSEARCH_SPARK_VERSION=${{ matrix.es_version }}
             VARIANT=${{ matrix.variant }}
+            ${{ matrix.es_version && format('ELASTICSEARCH_SPARK_VERSION={0}', matrix.es_version) || '' }}

@@ -34,25 +34,17 @@ patch_uid() {
 
 patch_uid
 
-# Set JAR path
-JAR_PATH="$APP_HOME/jaeger-spark-dependencies-0.0.1-SNAPSHOT.jar"
-
-# Determine main class based on VARIANT_TYPE
-if [ -n "$VARIANT_TYPE" ]; then
-    case "$VARIANT_TYPE" in
-        cassandra)
-            MAIN_CLASS="io.jaegertracing.spark.dependencies.cassandra.CassandraDependenciesJob"
-            ;;
-        elasticsearch*)
-            MAIN_CLASS="io.jaegertracing.spark.dependencies.elastic.ElasticsearchDependenciesJob"
-            ;;
-        *)
-            # For unrecognized variant, use default entry point
-            MAIN_CLASS="io.jaegertracing.spark.dependencies.DependenciesSparkJob"
-            ;;
-    esac
+# Determine JAR path and main class based on VARIANT_TYPE
+if [ "$VARIANT_TYPE" = "cassandra" ]; then
+    JAR_PATH="$APP_HOME/jaeger-spark-dependencies-cassandra.jar"
+    MAIN_CLASS="io.jaegertracing.spark.dependencies.cassandra.CassandraDependenciesJob"
+elif [ -n "$VARIANT_TYPE" ] && [ "${VARIANT_TYPE#elasticsearch}" != "$VARIANT_TYPE" ]; then
+    # VARIANT_TYPE starts with "elasticsearch"
+    JAR_PATH="$APP_HOME/jaeger-spark-dependencies-elasticsearch.jar"
+    MAIN_CLASS="io.jaegertracing.spark.dependencies.elastic.ElasticsearchDependenciesJob"
 else
-    # No variant specified, use default entry point
+    # Fallback to unified JAR (for backward compatibility or local builds)
+    JAR_PATH="$APP_HOME/jaeger-spark-dependencies-0.0.1-SNAPSHOT.jar"
     MAIN_CLASS="io.jaegertracing.spark.dependencies.DependenciesSparkJob"
 fi
 
