@@ -12,7 +12,7 @@
 # the License.
 #
 
-FROM eclipse-temurin:11 as builder
+FROM eclipse-temurin:11 AS builder
 
 # Build argument to specify the variant type
 # Supported values: cassandra, elasticsearch7, elasticsearch8, elasticsearch9
@@ -22,7 +22,7 @@ ARG VARIANT=elasticsearch9
 # Supported values: 7.17.29 (ES 7.12-7.16), 8.13.4 (ES 7.17+/8.x), 9.1.3 (ES 9.x)
 ARG ELASTICSEARCH_SPARK_VERSION=9.1.3
 
-ENV APP_HOME /app/
+ENV APP_HOME=/app/
 
 COPY pom.xml $APP_HOME
 COPY jaeger-spark-dependencies $APP_HOME/jaeger-spark-dependencies
@@ -35,16 +35,22 @@ COPY mvnw $APP_HOME
 
 WORKDIR $APP_HOME
 
-# Build the unified shaded JAR
-# Note: We always build the unified module which contains all dependencies.
-# The VARIANT determines which main class gets executed at runtime.
+# Build module-specific shaded JAR based on VARIANT
+# Cassandra variant: builds only cassandra module (no elasticsearch dependencies)
+# Elasticsearch variants: build only elasticsearch module with specific connector version
 RUN --mount=type=cache,target=/root/.m2 \
-    ./mvnw package --batch-mode -Dlicense.skip=true -DskipTests -Dversion.elasticsearch.spark=${ELASTICSEARCH_SPARK_VERSION} && \
-    mkdir -p /tmp/jars && \
-    cp $APP_HOME/jaeger-spark-dependencies/target/jaeger-spark-dependencies-*.jar /tmp/jars/app.jar
+    if [ "$VARIANT" = "cassandra" ]; then \
+      ./mvnw package --batch-mode -Dlicense.skip=true -DskipTests -pl jaeger-spark-dependencies-cassandra -am && \
+      mkdir -p /tmp/jars && \
+      cp $APP_HOME/jaeger-spark-dependencies-cassandra/target/jaeger-spark-dependencies-cassandra-*.jar /tmp/jars/app.jar; \
+    else \
+      ./mvnw package --batch-mode -Dlicense.skip=true -DskipTests -Dversion.elasticsearch.spark=${ELASTICSEARCH_SPARK_VERSION} -pl jaeger-spark-dependencies-elasticsearch -am && \
+      mkdir -p /tmp/jars && \
+      cp $APP_HOME/jaeger-spark-dependencies-elasticsearch/target/jaeger-spark-dependencies-elasticsearch-*.jar /tmp/jars/app.jar; \
+    fi
 
 FROM eclipse-temurin:11-jre
-MAINTAINER Pavol Loffay <ploffay@redhat.com>
+LABEL org.opencontainers.image.authors="The Jaeger Authors <cncf-jaeger-maintainers@lists.cncf.io>"
 
 # Carry forward the VARIANT build arg to the runtime stage
 ARG VARIANT=elasticsearch9
