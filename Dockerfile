@@ -35,19 +35,13 @@ COPY mvnw $APP_HOME
 
 WORKDIR $APP_HOME
 
-# Build only the required module based on variant
+# Build the unified shaded JAR
+# Note: We always build the unified module which contains all dependencies.
+# The VARIANT determines which main class gets executed at runtime.
 RUN --mount=type=cache,target=/root/.m2 \
-    if [ "$VARIANT" = "cassandra" ]; then \
-      ./mvnw package --batch-mode -Dlicense.skip=true -DskipTests -pl jaeger-spark-dependencies-cassandra -am; \
-    else \
-      ./mvnw package --batch-mode -Dlicense.skip=true -DskipTests -pl jaeger-spark-dependencies-elasticsearch -am -Dversion.elasticsearch.spark=${ELASTICSEARCH_SPARK_VERSION}; \
-    fi && \
+    ./mvnw package --batch-mode -Dlicense.skip=true -DskipTests -Dversion.elasticsearch.spark=${ELASTICSEARCH_SPARK_VERSION} && \
     mkdir -p /tmp/jars && \
-    if [ "$VARIANT" = "cassandra" ]; then \
-      cp $APP_HOME/jaeger-spark-dependencies-cassandra/target/jaeger-spark-dependencies-cassandra-*.jar /tmp/jars/app.jar; \
-    else \
-      cp $APP_HOME/jaeger-spark-dependencies-elasticsearch/target/jaeger-spark-dependencies-elasticsearch-*.jar /tmp/jars/app.jar; \
-    fi
+    cp $APP_HOME/jaeger-spark-dependencies/target/jaeger-spark-dependencies-*.jar /tmp/jars/app.jar
 
 FROM eclipse-temurin:11-jre
 MAINTAINER Pavol Loffay <ploffay@redhat.com>
