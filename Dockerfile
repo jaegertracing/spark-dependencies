@@ -16,14 +16,13 @@ FROM eclipse-temurin:11 as builder
 
 # Build argument to specify elasticsearch-spark version
 # Supported values: 7.17.29 (ES 7.12-7.16), 8.13.4 (ES 7.17+/8.x), 9.1.3 (ES 9.x)
-ARG ES_VERSION=9.1.3
+ARG ELASTICSEARCH_SPARK_VERSION=9.1.3
 
 # Build argument to specify the variant type
 # Supported values: cassandra, elasticsearch7, elasticsearch8, elasticsearch9
 ARG VARIANT=elasticsearch9
 
 ENV APP_HOME /app/
-ARG ELASTICSEARCH_SPARK_VERSION=9.1.3
 
 COPY pom.xml $APP_HOME
 COPY jaeger-spark-dependencies $APP_HOME/jaeger-spark-dependencies

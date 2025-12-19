@@ -83,5 +83,5 @@ jobs:
             linux/amd64
             linux/arm64
           build-args: |
-            ES_VERSION=${{ matrix.es_version }}
+            ELASTICSEARCH_SPARK_VERSION=${{ matrix.es_version }}
             VARIANT=${{ matrix.variant }}
