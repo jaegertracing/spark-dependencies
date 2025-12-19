@@ -50,6 +50,8 @@ extensions:
             keyspace: "jaeger_v1_dc1"
           connection:
             servers: ["cassandra:9042"]
+            tls:
+              insecure: true
 
 receivers:
   otlp:
