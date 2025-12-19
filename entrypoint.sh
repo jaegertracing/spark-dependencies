@@ -34,17 +34,17 @@ patch_uid() {
 
 patch_uid
 
-# Determine JAR path and main class based on VARIANT_TYPE
+# Use the single JAR name
+JAR_PATH="$APP_HOME/app.jar"
+
+# Determine main class based on VARIANT_TYPE
 if [ "$VARIANT_TYPE" = "cassandra" ]; then
-    JAR_PATH="$APP_HOME/jaeger-spark-dependencies-cassandra.jar"
     MAIN_CLASS="io.jaegertracing.spark.dependencies.cassandra.CassandraDependenciesJob"
 elif [ -n "$VARIANT_TYPE" ] && [ "${VARIANT_TYPE#elasticsearch}" != "$VARIANT_TYPE" ]; then
     # VARIANT_TYPE starts with "elasticsearch"
-    JAR_PATH="$APP_HOME/jaeger-spark-dependencies-elasticsearch.jar"
     MAIN_CLASS="io.jaegertracing.spark.dependencies.elastic.ElasticsearchDependenciesJob"
 else
     # Fallback to unified JAR (for backward compatibility or local builds)
-    JAR_PATH="$APP_HOME/jaeger-spark-dependencies-0.0.1-SNAPSHOT.jar"
     MAIN_CLASS="io.jaegertracing.spark.dependencies.DependenciesSparkJob"
 fi
 

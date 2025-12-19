@@ -41,6 +41,12 @@ RUN --mount=type=cache,target=/root/.m2 \
       ./mvnw package --batch-mode -Dlicense.skip=true -DskipTests -pl jaeger-spark-dependencies-cassandra -am; \
     else \
       ./mvnw package --batch-mode -Dlicense.skip=true -DskipTests -pl jaeger-spark-dependencies-elasticsearch -am -Dversion.elasticsearch.spark=${ELASTICSEARCH_SPARK_VERSION}; \
+    fi && \
+    mkdir -p /tmp/jars && \
+    if [ "$VARIANT" = "cassandra" ]; then \
+      cp $APP_HOME/jaeger-spark-dependencies-cassandra/target/jaeger-spark-dependencies-cassandra-*.jar /tmp/jars/app.jar; \
+    else \
+      cp $APP_HOME/jaeger-spark-dependencies-elasticsearch/target/jaeger-spark-dependencies-elasticsearch-*.jar /tmp/jars/app.jar; \
     fi
 
 FROM eclipse-temurin:11-jre
@@ -49,18 +55,11 @@ MAINTAINER Pavol Loffay <ploffay@redhat.com>
 # Carry forward the VARIANT build arg to the runtime stage
 ARG VARIANT=elasticsearch9
 
-ENV APP_HOME /app/
+ENV APP_HOME=/app/
 ENV VARIANT_TYPE=${VARIANT}
 
-# Copy the appropriate JAR based on variant
-RUN if [ "$VARIANT" = "cassandra" ]; then \
-      echo "cassandra" > /tmp/variant_type; \
-    else \
-      echo "elasticsearch" > /tmp/variant_type; \
-    fi
-
-COPY --from=builder $APP_HOME/jaeger-spark-dependencies-cassandra/target/jaeger-spark-dependencies-cassandra-*.jar $APP_HOME/jaeger-spark-dependencies-cassandra.jar 2>/dev/null || true
-COPY --from=builder $APP_HOME/jaeger-spark-dependencies-elasticsearch/target/jaeger-spark-dependencies-elasticsearch-*.jar $APP_HOME/jaeger-spark-dependencies-elasticsearch.jar 2>/dev/null || true
+# Copy the built JAR
+COPY --from=builder /tmp/jars/app.jar $APP_HOME/app.jar
 
 WORKDIR $APP_HOME
 
