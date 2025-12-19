@@ -63,9 +63,7 @@ receivers:
       thrift_http:
 
   zipkin:
-    protocols:
-      http:
-        endpoint: "0.0.0.0:9411"
+    endpoint: "0.0.0.0:9411"
 
 processors:
   batch:
