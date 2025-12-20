@@ -59,18 +59,23 @@ $ STORAGE=cassandra java -jar jaeger-spark-dependencies.jar `date -u -d '1 day a
 
 The following variables are common to all storage layers:
 
-    * `SPARK_MASTER`: Spark master to submit the job to; Defaults to `local[*]`
-    * `DATE`: Date in YYYY-mm-dd format. Denotes a day for which dependency links will be created.
+* `SPARK_MASTER`: Spark master to submit the job to; Defaults to `local[*]`
+* `DATE`: Date in YYYY-mm-dd format. Denotes a day for which dependency links will be created.
+* `PEER_SERVICE_TAG`: Tag name used to identify peer service in spans. Defaults to `peer.service`
 
 ### Cassandra
 Cassandra is used when `STORAGE=cassandra`.
 
-    * `CASSANDRA_KEYSPACE`: The keyspace to use. Defaults to "jaeger_v1_dc1".
-    * `CASSANDRA_CONTACT_POINTS`: Comma separated list of hosts / ip addresses part of Cassandra cluster. Defaults to localhost
-    * `CASSANDRA_LOCAL_DC`: The local DC to connect to (other nodes will be ignored)
-    * `CASSANDRA_USERNAME` and `CASSANDRA_PASSWORD`: Cassandra authentication. Will throw an exception on startup if authentication fails
-    * `CASSANDRA_USE_SSL`: Requires `javax.net.ssl.trustStore` and `javax.net.ssl.trustStorePassword`, defaults to false.
-    * `CASSANDRA_CLIENT_AUTH_ENABLED`: If set enables client authentication on SSL connections. Requires `javax.net.ssl.keyStore` and `javax.net.ssl.keyStorePassword`, defaults to false.
+* `CASSANDRA_KEYSPACE`: The keyspace to use. Defaults to "jaeger_v1_dc1".
+* `CASSANDRA_CONTACT_POINTS`: Comma separated list of hosts / ip addresses part of Cassandra cluster.
+  Defaults to localhost
+* `CASSANDRA_LOCAL_DC`: The local DC to connect to (other nodes will be ignored)
+* `CASSANDRA_USERNAME` and `CASSANDRA_PASSWORD`: Cassandra authentication. Will throw an exception
+  on startup if authentication fails
+* `CASSANDRA_USE_SSL`: Requires `javax.net.ssl.trustStore` and `javax.net.ssl.trustStorePassword`,
+  Defaults to false.
+* `CASSANDRA_CLIENT_AUTH_ENABLED`: If set enables client authentication on SSL connections.
+  Requires `javax.net.ssl.keyStore` and `javax.net.ssl.keyStorePassword`, defaults to false.
 
 Example usage:
 
@@ -86,27 +91,27 @@ Elasticsearch is used when `STORAGE=elasticsearch`.
 - ES 9.x: Use `:VERSION-elasticsearch9` tag (or `:latest`)
 
 #### Configuration
-    * `ES_NODES`: A comma separated list of elasticsearch hosts advertising http. Defaults to
-                  localhost. Add port section if not listening on port 9200. Only one of these hosts
-                  needs to be available to fetch the remaining nodes in the cluster. It is
-                  recommended to set this to all the master nodes of the cluster. Use url format for
-                  SSL. For example, "https://yourhost:8888"
-    * `ES_NODES_WAN_ONLY`: Set to true to only use the values set in ES_HOSTS, for example if your
-                           elasticsearch cluster is in Docker. If you're using a cloudprovider
-                           such as AWS Elasticsearch, set this to true. Defaults to false
-    * `ES_USERNAME` and `ES_PASSWORD`: Elasticsearch basic authentication. Use when X-Pack security
-                                       (formerly Shield) is in place. By default no username or
-                                       password is provided to elasticsearch.
-    * `ES_CLIENT_NODE_ONLY`: Set to true to disable elasticsearch cluster nodes.discovery and enable nodes.client.only.
-                             If your elasticsearch cluster's data nodes only listen on loopback ip, set this to true.
-                             Defaults to false
-    * `ES_INDEX_PREFIX`: index prefix of Jaeger indices. By default unset.
-    * `ES_INDEX_DATE_SEPARATOR`: index date separator of Jaeger indices. The default value is `-`. 
-                                 For example `.` will find index "jaeger-span-2020.11.25". 
-    * `ES_TIME_RANGE`: How far in the past the job should look to for spans, the maximum and default is `24h`.
-                       Any value accepted by [date-math](https://www.elastic.co/guide/en/elasticsearch/reference/current/common-options.html#date-math) can be used here, but the anchor is always `now`.
-    * `ES_USE_ALIASES`: Set to true to use index alias names to read from and write to.
-                        Usually required when using rollover indices.
+
+* `ES_NODES`: A comma separated list of elasticsearch hosts advertising http. Defaults to
+  127.0.0.1. Add port section if not listening on port 9200. Only one of these hosts
+  needs to be available to fetch the remaining nodes in the cluster. It is
+  recommended to set this to all the master nodes of the cluster. Use url format for
+  SSL. For example, "https://yourhost:8888"
+* `ES_NODES_WAN_ONLY`: Set to true to only use the values set in ES_NODES, for example if your
+  elasticsearch cluster is in Docker. If you're using a cloudprovider
+  such as AWS Elasticsearch, set this to true. Defaults to false
+* `ES_USERNAME` and `ES_PASSWORD`: Elasticsearch basic authentication. Use when X-Pack security
+  (formerly Shield) is in place. By default no username or password is provided to elasticsearch.
+* `ES_CLIENT_NODE_ONLY`: Set to true to disable elasticsearch cluster nodes.discovery and enable nodes.client.only.
+  If your elasticsearch cluster's data nodes only listen on loopback ip, set this to true.
+  Defaults to false.
+* `ES_INDEX_PREFIX`: index prefix of Jaeger indices. By default unset.
+* `ES_INDEX_DATE_SEPARATOR`: index date separator of Jaeger indices. The default value is `-`.
+  For example `.` will find index "jaeger-span-2020.11.25".
+* `ES_TIME_RANGE`: How far in the past the job should look to for spans, the maximum and default is `24h`.
+  Any value accepted by [date-math](https://www.elastic.co/guide/en/elasticsearch/reference/current/common-options.html#date-math) can be used here, but the anchor is always `now`.
+* `ES_USE_ALIASES`: Set to true to use index alias names to read from and write to.
+  Usually required when using rollover indices.
 
 Example usage:
 
@@ -117,17 +122,36 @@ $ STORAGE=elasticsearch ES_NODES=http://localhost:9200 java -jar jaeger-spark-de
 ## Design
 
 At a high-level, this job does the following:
-  * read lots of spans from a time period
-  * group them by traceId
-  * construct a graph using parent-child relationships expressed in span references
-  * for each edge `(parent span, child span)` output `(parent service, child service, count)`
-  * write the results to the database (e.g. `dependencies_v2` table in [Cassandra](https://github.com/jaegertracing/jaeger/blob/12e44faabf10cdd866391b78933eec5d6ac50fa9/plugin/storage/cassandra/schema/v004.cql.tmpl#L186))
+
+* read lots of spans from a time period
+* group them by traceId
+* construct a graph using parent-child relationships expressed in span references
+* for each edge `(parent span, child span)` output `(parent service, child service, count)`
+* write the results to the database (e.g. `dependencies_v2` table in [Cassandra](https://github.com/jaegertracing/jaeger/blob/12e44faabf10cdd866391b78933eec5d6ac50fa9/plugin/storage/cassandra/schema/v004.cql.tmpl#L186))
 
 ## Building locally
 To build the job locally and run tests:
 ```bash
 ./mvnw clean install # if failed add SPARK_LOCAL_IP=127.0.0.1
+```
+
+To run the unified jar (includes both Cassandra and Elasticsearch):
+```bash
+STORAGE=cassandra java -jar jaeger-spark-dependencies/target/jaeger-spark-dependencies-0.0.1-SNAPSHOT.jar
+# or
 STORAGE=elasticsearch ES_NODES=http://localhost:9200 java -jar jaeger-spark-dependencies/target/jaeger-spark-dependencies-0.0.1-SNAPSHOT.jar
+```
+
+To run storage-specific jars directly (without STORAGE variable):
+```bash
+# Cassandra
+java -jar jaeger-spark-dependencies-cassandra/target/jaeger-spark-dependencies-cassandra-0.0.1-SNAPSHOT.jar
+# Elasticsearch
+ES_NODES=http://localhost:9200 java -jar jaeger-spark-dependencies-elasticsearch/target/jaeger-spark-dependencies-elasticsearch-0.0.1-SNAPSHOT.jar
+```
+
+To build Docker image:
+```bash
 docker build -t jaegertracing/spark-dependencies:latest .
 ```
 
