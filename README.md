@@ -88,7 +88,7 @@ Elasticsearch is used when `STORAGE=elasticsearch`.
 
 #### Configuration
     * `ES_NODES`: A comma separated list of elasticsearch hosts advertising http. Defaults to
-                  localhost. Add port section if not listening on port 9200. Only one of these hosts
+                  127.0.0.1. Add port section if not listening on port 9200. Only one of these hosts
                   needs to be available to fetch the remaining nodes in the cluster. It is
                   recommended to set this to all the master nodes of the cluster. Use url format for
                   SSL. For example, "https://yourhost:8888"
