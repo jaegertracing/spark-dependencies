@@ -18,10 +18,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import io.jaegertracing.spark.dependencies.test.TracersGenerator;
-import io.jaegertracing.spark.dependencies.test.tree.TracingWrapper.JaegerWrapper;
+import io.jaegertracing.spark.dependencies.test.tree.TracingWrapper.OpenTelemetryWrapper;
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.thrift.transport.TTransportException;
 import org.junit.Test;
 
 /**
@@ -30,8 +29,8 @@ import org.junit.Test;
 public class TreeGeneratorTest {
 
   @Test
-  public void testGenerateOne() throws TTransportException {
-    Node<JaegerWrapper> root = new TreeGenerator(TracersGenerator.generateJaeger(1, "http://localhost"))
+  public void testGenerateOne() {
+    Node<OpenTelemetryWrapper> root = new TreeGenerator(TracersGenerator.generateJaeger(1, "http://localhost"))
         .generateTree(1, 3);
     assertEquals(0, root.getDescendants().size());
     assertNotNull(root.getServiceName());
@@ -40,8 +39,8 @@ public class TreeGeneratorTest {
   }
 
   @Test
-  public void testBranchingFactorOne() throws TTransportException {
-    Node<JaegerWrapper> root = new TreeGenerator(TracersGenerator.generateJaeger(1, "http://localhost"))
+  public void testBranchingFactorOne() {
+    Node<OpenTelemetryWrapper> root = new TreeGenerator(TracersGenerator.generateJaeger(1, "http://localhost"))
         .generateTree(16, 3);
     List<Node> nodes = new ArrayList<>();
     Traversals.postOrder(root, (jaegerWrapperNode, jaegerWrapperNode2) -> {
