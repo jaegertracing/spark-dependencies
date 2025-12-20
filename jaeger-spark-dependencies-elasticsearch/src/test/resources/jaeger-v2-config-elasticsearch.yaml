@@ -17,7 +17,7 @@ service:
   pipelines:
     traces:
       receivers: [otlp, jaeger, zipkin]
-      processors: [batch]
+      processors: [filter/jaeger, batch]
       exporters: [jaeger_storage_exporter]
   telemetry:
     resource:
@@ -32,6 +32,8 @@ service:
                 port: 8888
     logs:
       level: info
+    traces:
+      level: none
 
 extensions:
   healthcheckv2:
@@ -71,6 +73,12 @@ receivers:
     endpoint: "0.0.0.0:9411"
 
 processors:
+  filter/jaeger:
+    error_mode: ignore
+    traces:
+      span:
+        - 'resource.attributes["service.name"] == "jaeger"'
+  
   batch:
 
 exporters:
