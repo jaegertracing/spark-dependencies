@@ -294,7 +294,10 @@ public abstract class DependenciesTest {
         .url(url)
         .get()
         .build();
-    await().atMost(30, TimeUnit.SECONDS).until(() -> {
+    await()
+        .pollInterval(1, TimeUnit.SECONDS)
+        .atMost(30, TimeUnit.SECONDS)
+        .until(() -> {
       try(Response response = okHttpClient.newCall(request).execute()) {
         String responseBody = response.body().string();
         int statusCode = response.code();
