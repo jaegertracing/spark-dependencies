@@ -56,15 +56,5 @@
       <artifactId>awaitility</artifactId>
       <version>${version.org.awaitility-awaitility}</version>
     </dependency>
-    <dependency>
-      <groupId>io.zipkin.brave</groupId>
-      <artifactId>brave</artifactId>
-      <version>${version.io.zipkin.brave-brave}</version>
-    </dependency>
-    <dependency>
-      <groupId>io.zipkin.reporter</groupId>
-      <artifactId>zipkin-sender-okhttp3</artifactId>
-      <version>${version.io.zipkin.reporter-zipkin-sender-okhttp3}</version>
-    </dependency>
   </dependencies>
 </project>
