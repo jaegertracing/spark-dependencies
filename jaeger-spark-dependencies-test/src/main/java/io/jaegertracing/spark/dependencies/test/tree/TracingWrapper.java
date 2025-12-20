@@ -20,7 +20,9 @@ import java.util.UUID;
 /**
  * Encapsulates tracing information about one node(service) in the graph.
  * It allows to create one span for this node. Caller is responsible to
- * call {@link #createChildSpan(TracingWrapper)} and finish the span.
+ * call {@link #createChildSpan(TracingWrapper)} and finish the span. The
+ * parent parameter in createChildSpan should be of the same type as the
+ * implementing wrapper.
  *
  * @author Pavol Loffay
  */
