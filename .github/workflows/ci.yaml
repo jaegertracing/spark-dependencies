@@ -102,6 +102,8 @@ jobs:
       # TODO remove once testcontainers are updated
       - name: pull ryuk image
         run: docker pull testcontainersofficial/ryuk:0.3.0
+      # Build mega-jar (unified JAR with both Cassandra and Elasticsearch support)
+      # While ES9 doesn't require the mega-jar, we build it here to ensure it's tested at least once in CI
       - name: Build docker image
         uses: docker/build-push-action@v2.7.0
         # We need the image for the tests
@@ -111,7 +113,7 @@ jobs:
           load: true
           tags: ghcr.io/jaegertracing/spark-dependencies/spark-dependencies:test-es9
           build-args: |
-            VARIANT=elasticsearch9
+            VARIANT=unified
             ELASTICSEARCH_SPARK_VERSION=9.1.3
       - name: compile
         run: ./mvnw --batch-mode clean install -DskipTests -Dversion.elasticsearch.spark=9.1.3
