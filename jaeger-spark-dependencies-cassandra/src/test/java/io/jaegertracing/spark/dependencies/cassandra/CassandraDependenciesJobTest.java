@@ -37,60 +37,63 @@ public class CassandraDependenciesJobTest extends DependenciesTest {
 
   protected static Network network;
   protected static CassandraContainer cassandra;
-  protected static GenericContainer jaegerCollector;
-  protected static GenericContainer jaegerQuery;
+  protected static GenericContainer jaegerAll;
   protected static GenericContainer jaegerCassandraSchema;
   private static int cassandraPort;
 
   @BeforeClass
   public static void beforeClass() {
+    System.out.println("=== Starting CassandraDependenciesJobTest setup ===");
+    
     network = Network.newNetwork();
+    System.out.println("Created network: " + network.getId());
+    
+    System.out.println("Starting Cassandra container (cassandra:4.1)...");
     cassandra = new CassandraContainer("cassandra:4.1")
         .withNetwork(network)
         .withNetworkAliases("cassandra")
         .withExposedPorts(9042);
     cassandra.start();
     cassandraPort = cassandra.getMappedPort(9042);
+    System.out.println("Cassandra started. Mapped port: " + cassandraPort);
 
+    System.out.println("Starting Jaeger Cassandra schema container (jaegertracing/jaeger-cassandra-schema:" + jaegerVersion() + ")...");
     jaegerCassandraSchema = new GenericContainer<>("jaegertracing/jaeger-cassandra-schema:" + jaegerVersion())
         .withLogConsumer(new LogToConsolePrinter("[jaeger-cassandra-schema] "))
         .withNetwork(network);
     jaegerCassandraSchema.start();
+    System.out.println("Jaeger Cassandra schema container started, waiting for schema creation...");
     /**
      * Wait until schema is created
      */
     await().until(() -> !jaegerCassandraSchema.isRunning());
+    System.out.println("Jaeger Cassandra schema creation completed");
 
-    jaegerCollector = new GenericContainer<>("jaegertracing/jaeger-collector:" + jaegerVersion())
+    System.out.println("Starting Jaeger v2 unified container (jaegertracing/jaeger:" + jaegerVersion() + ")...");
+    jaegerAll = new GenericContainer<>("jaegertracing/jaeger:" + jaegerVersion())
         .withNetwork(network)
-        .withEnv("CASSANDRA_SERVERS", "cassandra")
-        .withEnv("CASSANDRA_KEYSPACE", "jaeger_v1_dc1")
-        .withEnv("COLLECTOR_ZIPKIN_HOST_PORT", ":9411")
-        .withEnv("COLLECTOR_QUEUE_SIZE", "100000")
-        // older versions of jaeger were using 204 status code, now changed to 200
-        .waitingFor(new BoundPortHttpWaitStrategy(14269).forStatusCodeMatching(statusCode -> statusCode >= 200 && statusCode < 300))
-        // the first one is health check
-        .withExposedPorts(14269, 14268, 9411);
-    jaegerCollector.start();
-
-    jaegerQuery = new GenericContainer<>("jaegertracing/jaeger-query:" + jaegerVersion())
-        .withNetwork(network)
-        .withEnv("CASSANDRA_SERVERS", "cassandra")
-        .withEnv("CASSANDRA_KEYSPACE", "jaeger_v1_dc1")
+        .withClasspathResourceMapping("jaeger-v2-config-cassandra.yaml", "/etc/jaeger/config.yaml", org.testcontainers.containers.BindMode.READ_ONLY)
+        .withCommand("--config", "/etc/jaeger/config.yaml")
         .waitingFor(new BoundPortHttpWaitStrategy(16687).forStatusCodeMatching(statusCode -> statusCode >= 200 && statusCode < 300))
-        .withExposedPorts(16687, 16686);
-    jaegerQuery.start();
+        .withExposedPorts(16687, 16686, 14268, 9411);
+    jaegerAll.start();
+    System.out.println("Jaeger v2 container started");
 
-    queryUrl = String.format("http://localhost:%d", jaegerQuery.getMappedPort(16686));
-    collectorUrl = String.format("http://localhost:%d", jaegerCollector.getMappedPort(14268));
-    zipkinCollectorUrl = String.format("http://localhost:%d", jaegerCollector.getMappedPort(9411));
+    queryUrl = String.format("http://localhost:%d", jaegerAll.getMappedPort(16686));
+    collectorUrl = String.format("http://localhost:%d", jaegerAll.getMappedPort(14268));
+    zipkinCollectorUrl = String.format("http://localhost:%d", jaegerAll.getMappedPort(9411));
+    
+    System.out.println("=== Container setup complete ===");
+    System.out.println("Query URL: " + queryUrl);
+    System.out.println("Collector URL: " + collectorUrl);
+    System.out.println("Zipkin Collector URL: " + zipkinCollectorUrl);
+    System.out.println("Health check port: " + jaegerAll.getMappedPort(16687));
   }
 
   @AfterClass
   public static void afterClass() {
     Optional.of(cassandra).ifPresent(GenericContainer::close);
-    Optional.of(jaegerCollector).ifPresent(GenericContainer::close);
-    Optional.of(jaegerQuery).ifPresent(GenericContainer::close);
+    Optional.of(jaegerAll).ifPresent(GenericContainer::close);
     Optional.of(jaegerCassandraSchema).ifPresent(GenericContainer::close);
   }
 

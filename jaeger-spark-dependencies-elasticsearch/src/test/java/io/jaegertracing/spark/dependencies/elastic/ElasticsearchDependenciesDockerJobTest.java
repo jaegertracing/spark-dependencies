@@ -61,7 +61,7 @@ public class ElasticsearchDependenciesDockerJobTest extends ElasticsearchDepende
             .withLogConsumer(new LogToConsolePrinter("[spark-dependencies] "))
             .withEnv("ES_NODES", "http://elasticsearch:9200")
             .withEnv("DATE", dateStr)
-            .dependsOn(jaegerElasticsearchEnvironment.elasticsearch, jaegerElasticsearchEnvironment.jaegerCollector)) {
+            .dependsOn(jaegerElasticsearchEnvironment.elasticsearch, jaegerElasticsearchEnvironment.jaegerAll)) {
       sparkDependenciesJob.start();
       await("spark-dependencies-job execution")
               .atMost(3, TimeUnit.MINUTES)
