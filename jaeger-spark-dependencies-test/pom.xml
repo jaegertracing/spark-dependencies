@@ -52,6 +52,11 @@
       <version>${version.io.opentelemetry}</version>
     </dependency>
     <dependency>
+      <groupId>io.opentelemetry.semconv</groupId>
+      <artifactId>opentelemetry-semconv</artifactId>
+      <version>1.27.0-alpha</version>
+    </dependency>
+    <dependency>
       <groupId>com.squareup.okhttp3</groupId>
       <artifactId>okhttp</artifactId>
       <version>${version.com.squareup.okhttp3-okhttp}</version>
