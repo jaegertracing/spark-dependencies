@@ -79,8 +79,8 @@ public class CassandraDependenciesJobTest extends DependenciesTest {
     jaegerAll.start();
     System.out.println("Jaeger v2 container started");
 
-    queryUrl = String.format("http://localhost:%d", jaegerAll.getMappedPort(16686));
-    collectorUrl = String.format("http://localhost:%d", jaegerAll.getMappedPort(4317));
+    queryUrl = String.format("http://127.0.0.1:%d", jaegerAll.getMappedPort(16686));
+    collectorUrl = String.format("http://127.0.0.1:%d", jaegerAll.getMappedPort(4317));
     
     System.out.println("=== Container setup complete ===");
     System.out.println("Query URL: " + queryUrl);

@@ -90,24 +90,46 @@ public class TracersGenerator {
   }
 
   public static Tuple<Tracer, Flushable> createJaeger(String serviceName, String collectorUrl) {
-    // Parse the collector URL to extract host and port for OTLP gRPC endpoint
-    // OtlpGrpcSpanExporter expects endpoint in format "http://host:port" (with scheme)
-    String otlpEndpoint = collectorUrl;
+    // Parse collectorUrl to extract host and port for OTLP gRPC
+    // collectorUrl is in format "http://host:port"
+    String host = "localhost";
+    int port = 4317; // default
     
-    // Extract the base URL (remove any path after host:port)
-    int slashIndex = otlpEndpoint.indexOf('/', otlpEndpoint.indexOf("//") + 2);
-    if (slashIndex > 0) {
-      otlpEndpoint = otlpEndpoint.substring(0, slashIndex);
+    try {
+      // Parse the URL to extract host and port
+      String urlStr = collectorUrl;
+      // Remove scheme
+      if (urlStr.startsWith("http://")) {
+        urlStr = urlStr.substring(7);
+      } else if (urlStr.startsWith("https://")) {
+        urlStr = urlStr.substring(8);
+      }
+      // Remove path if present
+      int slashIndex = urlStr.indexOf('/');
+      if (slashIndex > 0) {
+        urlStr = urlStr.substring(0, slashIndex);
+      }
+      // Extract host and port
+      int colonIndex = urlStr.lastIndexOf(':');
+      if (colonIndex > 0) {
+        host = urlStr.substring(0, colonIndex);
+        port = Integer.parseInt(urlStr.substring(colonIndex + 1));
+      } else {
+        host = urlStr;
+      }
+    } catch (Exception e) {
+      System.err.println("[ERROR TracersGenerator] Failed to parse collectorUrl: " + collectorUrl + ", error: " + e.getMessage());
     }
     
-    // Change to OTLP gRPC port (4317)
-    otlpEndpoint = otlpEndpoint.replaceAll(":\\d+$", ":4317");
+    // Reconstruct endpoint in the format expected by gRPC exporter
+    String otlpEndpoint = "http://" + host + ":" + port;
 
     Resource resource = Resource.getDefault()
         .merge(Resource.builder()
             .put(ResourceAttributes.SERVICE_NAME, serviceName)
             .build());
 
+    // For gRPC, the endpoint should include the scheme (http:// or https://)
     OtlpGrpcSpanExporter spanExporter = OtlpGrpcSpanExporter.builder()
         .setEndpoint(otlpEndpoint)
         .setTimeout(10, TimeUnit.SECONDS)
