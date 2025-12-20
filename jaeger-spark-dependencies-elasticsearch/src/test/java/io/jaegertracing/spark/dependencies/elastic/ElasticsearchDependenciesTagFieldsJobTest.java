@@ -29,7 +29,6 @@ public class ElasticsearchDependenciesTagFieldsJobTest extends ElasticsearchDepe
     jaegerEnvSetting.put("ES_TAGS__AS_FIELDS_ALL", "true");
     jaegerElasticsearchEnvironment.start(jaegerEnvSetting, jaegerVersion(), JaegerElasticsearchEnvironment.elasticsearchVersion());
     collectorUrl = jaegerElasticsearchEnvironment.getCollectorUrl();
-    zipkinCollectorUrl = jaegerElasticsearchEnvironment.getZipkinCollectorUrl();
     queryUrl = jaegerElasticsearchEnvironment.getQueryUrl();
   }
 }

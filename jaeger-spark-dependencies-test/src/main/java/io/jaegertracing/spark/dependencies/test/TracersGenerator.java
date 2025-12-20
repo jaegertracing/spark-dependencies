@@ -13,8 +13,6 @@
  */
 package io.jaegertracing.spark.dependencies.test;
 
-import brave.Tracing;
-import brave.sampler.Sampler;
 import io.jaegertracing.internal.JaegerTracer;
 import io.jaegertracing.internal.JaegerTracer.Builder;
 import io.jaegertracing.internal.exceptions.SenderException;
@@ -22,18 +20,11 @@ import io.jaegertracing.internal.reporters.RemoteReporter;
 import io.jaegertracing.internal.samplers.ConstSampler;
 import io.jaegertracing.spark.dependencies.test.tree.TracingWrapper;
 import io.jaegertracing.spark.dependencies.test.tree.TracingWrapper.JaegerWrapper;
-import io.jaegertracing.spark.dependencies.test.tree.TracingWrapper.ZipkinWrapper;
 import io.jaegertracing.thrift.internal.senders.HttpSender;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 import org.apache.thrift.transport.TTransportException;
-import zipkin.Span;
-import zipkin.reporter.AsyncReporter;
-import zipkin.reporter.Encoding;
-import zipkin.reporter.Sender;
-import zipkin.reporter.okhttp3.OkHttpSender;
 
 /**
  * @author Pavol Loffay
@@ -78,9 +69,6 @@ public class TracersGenerator {
     }
 
     public TracingWrapper tracingWrapper() {
-      if (tracer instanceof Tracing) {
-        return new ZipkinWrapper((brave.Tracing)tracer, serviceName);
-      }
       return new JaegerWrapper((io.jaegertracing.internal.JaegerTracer)tracer);
     }
 
@@ -118,33 +106,6 @@ public class TracersGenerator {
         throw new IllegalStateException("Failed to send", ex);
       }
     });
-  }
-
-  public static List<TracerHolder<Tracing>> generateZipkin(int number, String collectorUrl) {
-    List<TracerHolder<Tracing>> tracers = new ArrayList<>(number);
-    for (int i = 0; i < number; i++) {
-      String serviceName = serviceName();
-      Tuple<Tracing, Flushable> zipkinTracer = createZipkin(serviceName, collectorUrl);
-      tracers.add(new TracerHolder<>(zipkinTracer.getA(), serviceName, zipkinTracer.getB()));
-    }
-    return tracers;
-  }
-
-  public static Tuple<Tracing, Flushable> createZipkin(String serviceName, String collectorUrl) {
-    Sender sender = OkHttpSender.builder()
-      .endpoint(collectorUrl + "/api/v1/spans")
-      .encoding(Encoding.JSON)
-      .build();
-
-    AsyncReporter<Span> reporter = AsyncReporter.builder(sender)
-        .closeTimeout(1, TimeUnit.MILLISECONDS)
-        .build();
-    return new Tuple<>(Tracing.newBuilder()
-        .localServiceName(serviceName)
-        .sampler(Sampler.ALWAYS_SAMPLE)
-        .traceId128Bit(true)
-        .reporter(reporter)
-        .build(), () -> reporter.flush());
   }
 
   private static String serviceName() {

@@ -81,12 +81,10 @@ public class CassandraDependenciesJobTest extends DependenciesTest {
 
     queryUrl = String.format("http://localhost:%d", jaegerAll.getMappedPort(16686));
     collectorUrl = String.format("http://localhost:%d", jaegerAll.getMappedPort(14268));
-    zipkinCollectorUrl = String.format("http://localhost:%d", jaegerAll.getMappedPort(9411));
     
     System.out.println("=== Container setup complete ===");
     System.out.println("Query URL: " + queryUrl);
     System.out.println("Collector URL: " + collectorUrl);
-    System.out.println("Zipkin Collector URL: " + zipkinCollectorUrl);
     System.out.println("Health check port: " + jaegerAll.getMappedPort(16687));
   }
 

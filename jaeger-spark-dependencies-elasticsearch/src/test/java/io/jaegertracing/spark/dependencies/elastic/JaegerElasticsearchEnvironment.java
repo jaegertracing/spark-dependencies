@@ -43,7 +43,6 @@ public class JaegerElasticsearchEnvironment {
    */
   private String queryUrl;
   private String collectorUrl;
-  private String zipkinCollectorUrl;
 
   public static String elasticsearchVersion() {
     String version = System.getProperty("elasticsearch.version", System.getenv("ELASTICSEARCH_VERSION"));
@@ -74,7 +73,6 @@ public class JaegerElasticsearchEnvironment {
     jaegerAll.start();
 
     collectorUrl = String.format("http://%s:%d", jaegerAll.getContainerIpAddress(), jaegerAll.getMappedPort(14268));
-    zipkinCollectorUrl = String.format("http://%s:%d", jaegerAll.getContainerIpAddress(), jaegerAll.getMappedPort(9411));
     queryUrl = String.format("http://%s:%d", jaegerAll.getContainerIpAddress(), jaegerAll.getMappedPort(16686));
   }
 
@@ -139,10 +137,6 @@ public class JaegerElasticsearchEnvironment {
 
   public String getCollectorUrl() {
     return collectorUrl;
-  }
-
-  public String getZipkinCollectorUrl() {
-    return zipkinCollectorUrl;
   }
 
   public String getElasticsearchIPPort() {

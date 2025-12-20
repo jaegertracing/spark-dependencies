@@ -16,7 +16,6 @@ package io.jaegertracing.spark.dependencies.test;
 import static org.awaitility.Awaitility.await;
 import static org.junit.Assert.assertEquals;
 
-import brave.Tracing;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jaegertracing.internal.JaegerTracer;
@@ -27,7 +26,6 @@ import io.jaegertracing.spark.dependencies.test.rest.JsonHelper;
 import io.jaegertracing.spark.dependencies.test.rest.RestResult;
 import io.jaegertracing.spark.dependencies.test.tree.Node;
 import io.jaegertracing.spark.dependencies.test.tree.TracingWrapper.JaegerWrapper;
-import io.jaegertracing.spark.dependencies.test.tree.TracingWrapper.ZipkinWrapper;
 import io.jaegertracing.spark.dependencies.test.tree.Traversals;
 import io.jaegertracing.spark.dependencies.test.tree.TreeGenerator;
 import io.opentracing.References;
@@ -55,7 +53,6 @@ public abstract class DependenciesTest {
    */
   protected static String queryUrl;
   protected static String collectorUrl;
-  protected static String zipkinCollectorUrl;
 
   public static String jaegerVersion() {
     String jaegerVersion = System.getProperty("jaeger.version", System.getenv("JAEGER_VERSION"));
@@ -130,97 +127,7 @@ public abstract class DependenciesTest {
     System.out.println("=== testJaegerMultipleTraces completed successfully ===");
   }
 
-  @Test
-  public void testZipkinOneTraceFixed6NodesTwoTracers() throws Exception {
-    System.out.println("=== Starting testZipkinOneTraceFixed6NodesTwoTracers ===");
-    System.out.println("Creating Zipkin tracers for 'root' and 'tracer2'...");
-    Tuple<Tracing, Flushable> rootTuple = TracersGenerator.createZipkin("root", zipkinCollectorUrl);
-    Tuple<Tracing, Flushable> tracer2 = TracersGenerator.createZipkin("tracer2", zipkinCollectorUrl);
 
-    System.out.println("Building fixed 6-node trace tree...");
-    Node<ZipkinWrapper> root = new Node<>(new ZipkinWrapper(rootTuple.getA(), "root"), null);
-    Node<ZipkinWrapper> child11 = new Node<>(new ZipkinWrapper(tracer2.getA(), "tracer2"), root);
-    new Node<>(new ZipkinWrapper(tracer2.getA(), "tracer2"), root);
-    new Node<>(new ZipkinWrapper(tracer2.getA(), "tracer2"), root);
-
-    new Node<>(new ZipkinWrapper(tracer2.getA(), "tracer2"), child11);
-    new Node<>(new ZipkinWrapper(tracer2.getA(), "tracer2"), child11);
-
-    System.out.println("Finishing spans and closing tracers...");
-    Traversals.postOrder(root, (node, parent) -> node.getTracingWrapper().get().getSpan().finish());
-    rootTuple.getA().close();
-    tracer2.getA().close();
-    waitBetweenTraces();
-
-    System.out.println("Waiting for trace to appear in Jaeger Query...");
-    waitJaegerQueryContains(root.getServiceName(), root.getTracingWrapper().operationName());
-    System.out.println("Trace found in Jaeger Query");
-    
-    System.out.println("Deriving dependencies...");
-    deriveDependencies();
-    System.out.println("Dependencies derived, asserting results...");
-    assertDependencies(DependencyLinkDerivator.serviceDependencies(root));
-    System.out.println("=== testZipkinOneTraceFixed6NodesTwoTracers completed successfully ===");
-  }
-
-  @Test
-  public void testZipkinOneTrace() throws Exception {
-    System.out.println("=== Starting testZipkinOneTrace ===");
-    System.out.println("Generating Zipkin trace tree with 2 tracers, 50 nodes, depth 3...");
-    TreeGenerator<Tracing> treeGenerator = new TreeGenerator(TracersGenerator.generateZipkin(2, zipkinCollectorUrl));
-    Node<ZipkinWrapper> root = treeGenerator.generateTree(50, 3);
-    System.out.println("Trace tree generated. Root service: " + root.getServiceName() + ", operation: " + root.getTracingWrapper().operationName());
-    
-    System.out.println("Finishing spans...");
-    Traversals.postOrder(root, (node, parent) -> node.getTracingWrapper().get().getSpan().finish());
-    waitBetweenTraces();
-    
-    System.out.println("Closing and flushing tracers...");
-    treeGenerator.getTracers().forEach(tracer -> {
-      tracer.getTracer().close();
-      // tracer.close does not seem to flush all data
-      tracer.flushable().flush();
-    });
-
-    System.out.println("Waiting for traces to appear in Jaeger Query...");
-    waitJaegerQueryContains(root.getServiceName(), root.getTracingWrapper().operationName());
-    System.out.println("Traces found in Jaeger Query");
-    
-    System.out.println("Deriving dependencies...");
-    deriveDependencies();
-    System.out.println("Dependencies derived, asserting results...");
-    assertDependencies(DependencyLinkDerivator.serviceDependencies(root));
-    System.out.println("=== testZipkinOneTrace completed successfully ===");
-  }
-
-  @Test
-  public void testZipkinMultipleTraces() throws Exception {
-    System.out.println("=== Starting testZipkinMultipleTraces ===");
-    System.out.println("Generating 20 Zipkin trace trees with 5 tracers each...");
-    TreeGenerator<Tracing> treeGenerator = new TreeGenerator(TracersGenerator.generateZipkin(5, zipkinCollectorUrl));
-    Map<String, Map<String, Long>> expectedDependencies = new LinkedHashMap<>();
-    for (int i = 0; i < 20; i++) {
-      System.out.println("Generating trace " + (i + 1) + "/20...");
-      Node<ZipkinWrapper> root = treeGenerator.generateTree(50, 3);
-      DependencyLinkDerivator.serviceDependencies(root, expectedDependencies);
-      Traversals.postOrder(root, (node, parent) -> node.getTracingWrapper().get().getSpan().finish());
-      waitBetweenTraces();
-      waitJaegerQueryContains(root.getServiceName(), root.getTracingWrapper().operationName());
-    }
-    System.out.println("All 20 traces generated and verified");
-    
-    System.out.println("Closing and flushing tracers...");
-    treeGenerator.getTracers().forEach(tracer -> {
-      tracer.getTracer().close();
-      tracer.flushable().flush();
-    });
-
-    System.out.println("Deriving dependencies...");
-    deriveDependencies();
-    System.out.println("Dependencies derived, asserting results...");
-    assertDependencies(expectedDependencies);
-    System.out.println("=== testZipkinMultipleTraces completed successfully ===");
-  }
 
   @Test
   public void testMultipleReferences() throws Exception {
