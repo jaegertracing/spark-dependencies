@@ -59,6 +59,7 @@ public class ElasticsearchDependenciesDockerJobTest extends ElasticsearchDepende
             DockerImageName.parse("ghcr.io/jaegertracing/spark-dependencies/spark-dependencies:" + dependenciesJobTag()))
             .withNetwork(jaegerElasticsearchEnvironment.network)
             .withLogConsumer(new LogToConsolePrinter("[spark-dependencies] "))
+            .withEnv("STORAGE", "elasticsearch")
             .withEnv("ES_NODES", "http://elasticsearch:9200")
             .withEnv("DATE", dateStr)
             .dependsOn(jaegerElasticsearchEnvironment.elasticsearch, jaegerElasticsearchEnvironment.jaegerAll)) {
