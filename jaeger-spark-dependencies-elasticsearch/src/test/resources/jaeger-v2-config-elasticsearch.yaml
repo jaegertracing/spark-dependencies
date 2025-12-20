@@ -17,11 +17,11 @@ service:
   pipelines:
     traces:
       receivers: [otlp, jaeger, zipkin]
-      processors: [batch]
+      processors: [filter/jaeger, batch]
       exporters: [jaeger_storage_exporter]
   telemetry:
     resource:
-      service.name: jaeger
+      service.name: jaeger-backend
     metrics:
       level: detailed
       readers:
@@ -72,9 +72,14 @@ receivers:
 
   zipkin:
     endpoint: "0.0.0.0:9411"
-    parse_string_tags: true
 
 processors:
+  filter/jaeger:
+    error_mode: ignore
+    traces:
+      span:
+        - 'resource.attributes["service.name"] == "jaeger"'
+  
   batch:
 
 exporters:

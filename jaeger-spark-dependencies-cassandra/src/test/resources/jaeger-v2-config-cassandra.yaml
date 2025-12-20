@@ -21,7 +21,7 @@ service:
       exporters: [jaeger_storage_exporter]
   telemetry:
     resource:
-      service.name: jaeger
+      service.name: jaeger-backend
     metrics:
       level: detailed
       readers:
