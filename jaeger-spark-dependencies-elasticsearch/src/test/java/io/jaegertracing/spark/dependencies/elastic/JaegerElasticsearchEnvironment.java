@@ -69,10 +69,10 @@ public class JaegerElasticsearchEnvironment {
         .withCommand("--config", "/etc/jaeger/config.yaml")
         .withEnv(jaegerEnvs)
         .waitingFor(new BoundPortHttpWaitStrategy(16687).forStatusCodeMatching(statusCode -> statusCode >= 200 && statusCode < 300))
-        .withExposedPorts(16687, 16686, 14268, 9411);
+        .withExposedPorts(16687, 16686, 4317, 4318, 14268, 9411);
     jaegerAll.start();
 
-    collectorUrl = String.format("http://%s:%d", jaegerAll.getContainerIpAddress(), jaegerAll.getMappedPort(14268));
+    collectorUrl = String.format("http://%s:%d", jaegerAll.getContainerIpAddress(), jaegerAll.getMappedPort(4317));
     queryUrl = String.format("http://%s:%d", jaegerAll.getContainerIpAddress(), jaegerAll.getMappedPort(16686));
   }
 

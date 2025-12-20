@@ -13,18 +13,20 @@
  */
 package io.jaegertracing.spark.dependencies.test;
 
-import io.jaegertracing.internal.JaegerTracer;
-import io.jaegertracing.internal.JaegerTracer.Builder;
-import io.jaegertracing.internal.exceptions.SenderException;
-import io.jaegertracing.internal.reporters.RemoteReporter;
-import io.jaegertracing.internal.samplers.ConstSampler;
+import io.opentelemetry.api.OpenTelemetry;
+import io.opentelemetry.api.trace.Tracer;
+import io.opentelemetry.exporter.otlp.trace.OtlpGrpcSpanExporter;
+import io.opentelemetry.sdk.OpenTelemetrySdk;
+import io.opentelemetry.sdk.resources.Resource;
+import io.opentelemetry.sdk.trace.SdkTracerProvider;
+import io.opentelemetry.sdk.trace.export.BatchSpanProcessor;
+import io.opentelemetry.semconv.ResourceAttributes;
 import io.jaegertracing.spark.dependencies.test.tree.TracingWrapper;
-import io.jaegertracing.spark.dependencies.test.tree.TracingWrapper.JaegerWrapper;
-import io.jaegertracing.thrift.internal.senders.HttpSender;
+import io.jaegertracing.spark.dependencies.test.tree.TracingWrapper.OpenTelemetryWrapper;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import org.apache.thrift.transport.TTransportException;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author Pavol Loffay
@@ -69,7 +71,7 @@ public class TracersGenerator {
     }
 
     public TracingWrapper tracingWrapper() {
-      return new JaegerWrapper((io.jaegertracing.internal.JaegerTracer)tracer);
+      return new OpenTelemetryWrapper((Tracer)tracer, serviceName);
     }
 
     public Flushable flushable() {
@@ -77,35 +79,59 @@ public class TracersGenerator {
     }
   }
 
-  public static List<TracerHolder<JaegerTracer>> generateJaeger(int number, String collectorUrl) throws TTransportException {
-    List<TracerHolder<JaegerTracer>> tracers = new ArrayList<>(number);
+  public static List<TracerHolder<Tracer>> generateJaeger(int number, String collectorUrl) {
+    List<TracerHolder<Tracer>> tracers = new ArrayList<>(number);
     for (int i = 0; i < number; i++) {
       String serviceName = serviceName();
-      Tuple<JaegerTracer, Flushable> jaegerTracer = createJaeger(serviceName, collectorUrl);
+      Tuple<Tracer, Flushable> jaegerTracer = createJaeger(serviceName, collectorUrl);
       tracers.add(new TracerHolder<>(jaegerTracer.getA(), serviceName, jaegerTracer.getB()));
     }
     return tracers;
   }
 
-  public static Tuple<JaegerTracer, Flushable> createJaeger(String serviceName, String collectorUrl) throws TTransportException {
-    HttpSender sender = new HttpSender.Builder(collectorUrl + "/api/traces").build();
-    RemoteReporter reporter = new RemoteReporter.Builder()
-        .withSender(sender)
-        .withMaxQueueSize(100000)
-        .withFlushInterval(1)
+  public static Tuple<Tracer, Flushable> createJaeger(String serviceName, String collectorUrl) {
+    // Parse the collector URL to extract host and port for OTLP gRPC endpoint
+    String otlpEndpoint = collectorUrl.replace("http://", "http://").replace("https://", "https://");
+    // Extract the base URL (host:port)
+    int slashIndex = otlpEndpoint.indexOf('/', otlpEndpoint.indexOf("//") + 2);
+    if (slashIndex > 0) {
+      otlpEndpoint = otlpEndpoint.substring(0, slashIndex);
+    }
+    // Change to OTLP gRPC port (4317)
+    otlpEndpoint = otlpEndpoint.replaceAll(":\\d+$", ":4317");
+
+    Resource resource = Resource.getDefault()
+        .merge(Resource.builder()
+            .put(ResourceAttributes.SERVICE_NAME, serviceName)
+            .build());
+
+    OtlpGrpcSpanExporter spanExporter = OtlpGrpcSpanExporter.builder()
+        .setEndpoint(otlpEndpoint)
+        .setTimeout(10, TimeUnit.SECONDS)
         .build();
-    return new Tuple<>(new Builder(serviceName)
-        .withReporter(reporter)
-        .withSampler(new ConstSampler(true))
-        .withTraceId128Bit()
-        .build(),
+
+    SdkTracerProvider sdkTracerProvider = SdkTracerProvider.builder()
+        .addSpanProcessor(BatchSpanProcessor.builder(spanExporter)
+            .setMaxQueueSize(100000)
+            .setScheduleDelay(1, TimeUnit.MILLISECONDS)
+            .build())
+        .setResource(resource)
+        .build();
+
+    OpenTelemetry openTelemetry = OpenTelemetrySdk.builder()
+        .setTracerProvider(sdkTracerProvider)
+        .build();
+
+    Tracer tracer = openTelemetry.getTracer(serviceName);
+
+    return new Tuple<>(tracer,
         () -> {
-      try {
-        sender.flush();
-      } catch (SenderException ex) {
-        throw new IllegalStateException("Failed to send", ex);
-      }
-    });
+          try {
+            sdkTracerProvider.forceFlush().join(10, TimeUnit.SECONDS);
+          } catch (Exception ex) {
+            throw new IllegalStateException("Failed to flush", ex);
+          }
+        });
   }
 
   private static String serviceName() {
