@@ -67,6 +67,10 @@ public class SpansToDependencyLinks implements FlatMapFunction<Iterable<Span>, D
               children.add(span);
             }
             // Map of parents
+            // Note: Multiple spans can share the same span ID in Zipkin's shared span model.
+            // In this model, both client and server sides report spans with the same span ID
+            // but different span.kind tags (CLIENT vs SERVER). Jaeger uses individual spans
+            // where each operation gets its own unique span ID.
             Set<Span> sharedSpans = spanMap.get(span.getSpanId());
             if (sharedSpans == null) {
                 sharedSpans = new LinkedHashSet<>();
@@ -76,6 +80,8 @@ public class SpansToDependencyLinks implements FlatMapFunction<Iterable<Span>, D
         }
 
         // Let's start with zipkin shared spans
+        // Process Zipkin-style shared spans first: extract dependencies from spans that share
+        // the same span ID by looking for CLIENT/PRODUCER and SERVER/CONSUMER span.kind tags.
         List<Dependency> result = sharedSpanDependencies(spanMap);
 
         for (Span span : uniqueSpans) {
@@ -86,6 +92,10 @@ public class SpansToDependencyLinks implements FlatMapFunction<Iterable<Span>, D
 
             // if the current span is shared and not a client span we skip it
             // because the link from this span to parent should be from client span
+            // Rationale: In Zipkin's shared span model, both client and server report with the
+            // same span ID. To avoid duplicate dependency links, we only process the CLIENT span
+            // when creating parent-child dependencies. The SERVER span's dependency was already
+            // captured in sharedSpanDependencies() above.
             if (spanMap.get(span.getSpanId()).size() > 1 && !isClientSpan(span)) {
                 continue;
             }
@@ -94,12 +104,16 @@ public class SpansToDependencyLinks implements FlatMapFunction<Iterable<Span>, D
                 Set<Span> parents = spanMap.get(reference.getSpanId());
                 if (parents != null) {
                     if (parents.size() > 1) {
+                        // Parent has shared spans (Zipkin model): prefer the SERVER span
+                        // as the true parent for the dependency link
                         serverSpan(parents)
                             .ifPresent(parent ->
                                 result.add(new Dependency(parent.getProcess().getServiceName(), span.getProcess().getServiceName()))
                             );
                     } else {
                         // this is jaeger span or zipkin native (not shared!)
+                        // Single span per ID (Jaeger model or non-shared Zipkin): 
+                        // use direct parent-child reference to create dependency link
                         Span parent = parents.iterator().next();
                         if (parent.getProcess() == null || parent.getProcess().getServiceName() == null) {
                             continue;
@@ -147,6 +161,20 @@ public class SpansToDependencyLinks implements FlatMapFunction<Iterable<Span>, D
         return dependencies;
     }
 
+    /**
+     * Extracts dependency links from Zipkin-style shared spans.
+     * 
+     * In Zipkin's shared span model, multiple spans can share the same span ID:
+     * - The client side reports a span with span.kind=CLIENT or PRODUCER
+     * - The server side reports a span with span.kind=SERVER or CONSUMER
+     * - Both spans have the same span ID but represent different services
+     * 
+     * This method finds the client and server services within a shared span set
+     * and creates a dependency link between them.
+     * 
+     * @param sharedSpans Set of spans sharing the same span ID
+     * @return Optional dependency link from client service to server service
+     */
     protected Optional<Dependency> sharedSpanDependency(Set<Span> sharedSpans) {
         String clientService = null;
         String serverService = null;
