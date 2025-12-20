@@ -17,7 +17,7 @@ service:
   pipelines:
     traces:
       receivers: [otlp, jaeger, zipkin]
-      processors: [filter/jaeger, batch]
+      processors: [batch]
       exporters: [jaeger_storage_exporter]
   telemetry:
     resource:
@@ -54,6 +54,7 @@ extensions:
         elasticsearch:
           server_urls:
             - http://elasticsearch:9200
+          service_cache_ttl: 1s
 
 receivers:
   otlp:
@@ -71,14 +72,9 @@ receivers:
 
   zipkin:
     endpoint: "0.0.0.0:9411"
+    parse_string_tags: true
 
 processors:
-  filter/jaeger:
-    error_mode: ignore
-    traces:
-      span:
-        - 'resource.attributes["service.name"] == "jaeger"'
-  
   batch:
 
 exporters:
