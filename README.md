@@ -24,14 +24,14 @@ Example for Cassandra:
 ```bash
 $ docker run \
   --env CASSANDRA_CONTACT_POINTS=host1,host2 \
-  ghcr.io/jaegertracing/spark-dependencies/spark-dependencies:latest-cassandra
+  ghcr.io/jaegertracing/spark-dependencies/spark-dependencies:v0.5.3-cassandra
 ```
 
 Example for Elasticsearch 8.x:
 ```bash
 $ docker run \
   --env ES_NODES=http://elasticsearch:9200 \
-  ghcr.io/jaegertracing/spark-dependencies/spark-dependencies:latest-elasticsearch8
+  ghcr.io/jaegertracing/spark-dependencies/spark-dependencies:v0.5.3-elasticsearch8
 ```
 
 Use `--env JAVA_OPTS=-Djavax.net.ssl.` to set trust store and other Java properties.
