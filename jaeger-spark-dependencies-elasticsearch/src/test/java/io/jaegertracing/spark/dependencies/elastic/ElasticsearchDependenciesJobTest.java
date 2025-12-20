@@ -14,7 +14,8 @@
 package io.jaegertracing.spark.dependencies.elastic;
 
 
-import io.jaegertracing.internal.JaegerTracer;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.Tracer;
 import io.jaegertracing.spark.dependencies.test.DependenciesTest;
 import io.jaegertracing.spark.dependencies.test.TracersGenerator;
 import java.io.IOException;
@@ -24,7 +25,6 @@ import java.util.HashMap;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
-import org.apache.thrift.transport.TTransportException;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -48,11 +48,15 @@ public class ElasticsearchDependenciesJobTest extends DependenciesTest {
   }
 
   @Before
-  public void before() throws TTransportException {
-    JaegerTracer initStorageTracer = TracersGenerator.createJaeger(UUID.randomUUID().toString(), collectorUrl).getA();
-    initStorageTracer.buildSpan(UUID.randomUUID().toString()).withTag("foo", "bar").start().finish();
-    initStorageTracer.close();
-    waitJaegerQueryContains(initStorageTracer.getServiceName(), "foo");
+  public void before() {
+    String serviceName = UUID.randomUUID().toString();
+    String operationName = UUID.randomUUID().toString();
+    Tracer initStorageTracer = TracersGenerator.createJaeger(serviceName, collectorUrl).getA();
+    Span span = initStorageTracer.spanBuilder(operationName).startSpan();
+    span.setAttribute("foo", "bar");
+    span.end();
+    TracersGenerator.createJaeger(serviceName, collectorUrl).getB().flush();
+    waitJaegerQueryContains(serviceName, "foo");
   }
 
   @After

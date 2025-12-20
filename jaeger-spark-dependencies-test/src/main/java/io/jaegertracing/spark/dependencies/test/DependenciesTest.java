@@ -136,6 +136,9 @@ public abstract class DependenciesTest {
     Tuple<Tracer, Flushable> s3Tuple = TracersGenerator.createJaeger("S3", collectorUrl);
 
     System.out.println("Creating spans with multiple references...");
+    // Note: OpenTelemetry doesn't support FOLLOWS_FROM references like OpenTracing did.
+    // In OpenTelemetry, a span can only have one parent. Both s2Span and s3Span will have
+    // s1Span as their parent, creating S1->S2 and S1->S3 dependencies.
     Span s1Span = s1Tuple.getA().spanBuilder("foo").startSpan();
     Span s2Span = s2Tuple.getA().spanBuilder("bar")
         .setParent(io.opentelemetry.context.Context.current().with(s1Span))

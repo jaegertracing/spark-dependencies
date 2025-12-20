@@ -91,8 +91,8 @@ public class TracersGenerator {
 
   public static Tuple<Tracer, Flushable> createJaeger(String serviceName, String collectorUrl) {
     // Parse the collector URL to extract host and port for OTLP gRPC endpoint
-    String otlpEndpoint = collectorUrl.replace("http://", "http://").replace("https://", "https://");
     // Extract the base URL (host:port)
+    String otlpEndpoint = collectorUrl;
     int slashIndex = otlpEndpoint.indexOf('/', otlpEndpoint.indexOf("//") + 2);
     if (slashIndex > 0) {
       otlpEndpoint = otlpEndpoint.substring(0, slashIndex);
