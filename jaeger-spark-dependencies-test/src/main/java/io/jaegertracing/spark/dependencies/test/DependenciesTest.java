@@ -86,6 +86,9 @@ public abstract class DependenciesTest {
       tracer.flushable().flush();
     });
     
+    // Give extra time for spans to be exported and indexed
+    TimeUnit.SECONDS.sleep(2);
+    
     System.out.println("Waiting for traces to appear in Jaeger Query...");
     waitJaegerQueryContains(root.getServiceName(), root.getTracingWrapper().operationName());
     System.out.println("Traces found in Jaeger Query");
@@ -117,6 +120,9 @@ public abstract class DependenciesTest {
     System.out.println("Flushing and closing tracers...");
     // flush and wait for reported data
     treeGenerator.getTracers().forEach(tracer -> tracer.flushable().flush());
+    
+    // Give extra time for spans to be exported and indexed
+    TimeUnit.SECONDS.sleep(2);
 
     System.out.println("Deriving dependencies...");
     deriveDependencies();
@@ -154,6 +160,9 @@ public abstract class DependenciesTest {
     s1Tuple.getB().flush();
     s2Tuple.getB().flush();
     s3Tuple.getB().flush();
+    
+    // Give extra time for spans to be exported and indexed
+    TimeUnit.SECONDS.sleep(2);
     
     System.out.println("Waiting for traces to appear in Jaeger Query...");
     waitJaegerQueryContains("S1", "foo");

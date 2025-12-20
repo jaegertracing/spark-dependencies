@@ -91,12 +91,15 @@ public class TracersGenerator {
 
   public static Tuple<Tracer, Flushable> createJaeger(String serviceName, String collectorUrl) {
     // Parse the collector URL to extract host and port for OTLP gRPC endpoint
-    // Extract the base URL (host:port)
+    // OtlpGrpcSpanExporter expects endpoint in format "http://host:port" (with scheme)
     String otlpEndpoint = collectorUrl;
+    
+    // Extract the base URL (remove any path after host:port)
     int slashIndex = otlpEndpoint.indexOf('/', otlpEndpoint.indexOf("//") + 2);
     if (slashIndex > 0) {
       otlpEndpoint = otlpEndpoint.substring(0, slashIndex);
     }
+    
     // Change to OTLP gRPC port (4317)
     otlpEndpoint = otlpEndpoint.replaceAll(":\\d+$", ":4317");
 
@@ -127,9 +130,12 @@ public class TracersGenerator {
     return new Tuple<>(tracer,
         () -> {
           try {
+            // Force flush to ensure all spans are exported
             sdkTracerProvider.forceFlush().join(10, TimeUnit.SECONDS);
+            // Shutdown to ensure proper cleanup
+            sdkTracerProvider.shutdown().join(10, TimeUnit.SECONDS);
           } catch (Exception ex) {
-            throw new IllegalStateException("Failed to flush", ex);
+            throw new IllegalStateException("Failed to flush and shutdown tracer provider", ex);
           }
         });
   }

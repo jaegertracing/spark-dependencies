@@ -51,11 +51,18 @@ public class ElasticsearchDependenciesJobTest extends DependenciesTest {
   public void before() {
     String serviceName = UUID.randomUUID().toString();
     String operationName = UUID.randomUUID().toString();
-    Tracer initStorageTracer = TracersGenerator.createJaeger(serviceName, collectorUrl).getA();
+    TracersGenerator.Tuple<Tracer, TracersGenerator.Flushable> tuple = TracersGenerator.createJaeger(serviceName, collectorUrl);
+    Tracer initStorageTracer = tuple.getA();
     Span span = initStorageTracer.spanBuilder(operationName).startSpan();
     span.setAttribute("foo", "bar");
     span.end();
-    TracersGenerator.createJaeger(serviceName, collectorUrl).getB().flush();
+    tuple.getB().flush();
+    try {
+      // Give extra time for spans to be exported and indexed
+      TimeUnit.SECONDS.sleep(2);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+    }
     waitJaegerQueryContains(serviceName, "foo");
   }
 
