@@ -195,7 +195,7 @@ public final class CassandraDependenciesJob {
   private void store(JavaSparkContext sc, List<Dependency> links) {
     String table = dependenciesTable(sc);
     log.info("Storing dependencies into {}", table);
-    if (table == "dependencies_v2") {
+    if ("dependencies_v2".equals(table)) {
       CassandraDependenciesV2 dependencies = new CassandraDependenciesV2(links, day);
       javaFunctions(sc.parallelize(Collections.singletonList(dependencies)))
           .writerBuilder(keyspace, table, mapToRow(CassandraDependenciesV2.class))

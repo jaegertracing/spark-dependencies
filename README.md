@@ -24,14 +24,14 @@ Example for Cassandra:
 ```bash
 $ docker run \
   --env CASSANDRA_CONTACT_POINTS=host1,host2 \
-  ghcr.io/jaegertracing/spark-dependencies/spark-dependencies:v0.5.3-cassandra
+  ghcr.io/jaegertracing/spark-dependencies/spark-dependencies:latest-cassandra
 ```
 
 Example for Elasticsearch 8.x:
 ```bash
 $ docker run \
   --env ES_NODES=http://elasticsearch:9200 \
-  ghcr.io/jaegertracing/spark-dependencies/spark-dependencies:v0.5.3-elasticsearch8
+  ghcr.io/jaegertracing/spark-dependencies/spark-dependencies:latest-elasticsearch8
 ```
 
 Use `--env JAVA_OPTS=-Djavax.net.ssl.` to set trust store and other Java properties.
@@ -61,6 +61,7 @@ The following variables are common to all storage layers:
 
     * `SPARK_MASTER`: Spark master to submit the job to; Defaults to `local[*]`
     * `DATE`: Date in YYYY-mm-dd format. Denotes a day for which dependency links will be created.
+    * `PEER_SERVICE_TAG`: Tag name used to identify peer service in spans. Defaults to `peer.service`
 
 ### Cassandra
 Cassandra is used when `STORAGE=cassandra`.
@@ -91,7 +92,7 @@ Elasticsearch is used when `STORAGE=elasticsearch`.
                   needs to be available to fetch the remaining nodes in the cluster. It is
                   recommended to set this to all the master nodes of the cluster. Use url format for
                   SSL. For example, "https://yourhost:8888"
-    * `ES_NODES_WAN_ONLY`: Set to true to only use the values set in ES_HOSTS, for example if your
+    * `ES_NODES_WAN_ONLY`: Set to true to only use the values set in ES_NODES, for example if your
                            elasticsearch cluster is in Docker. If you're using a cloudprovider
                            such as AWS Elasticsearch, set this to true. Defaults to false
     * `ES_USERNAME` and `ES_PASSWORD`: Elasticsearch basic authentication. Use when X-Pack security
@@ -127,7 +128,25 @@ At a high-level, this job does the following:
 To build the job locally and run tests:
 ```bash
 ./mvnw clean install # if failed add SPARK_LOCAL_IP=127.0.0.1
+```
+
+To run the unified jar (includes both Cassandra and Elasticsearch):
+```bash
+STORAGE=cassandra java -jar jaeger-spark-dependencies/target/jaeger-spark-dependencies-0.0.1-SNAPSHOT.jar
+# or
 STORAGE=elasticsearch ES_NODES=http://localhost:9200 java -jar jaeger-spark-dependencies/target/jaeger-spark-dependencies-0.0.1-SNAPSHOT.jar
+```
+
+To run storage-specific jars directly (without STORAGE variable):
+```bash
+# Cassandra
+java -jar jaeger-spark-dependencies-cassandra/target/jaeger-spark-dependencies-cassandra-0.0.1-SNAPSHOT.jar
+# Elasticsearch
+ES_NODES=http://localhost:9200 java -jar jaeger-spark-dependencies-elasticsearch/target/jaeger-spark-dependencies-elasticsearch-0.0.1-SNAPSHOT.jar
+```
+
+To build Docker image:
+```bash
 docker build -t jaegertracing/spark-dependencies:latest .
 ```
 
