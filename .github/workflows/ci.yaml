@@ -15,7 +15,7 @@ jobs:
       - uses: actions/setup-java@v2
         with:
           distribution: temurin
-          java-version: '11'
+          java-version: '17'
       # TODO remove once testcontainers are updated
       - name: pull ryuk image
         run: docker pull testcontainersofficial/ryuk:0.3.0
@@ -42,7 +42,7 @@ jobs:
       - uses: actions/setup-java@v2
         with:
           distribution: temurin
-          java-version: '11'
+          java-version: '17'
       # TODO remove once testcontainers are updated
       - name: pull ryuk image
         run: docker pull testcontainersofficial/ryuk:0.3.0
@@ -70,7 +70,7 @@ jobs:
       - uses: actions/setup-java@v2
         with:
           distribution: temurin
-          java-version: '11'
+          java-version: '17'
       # TODO remove once testcontainers are updated
       - name: pull ryuk image
         run: docker pull testcontainersofficial/ryuk:0.3.0
@@ -98,7 +98,7 @@ jobs:
       - uses: actions/setup-java@v2
         with:
           distribution: temurin
-          java-version: '11'
+          java-version: '17'
       # TODO remove once testcontainers are updated
       - name: pull ryuk image
         run: docker pull testcontainersofficial/ryuk:0.3.0

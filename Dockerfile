@@ -12,7 +12,7 @@
 # the License.
 #
 
-FROM eclipse-temurin:11 AS builder
+FROM eclipse-temurin:17 AS builder
 
 # Build argument to specify the variant type
 # Supported values: cassandra, elasticsearch7, elasticsearch8, elasticsearch9, unified
@@ -54,7 +54,7 @@ RUN --mount=type=cache,target=/root/.m2 \
       cp $APP_HOME/jaeger-spark-dependencies-elasticsearch/target/jaeger-spark-dependencies-elasticsearch-0.0.1-SNAPSHOT.jar /tmp/jars/app.jar; \
     fi
 
-FROM eclipse-temurin:11-jre
+FROM eclipse-temurin:17-jre
 LABEL org.opencontainers.image.authors="The Jaeger Authors <cncf-jaeger-maintainers@lists.cncf.io>"
 
 # Carry forward the VARIANT build arg to the runtime stage
