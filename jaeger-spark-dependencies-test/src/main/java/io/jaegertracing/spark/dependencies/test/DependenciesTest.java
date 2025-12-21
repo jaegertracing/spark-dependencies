@@ -55,7 +55,7 @@ public abstract class DependenciesTest {
 
   public static String jaegerVersion() {
     String jaegerVersion = System.getProperty("jaeger.version", System.getenv("JAEGER_VERSION"));
-    return jaegerVersion != null ? jaegerVersion : "latest";
+    return jaegerVersion != null ? jaegerVersion : "2.13.0";
   }
 
   /**

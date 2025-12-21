@@ -156,7 +156,7 @@ docker build -t jaegertracing/spark-dependencies:latest .
 ```
 
 In tests it's possible to specify version of Jaeger images by env variable `JAEGER_VERSION`
-or system property `jaeger.version`. By default tests are using latest images.
+or system property `jaeger.version`. By default tests are using Jaeger version 2.13.0.
 
 ## License
 
