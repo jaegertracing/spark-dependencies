@@ -193,30 +193,6 @@ Each test suite performs two steps:
 1. Builds a Docker image with the appropriate storage variant
 2. Runs tests using testcontainers against that variant
 
-#### Cassandra Integration Tests
-Tests the latest Jaeger with Cassandra 4.x storage backend.
-```bash
-make e2e-cassandra
-```
-
-#### Elasticsearch 7 Integration Tests
-Tests the latest Jaeger with Elasticsearch 7 storage backend.
-```bash
-make e2e-es7
-```
-
-#### Elasticsearch 8 Integration Tests
-Tests the latest Jaeger with Elasticsearch 8 storage backend.
-```bash
-make e2e-es8
-```
-
-#### Elasticsearch 9 Integration Tests
-Tests the latest Jaeger with Elasticsearch 9 storage backend. This also builds the mega-jar (unified JAR with both Cassandra and Elasticsearch support) to ensure it's tested.
-```bash
-make e2e-es9
-```
-
 ### Environment Variables
 
 The following environment variables are used in integration tests:
