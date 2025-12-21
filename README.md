@@ -11,9 +11,11 @@ but other days can be explicitly specified.
 ## Quick-start
 Spark job can be run as docker container and also as java executable:
 
-### Docker Image Variants
+### Container Image Variants
 
 Starting with version 0.6.x, Docker images are published with variant-specific tags. **Each variant automatically uses the appropriate storage backend, so the `STORAGE` environment variable is no longer needed.**
+
+The images are named `ghcr.io/jaegertracing/spark-dependencies/spark-dependencies:{VERSION}-{VARIANT}`:
 
 - **`VERSION-cassandra`**: For Cassandra storage (uses CassandraDependenciesJob directly)
 - **`VERSION-elasticsearch7`**: For Elasticsearch 7.12-7.16 (uses ElasticsearchDependenciesJob with ES connector 7.17.29)
