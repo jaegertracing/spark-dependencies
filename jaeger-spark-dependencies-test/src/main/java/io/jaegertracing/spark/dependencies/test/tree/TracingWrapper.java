@@ -13,8 +13,9 @@
  */
 package io.jaegertracing.spark.dependencies.test.tree;
 
-import io.jaegertracing.internal.JaegerSpan;
-import io.jaegertracing.internal.JaegerTracer;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.Tracer;
+import io.opentelemetry.context.Context;
 import java.util.UUID;
 
 /**
@@ -32,39 +33,49 @@ public interface TracingWrapper<T extends TracingWrapper> {
   String operationName();
   void createChildSpan(TracingWrapper<T> parent);
 
-  class JaegerWrapper implements TracingWrapper<JaegerWrapper> {
-    private final JaegerTracer tracer;
-    private JaegerSpan span;
+  class OpenTelemetryWrapper implements TracingWrapper<OpenTelemetryWrapper> {
+    private final Tracer tracer;
+    private final String serviceName;
+    private Span span;
+    private String operationName;
 
-    public JaegerWrapper(JaegerTracer tracer) {
+    public OpenTelemetryWrapper(Tracer tracer, String serviceName) {
       this.tracer = tracer;
+      this.serviceName = serviceName;
     }
 
     @Override
-    public JaegerWrapper get() {
+    public OpenTelemetryWrapper get() {
       return this;
     }
 
     @Override
     public String serviceName() {
-      return tracer.getServiceName();
+      return serviceName;
     }
 
     @Override
     public String operationName() {
-      return span.getOperationName();
+      return operationName;
     }
 
     @Override
-    public void createChildSpan(TracingWrapper<JaegerWrapper> parent) {
-      io.opentracing.Tracer.SpanBuilder spanBuilder = tracer.buildSpan(UUID.randomUUID().toString().replace("-", ""));
-      if (parent != null) {
-        spanBuilder.asChildOf(parent.get().span);
+    public void createChildSpan(TracingWrapper<OpenTelemetryWrapper> parent) {
+      operationName = UUID.randomUUID().toString().replace("-", "");
+      
+      if (parent != null && parent.get().span != null) {
+        Context parentContext = Context.current().with(parent.get().span);
+        span = tracer.spanBuilder(operationName)
+            .setParent(parentContext)
+            .startSpan();
+      } else {
+        span = tracer.spanBuilder(operationName)
+            .setNoParent()
+            .startSpan();
       }
-      span = (JaegerSpan)spanBuilder.startManual();
     }
 
-    public JaegerSpan getSpan() {
+    public Span getSpan() {
       return span;
     }
   }

@@ -28,11 +28,6 @@
 
   <dependencies>
     <dependency>
-      <groupId>io.opentracing</groupId>
-      <artifactId>opentracing-mock</artifactId>
-      <version>${version.io.opentracing}</version>
-    </dependency>
-    <dependency>
       <artifactId>junit</artifactId>
       <groupId>junit</groupId>
       <version>${version.junit}</version>
@@ -42,9 +37,30 @@
       <artifactId>testcontainers</artifactId>
     </dependency>
     <dependency>
-      <groupId>io.jaegertracing</groupId>
-      <artifactId>jaeger-client</artifactId>
-      <version>${version.io.jaegertracing}</version>
+      <groupId>io.opentelemetry</groupId>
+      <artifactId>opentelemetry-api</artifactId>
+      <version>${version.io.opentelemetry}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.opentelemetry</groupId>
+      <artifactId>opentelemetry-sdk</artifactId>
+      <version>${version.io.opentelemetry}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.opentelemetry</groupId>
+      <artifactId>opentelemetry-exporter-otlp</artifactId>
+      <version>${version.io.opentelemetry}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.opentelemetry.semconv</groupId>
+      <artifactId>opentelemetry-semconv</artifactId>
+      <version>1.27.0-alpha</version>
+    </dependency>
+    <dependency>
+      <groupId>io.opentracing</groupId>
+      <artifactId>opentracing-mock</artifactId>
+      <version>${version.io.opentracing}</version>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>com.squareup.okhttp3</groupId>

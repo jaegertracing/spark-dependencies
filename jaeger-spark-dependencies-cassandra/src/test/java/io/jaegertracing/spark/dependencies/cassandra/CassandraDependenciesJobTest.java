@@ -75,12 +75,12 @@ public class CassandraDependenciesJobTest extends DependenciesTest {
         .withClasspathResourceMapping("jaeger-v2-config-cassandra.yaml", "/etc/jaeger/config.yaml", org.testcontainers.containers.BindMode.READ_ONLY)
         .withCommand("--config", "/etc/jaeger/config.yaml")
         .waitingFor(new BoundPortHttpWaitStrategy(16687).forStatusCodeMatching(statusCode -> statusCode >= 200 && statusCode < 300))
-        .withExposedPorts(16687, 16686, 14268, 9411);
+        .withExposedPorts(16687, 16686, 4317, 4318, 14268, 9411);
     jaegerAll.start();
     System.out.println("Jaeger v2 container started");
 
-    queryUrl = String.format("http://localhost:%d", jaegerAll.getMappedPort(16686));
-    collectorUrl = String.format("http://localhost:%d", jaegerAll.getMappedPort(14268));
+    queryUrl = String.format("http://127.0.0.1:%d", jaegerAll.getMappedPort(16686));
+    collectorUrl = String.format("http://127.0.0.1:%d", jaegerAll.getMappedPort(4317));
     
     System.out.println("=== Container setup complete ===");
     System.out.println("Query URL: " + queryUrl);
