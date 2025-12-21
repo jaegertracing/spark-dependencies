@@ -50,13 +50,12 @@ docker build \
   -t ghcr.io/jaegertracing/spark-dependencies/spark-dependencies:test-es7 \
   .
 
-# Compile the project with ES7 Spark connector version
-./mvnw --batch-mode clean install -DskipTests -Dversion.elasticsearch.spark=7.17.10
-
 # Run ES7 integration tests
 SPARK_DEPENDENCIES_JOB_TAG=test-es7 \
 ELASTICSEARCH_VERSION=7.3.0 \
-./mvnw --batch-mode test -pl jaeger-spark-dependencies-elasticsearch -Dversion.elasticsearch.spark=7.17.10
+./mvnw --batch-mode clean test -am \
+  -pl jaeger-spark-dependencies-elasticsearch \
+  -Dversion.elasticsearch.spark=7.17.10
 ```
 
 ### 3. Elasticsearch 8 Integration Tests
@@ -71,13 +70,12 @@ docker build \
   -t ghcr.io/jaegertracing/spark-dependencies/spark-dependencies:test-es8 \
   .
 
-# Compile the project with ES8 Spark connector version
-./mvnw --batch-mode clean install -DskipTests -Dversion.elasticsearch.spark=8.13.4
-
 # Run ES8 integration tests
 SPARK_DEPENDENCIES_JOB_TAG=test-es8 \
 ELASTICSEARCH_VERSION=8.3.1 \
-./mvnw --batch-mode test -pl jaeger-spark-dependencies-elasticsearch -Dversion.elasticsearch.spark=8.13.4
+./mvnw --batch-mode clean test -am \
+  -pl jaeger-spark-dependencies-elasticsearch \
+  -Dversion.elasticsearch.spark=8.13.4
 ```
 
 ### 4. Elasticsearch 9 Integration Tests
@@ -92,43 +90,17 @@ docker build \
   -t ghcr.io/jaegertracing/spark-dependencies/spark-dependencies:test-es9 \
   .
 
-# Compile the project with ES9 Spark connector version
-./mvnw --batch-mode clean install -DskipTests -Dversion.elasticsearch.spark=9.1.3
-
 # Run ES9 integration tests
 SPARK_DEPENDENCIES_JOB_TAG=test-es9 \
 ELASTICSEARCH_VERSION=9.1.3 \
-./mvnw --batch-mode test -pl jaeger-spark-dependencies-elasticsearch -Dversion.elasticsearch.spark=9.1.3
+./mvnw --batch-mode clean test -am \
+  -pl jaeger-spark-dependencies-elasticsearch \
+  -Dversion.elasticsearch.spark=9.1.3
 ```
 
 ## Running All Tests
 
-To run all integration tests sequentially, you can execute each test suite one after another:
-
-```bash
-# Pull Ryuk image (required for all tests)
-docker pull testcontainersofficial/ryuk:0.3.0
-
-# Run Cassandra tests
-docker build --build-arg VARIANT=cassandra -t ghcr.io/jaegertracing/spark-dependencies/spark-dependencies:test-cassandra .
-./mvnw --batch-mode clean install -DskipTests
-SPARK_DEPENDENCIES_JOB_TAG=test-cassandra ./mvnw --batch-mode test -pl jaeger-spark-dependencies-cassandra
-
-# Run ES7 tests
-docker build --build-arg VARIANT=elasticsearch7 --build-arg ELASTICSEARCH_SPARK_VERSION=7.17.10 -t ghcr.io/jaegertracing/spark-dependencies/spark-dependencies:test-es7 .
-./mvnw --batch-mode clean install -DskipTests -Dversion.elasticsearch.spark=7.17.10
-SPARK_DEPENDENCIES_JOB_TAG=test-es7 ELASTICSEARCH_VERSION=7.3.0 ./mvnw --batch-mode test -pl jaeger-spark-dependencies-elasticsearch -Dversion.elasticsearch.spark=7.17.10
-
-# Run ES8 tests
-docker build --build-arg VARIANT=elasticsearch8 --build-arg ELASTICSEARCH_SPARK_VERSION=8.13.4 -t ghcr.io/jaegertracing/spark-dependencies/spark-dependencies:test-es8 .
-./mvnw --batch-mode clean install -DskipTests -Dversion.elasticsearch.spark=8.13.4
-SPARK_DEPENDENCIES_JOB_TAG=test-es8 ELASTICSEARCH_VERSION=8.3.1 ./mvnw --batch-mode test -pl jaeger-spark-dependencies-elasticsearch -Dversion.elasticsearch.spark=8.13.4
-
-# Run ES9 tests
-docker build --build-arg VARIANT=unified --build-arg ELASTICSEARCH_SPARK_VERSION=9.1.3 -t ghcr.io/jaegertracing/spark-dependencies/spark-dependencies:test-es9 .
-./mvnw --batch-mode clean install -DskipTests -Dversion.elasticsearch.spark=9.1.3
-SPARK_DEPENDENCIES_JOB_TAG=test-es9 ELASTICSEARCH_VERSION=9.1.3 ./mvnw --batch-mode test -pl jaeger-spark-dependencies-elasticsearch -Dversion.elasticsearch.spark=9.1.3
-```
+To run all integration tests sequentially, you can execute each test suite desribed above one after another.
 
 ## Environment Variables
 
@@ -140,7 +112,7 @@ The following environment variables are used in integration tests:
 
 You can also set this as a system property:
 ```bash
-./mvnw test -Djaeger.version=1.50.0
+./mvnw test -Djaeger.version=2.14.0
 ```
 
 ## Troubleshooting
@@ -155,7 +127,7 @@ Then log out and log back in.
 ### Testcontainers Issues
 If testcontainers fail to start, ensure:
 1. Docker is running and accessible
-2. The Ryuk image is pulled: `docker pull testcontainersofficial/ryuk:0.3.0`
+2. The Ryuk image is pulled: `docker pull testcontainersofficial/ryuk:latest`
 3. You have sufficient disk space for Docker images
 
 ### Build Failures

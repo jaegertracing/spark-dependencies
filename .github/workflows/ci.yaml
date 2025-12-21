@@ -66,7 +66,7 @@ jobs:
           SPARK_DEPENDENCIES_JOB_TAG: ${{ matrix.job_tag }}
           ELASTICSEARCH_VERSION: ${{ matrix.es_ver }}
           # The es_spark version is only needed when testing Elasticsearch variants
-          MAVEN_ES_PROP: ${{ matrix.es_spark_ver == '' && '' || format('-Dversion.elasticsearch.spark={0}', matrix.es_spark_ver) }}
+          MAVEN_ES_PROP: ${{ matrix.es_spark_ver != '' && format('-Dversion.elasticsearch.spark={0}', matrix.es_spark_ver) || '' }}
         run: |
           ./mvnw --batch-mode clean test -am \
             -pl ${{ matrix.project }} \
