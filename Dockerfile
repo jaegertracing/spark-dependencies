@@ -12,7 +12,7 @@
 # the License.
 #
 
-FROM eclipse-temurin:17 AS builder
+FROM eclipse-temurin:17-jdk AS builder
 
 # Build argument to specify the variant type
 # Supported values: cassandra, elasticsearch7, elasticsearch8, elasticsearch9, unified
