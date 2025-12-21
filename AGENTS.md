@@ -20,14 +20,6 @@ The integration tests validate the Spark dependencies job against different stor
 
 Each test suite builds a Docker image with the appropriate storage variant and runs tests using testcontainers.
 
-## Common Setup
-
-All integration tests require pulling the Ryuk image (used by testcontainers):
-
-```bash
-docker pull testcontainersofficial/ryuk:0.3.0
-```
-
 ## Running Integration Tests
 
 ### 1. Cassandra Integration Tests
@@ -41,12 +33,9 @@ docker build \
   -t ghcr.io/jaegertracing/spark-dependencies/spark-dependencies:test-cassandra \
   .
 
-# Compile the project (skip tests for faster build)
-./mvnw --batch-mode clean install -DskipTests
-
 # Run Cassandra integration tests
 SPARK_DEPENDENCIES_JOB_TAG=test-cassandra \
-./mvnw --batch-mode test -pl jaeger-spark-dependencies-cassandra
+./mvnw --batch-mode clean test -am -pl jaeger-spark-dependencies-cassandra
 ```
 
 ### 2. Elasticsearch 7 Integration Tests
