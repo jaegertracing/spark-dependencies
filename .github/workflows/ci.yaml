@@ -7,106 +7,67 @@ on:
     branches: [ main ]
 
 jobs:
-  latest-jaeger:
-    name: Latest Jaeger and Cassandra 4.x
+  test:
+    name: Jaeger v2 and ${{ matrix.storage_name }}
     runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-java@v2
-        with:
-          distribution: temurin
-          java-version: '11'
-      - name: Build docker image to be used in tests
-        uses: docker/build-push-action@v2.7.0
-        with:
-          context: .
-          push: false
-          load: true
-          tags: ghcr.io/jaegertracing/spark-dependencies/spark-dependencies:test-cassandra
-          build-args: |
-            VARIANT=cassandra
-      - name: test
-        run: SPARK_DEPENDENCIES_JOB_TAG=test-cassandra ./mvnw --batch-mode clean test -am -pl jaeger-spark-dependencies-cassandra
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - storage_name: "Cassandra 4.x"
+            job_tag: "test-cassandra"
+            variant: "cassandra"
+            project: "jaeger-spark-dependencies-cassandra"
 
-  latest-jaeger-es7:
-    name: Latest Jaeger and ES7
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-java@v2
-        with:
-          distribution: temurin
-          java-version: '11'
-      - name: Build docker image to be used in tests
-        uses: docker/build-push-action@v2.7.0
-        with:
-          context: .
-          push: false
-          load: true
-          tags: ghcr.io/jaegertracing/spark-dependencies/spark-dependencies:test-es7
-          build-args: |
-            VARIANT=elasticsearch7
-            ELASTICSEARCH_SPARK_VERSION=7.17.10
-      - name: test
-        run: |
-          SPARK_DEPENDENCIES_JOB_TAG=test-es7 \
-          ELASTICSEARCH_VERSION=7.3.0 \
-          ./mvnw --batch-mode clean test -am \
-            -pl jaeger-spark-dependencies-elasticsearch \
-            -Dversion.elasticsearch.spark=7.17.10
+          - storage_name: "Elasticsearch 7"
+            job_tag: "test-es7"
+            variant: "elasticsearch7"
+            project: "jaeger-spark-dependencies-elasticsearch"
+            es_spark_ver: "7.17.10"
+            es_ver: "7.3.0"
 
-  latest-jaeger-es8:
-    name: Latest Jaeger and ES8
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-java@v2
-        with:
-          distribution: temurin
-          java-version: '11'
-      - name: Build docker image to be used in tests
-        uses: docker/build-push-action@v2.7.0
-        with:
-          context: .
-          push: false
-          load: true
-          tags: ghcr.io/jaegertracing/spark-dependencies/spark-dependencies:test-es8
-          build-args: |
-            VARIANT=elasticsearch8
-            ELASTICSEARCH_SPARK_VERSION=8.13.4
-      - name: test
-        run: |
-          SPARK_DEPENDENCIES_JOB_TAG=test-es8 \
-          ELASTICSEARCH_VERSION=8.3.1 \
-          ./mvnw --batch-mode clean test -am \
-            -pl jaeger-spark-dependencies-elasticsearch \
-            -Dversion.elasticsearch.spark=8.13.4
+          - storage_name: "Elasticsearch 8"
+            job_tag: "test-es8"
+            variant: "elasticsearch8"
+            project: "jaeger-spark-dependencies-elasticsearch"
+            es_spark_ver: "8.13.4"
+            es_ver: "8.3.1"
 
-  latest-jaeger-es9:
-    name: Latest Jaeger and ES9
-    runs-on: ubuntu-22.04
+          - storage_name: "Elasticsearch 9"
+            job_tag: "test-es9"
+            variant: "unified"
+            project: "jaeger-spark-dependencies-elasticsearch"
+            es_spark_ver: "9.1.3"
+            es_ver: "9.1.3"
+
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-java@v2
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
         with:
-          distribution: temurin
+          distribution: 'temurin'
           java-version: '11'
+          cache: 'maven'
+
       - name: Build docker image to be used in tests
-        uses: docker/build-push-action@v2.7.0
+        uses: docker/build-push-action@v5
         with:
           context: .
           push: false
           load: true
-          tags: ghcr.io/jaegertracing/spark-dependencies/spark-dependencies:test-es9
-          # Build mega-jar (VARIANT=unified) with both Cassandra and Elasticsearch support.
-          # While ES9 doesn't require the mega-jar, we build it here to ensure it's tested at least once in CI
+          tags: ghcr.io/jaegertracing/spark-dependencies/spark-dependencies:${{ matrix.job_tag }}
           build-args: |
-            VARIANT=unified
-            ELASTICSEARCH_SPARK_VERSION=9.1.3
-      - name: test
+            VARIANT=${{ matrix.variant }}
+            ELASTICSEARCH_SPARK_VERSION=${{ matrix.es_spark_ver }}
+
+      - name: Run Maven Tests
+        env:
+          SPARK_DEPENDENCIES_JOB_TAG: ${{ matrix.job_tag }}
+          ELASTICSEARCH_VERSION: ${{ matrix.es_ver }}
+          # The es_spark version is only needed when testing Elasticsearch variants
+          MAVEN_ES_PROP: ${{ matrix.es_spark_ver == '' && '' || format('-Dversion.elasticsearch.spark={0}', matrix.es_spark_ver) }}
         run: |
-          SPARK_DEPENDENCIES_JOB_TAG=test-es9 \
-          ELASTICSEARCH_VERSION=9.1.3 \
           ./mvnw --batch-mode clean test -am \
-            -pl jaeger-spark-dependencies-elasticsearch \
-            -Dversion.elasticsearch.spark=9.1.3
+            -pl ${{ matrix.project }} \
+            $MAVEN_ES_PROP
