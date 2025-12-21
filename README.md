@@ -160,6 +160,100 @@ docker build -t jaegertracing/spark-dependencies:latest .
 In tests it's possible to specify version of Jaeger images by env variable `JAEGER_VERSION`
 or system property `jaeger.version`. By default tests are using latest images.
 
+## Running Integration Tests
+
+The integration tests validate the Spark dependencies job against different storage backends:
+- Cassandra 4.x
+- Elasticsearch 7
+- Elasticsearch 8
+- Elasticsearch 9
+
+### Prerequisites
+
+Before running integration tests, ensure you have the following installed:
+
+- **Java 11** (Temurin distribution recommended)
+- **Docker** (for building images and running testcontainers)
+- **Maven** (included via `./mvnw` wrapper)
+
+### Quick Start
+
+Use the following make targets to run integration tests:
+
+```bash
+make e2e-cassandra  # Run Cassandra integration tests
+make e2e-es7        # Run Elasticsearch 7 integration tests
+make e2e-es8        # Run Elasticsearch 8 integration tests
+make e2e-es9        # Run Elasticsearch 9 integration tests
+```
+
+### What Each Target Does
+
+Each test suite performs two steps:
+1. Builds a Docker image with the appropriate storage variant
+2. Runs tests using testcontainers against that variant
+
+#### Cassandra Integration Tests
+Tests the latest Jaeger with Cassandra 4.x storage backend.
+```bash
+make e2e-cassandra
+```
+
+#### Elasticsearch 7 Integration Tests
+Tests the latest Jaeger with Elasticsearch 7 storage backend.
+```bash
+make e2e-es7
+```
+
+#### Elasticsearch 8 Integration Tests
+Tests the latest Jaeger with Elasticsearch 8 storage backend.
+```bash
+make e2e-es8
+```
+
+#### Elasticsearch 9 Integration Tests
+Tests the latest Jaeger with Elasticsearch 9 storage backend. This also builds the mega-jar (unified JAR with both Cassandra and Elasticsearch support) to ensure it's tested.
+```bash
+make e2e-es9
+```
+
+### Environment Variables
+
+The following environment variables are used in integration tests:
+
+- `SPARK_DEPENDENCIES_JOB_TAG`: Specifies the Docker image tag to use in tests (e.g., `test-cassandra`, `test-es7`, `test-es8`, `test-es9`)
+- `ELASTICSEARCH_VERSION`: Specifies the Elasticsearch version for testcontainers to use
+- `JAEGER_VERSION`: (Optional) Specifies the version of Jaeger images to use in tests. Defaults to latest.
+
+You can also set this as a system property:
+```bash
+./mvnw test -Djaeger.version=2.14.0
+```
+
+### Troubleshooting
+
+#### Docker Permission Issues
+If you encounter Docker permission issues, ensure your user is in the `docker` group:
+```bash
+sudo usermod -aG docker $USER
+```
+Then log out and log back in.
+
+#### Testcontainers Issues
+If testcontainers fail to start, ensure:
+1. Docker is running and accessible
+2. The Ryuk image is pulled: `docker pull testcontainersofficial/ryuk:latest`
+3. You have sufficient disk space for Docker images
+
+#### Build Failures
+If you encounter build failures:
+1. Ensure you have Java 11 installed
+2. Clean the Maven cache: `./mvnw clean`
+3. Try running with the `-U` flag to force update dependencies: `./mvnw -U clean install`
+
+#### Port Conflicts
+If tests fail due to port conflicts, ensure no other services are running on the ports used by testcontainers (typically ephemeral ports, but sometimes standard ports like 9042 for Cassandra or 9200 for Elasticsearch).
+
 ## License
 
 [Apache 2.0 License](./LICENSE).
