@@ -46,9 +46,9 @@ jobs:
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
-          java-version: '11'
-          cache: 'maven'
+          distribution: "temurin"
+          java-version: "21"
+          cache: "maven"
 
       - name: Build docker image to be used in tests
         uses: docker/build-push-action@v5
