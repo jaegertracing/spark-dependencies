@@ -166,6 +166,11 @@
         <artifactId>commons-beanutils</artifactId>
         <version>1.9.4</version>
       </dependency>
+      <dependency>
+        <groupId>org.scala-lang</groupId>
+        <artifactId>scala-library</artifactId>
+        <version>${version.scala.binary}.18</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
