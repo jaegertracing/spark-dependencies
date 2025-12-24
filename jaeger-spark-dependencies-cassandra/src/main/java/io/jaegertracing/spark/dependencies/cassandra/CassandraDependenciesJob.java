@@ -1,5 +1,6 @@
 /**
  * Copyright (c) The Jaeger Authors
+ * Copyright 2016-2017 The OpenZipkin Authors
  * SPDX-License-Identifier: Apache-2.0
  */
 package io.jaegertracing.spark.dependencies.cassandra;
@@ -8,8 +9,6 @@ import static com.datastax.spark.connector.japi.CassandraJavaUtil.javaFunctions;
 import static com.datastax.spark.connector.japi.CassandraJavaUtil.mapRowTo;
 import static com.datastax.spark.connector.japi.CassandraJavaUtil.mapToRow;
 
-import com.datastax.spark.connector.cql.CassandraConnector;
-import com.datastax.spark.connector.japi.CassandraRow;
 import com.google.common.base.Joiner;
 import com.google.common.net.HostAndPort;
 import io.jaegertracing.spark.dependencies.DependenciesSparkHelper;
@@ -23,7 +22,6 @@ import java.time.Period;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalUnit;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;

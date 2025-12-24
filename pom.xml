@@ -296,6 +296,9 @@
             <exclude>mvnw.cmd</exclude>
             <exclude>.mvn/wrapper/maven-wrapper.properties</exclude>
             <exclude>**swp</exclude>
+            <!-- These files also contain Zipkin (c) headers -->
+            <exclude>**/ElasticsearchDependenciesJob.java</exclude>
+            <exclude>**/CassandraDependenciesJob.java</exclude>
           </excludes>
         </configuration>
         <executions>

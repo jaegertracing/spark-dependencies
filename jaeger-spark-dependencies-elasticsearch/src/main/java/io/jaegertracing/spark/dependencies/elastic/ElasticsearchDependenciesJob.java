@@ -1,5 +1,6 @@
 /**
  * Copyright (c) The Jaeger Authors
+ * Copyright 2016-2017 The OpenZipkin Authors
  * SPDX-License-Identifier: Apache-2.0
  */
 package io.jaegertracing.spark.dependencies.elastic;
