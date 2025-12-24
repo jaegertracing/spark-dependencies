@@ -1,3 +1,8 @@
+#
+# Copyright (c) The Jaeger Authors
+# SPDX-License-Identifier: Apache-2.0
+#
+
 .PHONY: e2e-cassandra e2e-es7 e2e-es8 e2e-es9 help
 
 help:
