@@ -45,7 +45,7 @@
     <dependency>
       <groupId>io.opentelemetry.semconv</groupId>
       <artifactId>opentelemetry-semconv</artifactId>
-      <version>1.27.0-alpha</version>
+      <version>1.37.0</version>
     </dependency>
     <dependency>
       <groupId>io.opentracing</groupId>
