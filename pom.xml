@@ -31,7 +31,7 @@
     <version.org.apache.spark>3.5.1</version.org.apache.spark>
     <version.io.jaegertracing>0.34.3</version.io.jaegertracing>
     <version.io.opentracing>0.33.0</version.io.opentracing>
-    <version.io.opentelemetry>1.44.1</version.io.opentelemetry>
+    <version.io.opentelemetry>1.57.0</version.io.opentelemetry>
     <version.io.opentelemetry.instrumentation>2.10.0</version.io.opentelemetry.instrumentation>
     <version.junit>4.13.2</version.junit>
     <version.org.assertj>3.24.2</version.org.assertj>
