@@ -18,6 +18,8 @@
     <module>jaeger-spark-dependencies-common</module>
     <module>jaeger-spark-dependencies-cassandra</module>
     <module>jaeger-spark-dependencies-elasticsearch</module>
+
+    <module>jaeger-spark-dependencies-opensearch</module>
     <module>jaeger-spark-dependencies</module>
   </modules>
 
@@ -88,6 +90,11 @@
       <dependency>
         <groupId>${project.groupId}</groupId>
         <artifactId>jaeger-spark-dependencies-elasticsearch</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>jaeger-spark-dependencies-opensearch</artifactId>
         <version>${project.version}</version>
       </dependency>
 
@@ -315,6 +322,7 @@
             <exclude>.github/java-upgrade/**</exclude>
             <!-- These files also contain Zipkin (c) headers -->
             <exclude>**/ElasticsearchDependenciesJob.java</exclude>
+            <exclude>**/OpenSearchDependenciesJob.java</exclude>
             <exclude>**/CassandraDependenciesJob.java</exclude>
           </excludes>
         </configuration>

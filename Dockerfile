@@ -5,7 +5,6 @@
 
 # Simple runtime image that receives a pre-built JAR from the host
 FROM eclipse-temurin:21.0.9_10-jre@sha256:b0f6befb3f2af49704998c4425cb6313c1da505648a8e78cee731531996f735d
-LABEL org.opencontainers.image.authors="The Jaeger Authors <cncf-jaeger-maintainers@lists.cncf.io>"
 
 # Build argument to specify the variant type
 # Supported values: cassandra, elasticsearch7, elasticsearch8, elasticsearch9

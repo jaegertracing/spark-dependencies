@@ -51,6 +51,12 @@
       <version>${version.org.awaitility-awaitility}</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>io.opentelemetry</groupId>
+      <artifactId>opentelemetry-api</artifactId>
+      <version>${version.io.opentelemetry}</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
