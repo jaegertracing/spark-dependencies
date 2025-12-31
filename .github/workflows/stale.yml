@@ -19,7 +19,7 @@ jobs:
         with:
           egress-policy: audit
 
-      - uses: actions/stale@28ca1036281a5e5922ead5184a1bbf96e5fc984e
+      - uses: actions/stale@a21a0816299b11691f9592ef0d63d08e02f06d9d
         with:
           # Issues configuration
           days-before-issue-stale: 90
