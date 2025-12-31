@@ -11,7 +11,7 @@ import io.opentelemetry.sdk.OpenTelemetrySdk;
 import io.opentelemetry.sdk.resources.Resource;
 import io.opentelemetry.sdk.trace.SdkTracerProvider;
 import io.opentelemetry.sdk.trace.export.BatchSpanProcessor;
-import io.opentelemetry.semconv.ResourceAttributes;
+import io.opentelemetry.semconv.ServiceAttributes;
 import io.jaegertracing.spark.dependencies.test.tree.TracingWrapper;
 import io.jaegertracing.spark.dependencies.test.tree.TracingWrapper.OpenTelemetryWrapper;
 import java.util.ArrayList;
@@ -117,7 +117,7 @@ public class TracersGenerator {
 
     Resource resource = Resource.getDefault()
         .merge(Resource.builder()
-            .put(ResourceAttributes.SERVICE_NAME, serviceName)
+            .put(ServiceAttributes.SERVICE_NAME, serviceName)
             .build());
 
     // For gRPC, the endpoint should include the scheme (http:// or https://)
