@@ -44,6 +44,6 @@ public class MockTracingWrapper implements TracingWrapper<MockTracingWrapper> {
     if (parent != null) {
       spanBuilder.asChildOf(parent.get().span);
     }
-    span = spanBuilder.startManual();
+    span = spanBuilder.start();
   }
 }
