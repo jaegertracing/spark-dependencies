@@ -142,6 +142,20 @@
                   </includes>
                 </filter>
                 <filter>
+                  <!-- Keep all okhttp3 classes to avoid NoSuchMethodError -->
+                  <artifact>com.squareup.okhttp3:*</artifact>
+                  <includes>
+                    <include>**</include>
+                  </includes>
+                </filter>
+                <filter>
+                  <!-- Keep all okio classes to avoid NoSuchMethodError -->
+                  <artifact>com.squareup.okio:*</artifact>
+                  <includes>
+                    <include>**</include>
+                  </includes>
+                </filter>
+                <filter>
                   <artifact>*:*</artifact>
                   <excludes>
                     <exclude>META-INF/*.SF</exclude>

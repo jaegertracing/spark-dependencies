@@ -141,6 +141,17 @@
           </exclusion>
         </exclusions>
       </dependency>
+      <!-- Ensure okio 3.x is used (required by okhttp 4.12.0) -->
+      <dependency>
+        <groupId>com.squareup.okio</groupId>
+        <artifactId>okio</artifactId>
+        <version>3.6.0</version>
+      </dependency>
+      <dependency>
+        <groupId>com.squareup.okio</groupId>
+        <artifactId>okio-jvm</artifactId>
+        <version>3.6.0</version>
+      </dependency>
       <dependency>
         <groupId>com.google.guava</groupId>
         <artifactId>guava</artifactId>
