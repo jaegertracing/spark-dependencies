@@ -45,7 +45,7 @@ RUN --mount=type=cache,target=/root/.m2 \
       cp $APP_HOME/jaeger-spark-dependencies-elasticsearch/target/jaeger-spark-dependencies-elasticsearch-0.0.1-SNAPSHOT.jar /tmp/jars/app.jar; \
     fi
 
-FROM eclipse-temurin:21-jre
+FROM eclipse-temurin:21.0.9_10-jre@sha256:b0f6befb3f2af49704998c4425cb6313c1da505648a8e78cee731531996f735d
 LABEL org.opencontainers.image.authors="The Jaeger Authors <cncf-jaeger-maintainers@lists.cncf.io>"
 
 # Carry forward the VARIANT build arg to the runtime stage
