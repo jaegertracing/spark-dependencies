@@ -1,0 +1,236 @@
+#
+# Copyright (c) The Jaeger Authors
+# SPDX-License-Identifier: Apache-2.0
+#
+
+name: "CI/CD Pipeline"
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  release:
+    types: [ published ]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to publish in addition to `latest`"
+        required: true
+        type: string
+
+jobs:
+  # Define the matrix once for all jobs
+  setup:
+    runs-on: ubuntu-24.04
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      
+      - uses: actions/setup-java@f2beeb24e141e01a676f977032f5a29d81c9e27e # v5
+        with:
+          distribution: "temurin"
+          java-version: "21"
+          cache: "maven"
+
+      - name: Resolve all dependencies
+        # go-offline ensures the .m2 folder is full before the matrix starts
+        run: |
+          mvn dependency:go-offline -B --no-transfer-progress \
+            -Dmaven.wagon.http.retryHandler.count=3 \
+            -Dmaven.wagon.http.connectionTimeout=120000 \
+            -Dmaven.wagon.http.readTimeout=120000 \
+            -Dhttp.retryHandler.count=5
+
+      - id: set-matrix
+        run: |
+          # Define configuration for all storage variants
+          STRATEGY='{
+            "include": [
+              {
+                "variant": "cassandra",
+                "storage": "cassandra",
+                "es_version": "",
+                "image_tag": "test-cassandra",
+                "es_test_ver": ""
+              },
+              {
+                "variant": "elasticsearch7",
+                "storage": "elasticsearch",
+                "es_version": "7.17.29",
+                "image_tag": "test-es7",
+                "es_test_ver": "7.3.0"
+              },
+              {
+                "variant": "elasticsearch8",
+                "storage": "elasticsearch",
+                "es_version": "8.13.4",
+                "image_tag": "test-es8",
+                "es_test_ver": "8.3.1"
+              },
+              {
+                "variant": "elasticsearch9",
+                "storage": "elasticsearch",
+                "es_version": "9.1.3",
+                "image_tag": "test-es9",
+                "es_test_ver": "9.1.3"
+              }
+            ]
+          }'
+          # Convert to a single line and output
+          echo "matrix=$(echo $STRATEGY | jq -c .)" >> $GITHUB_OUTPUT
+
+  build-jars:
+    name: Build JAR - ${{ matrix.variant }}
+    runs-on: ubuntu-24.04
+    needs: setup
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.setup.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@f2beeb24e141e01a676f977032f5a29d81c9e27e # v5
+        with:
+          distribution: "temurin"
+          java-version: "21"
+          cache: "maven"
+
+      - name: Build JAR
+        env:
+          MAVEN_ES_PROP: ${{ matrix.es_version != '' && format('-Dversion.elasticsearch.spark={0}', matrix.es_version) || '' }}
+        run: |
+          ./mvnw clean package --batch-mode --no-transfer-progress -Dlicense.skip=true -DskipTests \
+            -pl jaeger-spark-dependencies-${{ matrix.storage }} -am \
+            $MAVEN_ES_PROP
+
+      - name: Prepare artifact
+        run: |
+          mkdir -p artifact-target
+          cp jaeger-spark-dependencies-${{ matrix.storage }}/target/jaeger-spark-dependencies-${{ matrix.storage }}-0.0.1-SNAPSHOT.jar \
+            artifact-target/
+
+      - name: Upload JAR artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: jar-${{ matrix.variant }}
+          path: artifact-target/*.jar
+          retention-days: 1
+
+  e2e-tests:
+    name: E2E Tests - ${{ matrix.variant }}
+    runs-on: ubuntu-24.04
+    needs: [setup, build-jars]
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.setup.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@f2beeb24e141e01a676f977032f5a29d81c9e27e # v5
+        with:
+          distribution: "temurin"
+          java-version: "21"
+          cache: "maven"
+
+      - name: Download JAR artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: jar-${{ matrix.variant }}
+          path: artifact-target/
+
+      - name: Build local Docker image
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
+        with:
+          context: .
+          load: true
+          push: false
+          tags: ghcr.io/jaegertracing/spark-dependencies/spark-dependencies:${{ matrix.image_tag }}
+          build-args: |
+            VARIANT=${{ matrix.variant }}
+
+      - name: Run integration tests
+        env:
+          SPARK_DEPENDENCIES_JOB_IMAGE_TAG: ${{ matrix.image_tag }}
+          ELASTICSEARCH_VERSION: ${{ matrix.es_test_ver }}
+          # The es_spark version is only needed when testing Elasticsearch variants
+          MAVEN_ES_PROP: ${{ matrix.es_version != '' && format('-Dversion.elasticsearch.spark={0}', matrix.es_version) || '' }}
+        run: |
+          ./mvnw --batch-mode --no-transfer-progress test -am \
+            -pl jaeger-spark-dependencies-${{ matrix.storage }} \
+            $MAVEN_ES_PROP
+
+  publish:
+    name: Publish - ${{ matrix.variant }}
+    runs-on: ubuntu-24.04
+    needs: [setup, e2e-tests]
+    if: github.event_name != 'pull_request'
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.setup.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+
+      - name: Download JAR artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: jar-${{ matrix.variant }}
+          path: artifact-target/
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@f9f531f0b89f3b84ca20b6bf63b3e3f4e57e6b35 # v3.3.0
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+        with:
+          install: true
+          platforms: |
+            linux/amd64
+            linux/arm64
+
+      - name: Compute Tags
+        id: compute-tags
+        run: |
+          prefix="ghcr.io/jaegertracing/spark-dependencies/spark-dependencies"
+          variant="${{ matrix.variant }}"
+          
+          # For main releases, use variant suffix
+          if [[ "${{ github.event_name }}" == "release" ]] && [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            release=$(echo ${{ github.ref }} | sed 's/refs\/tags\///g')
+            tags="$prefix:$release-$variant"
+            
+            # elasticsearch9 gets the 'latest' tag as it supports the newest ES version
+            if [[ "$variant" == "elasticsearch9" ]]; then
+              tags="$tags,$prefix:latest"
+            fi
+          elif [[ -n "${{ inputs.tag }}" ]]; then
+            tags="$prefix:${{ inputs.tag }}-$variant"
+          else
+            # For main branch builds, use main-variant
+            tags="$prefix:main-$variant"
+          fi
+
+          echo "Computed tags for publication ($variant): $tags"
+          echo "tags=$tags" >> $GITHUB_OUTPUT
+
+      - name: Login to GitHub Package Registry
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push multi-arch images
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.compute-tags.outputs.tags }}
+          platforms: |
+            linux/amd64
+            linux/arm64
+          build-args: |
+            VARIANT=${{ matrix.variant }}
