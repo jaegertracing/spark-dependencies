@@ -159,16 +159,16 @@ To build Docker image:
 For Cassandra:
 ```bash
 ./mvnw clean package --batch-mode -Dlicense.skip=true -DskipTests -pl jaeger-spark-dependencies-cassandra -am
-mkdir -p target
-cp jaeger-spark-dependencies-cassandra/target/jaeger-spark-dependencies-cassandra-0.0.1-SNAPSHOT.jar target/
+mkdir -p artifact-target
+cp jaeger-spark-dependencies-cassandra/target/jaeger-spark-dependencies-cassandra-0.0.1-SNAPSHOT.jar artifact-target/
 docker build --build-arg VARIANT=cassandra -t jaegertracing/spark-dependencies:cassandra .
 ```
 
 For Elasticsearch 9:
 ```bash
 ./mvnw clean package --batch-mode -Dlicense.skip=true -DskipTests -Dversion.elasticsearch.spark=9.1.3 -pl jaeger-spark-dependencies-elasticsearch -am
-mkdir -p target
-cp jaeger-spark-dependencies-elasticsearch/target/jaeger-spark-dependencies-elasticsearch-0.0.1-SNAPSHOT.jar target/
+mkdir -p artifact-target
+cp jaeger-spark-dependencies-elasticsearch/target/jaeger-spark-dependencies-elasticsearch-0.0.1-SNAPSHOT.jar artifact-target/
 docker build --build-arg VARIANT=elasticsearch9 -t jaegertracing/spark-dependencies:elasticsearch9 .
 ```
 
@@ -249,9 +249,10 @@ If tests fail due to port conflicts, ensure no other services are running on the
 
 The project uses a unified CI/CD pipeline (`.github/workflows/ci-cd.yml`) that implements a **Host-Build Matrix Pattern**:
 
-1. **Build JARs** - Builds storage-specific JARs on the GitHub runner (parallel for all variants)
-2. **E2E Tests** - Tests each variant using Docker containers with pre-built JARs
-3. **Publish** - Publishes multi-arch Docker images (linux/amd64, linux/arm64) to GitHub Container Registry
+1. **Setup & Dependency Download** - Downloads all Maven dependencies once and warms the cache for subsequent jobs
+2. **Build JARs** - Builds storage-specific JARs on the GitHub runner (parallel for all variants)
+3. **E2E Tests** - Tests each variant using Docker containers with pre-built JARs
+4. **Publish** - Publishes multi-arch Docker images (linux/amd64, linux/arm64) to GitHub Container Registry
 
 The pipeline supports four variants:
 - `cassandra` - For Cassandra storage
