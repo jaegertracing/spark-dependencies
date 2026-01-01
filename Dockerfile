@@ -14,7 +14,7 @@ ARG VARIANT=elasticsearch9
 ENV APP_HOME=/app/
 ENV VARIANT_TYPE=${VARIANT}
 
-# The JAR is provided by the GHA runner into the artifact-target/ folder
+# The JAR is provided by the GHA runner into the artifact-target folder
 COPY artifact-target/jaeger-spark-dependencies*.jar $APP_HOME/app.jar
 
 WORKDIR $APP_HOME

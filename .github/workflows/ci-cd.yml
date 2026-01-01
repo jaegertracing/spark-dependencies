@@ -37,7 +37,7 @@ jobs:
       - name: Resolve all dependencies
         # go-offline ensures the .m2 folder is full before the matrix starts
         run: |
-          mvn dependency:go-offline -B \
+          mvn dependency:go-offline -B --no-transfer-progress \
             -Dmaven.wagon.http.retryHandler.count=3 \
             -Dmaven.wagon.http.connectionTimeout=120000 \
             -Dmaven.wagon.http.readTimeout=120000 \
@@ -106,7 +106,7 @@ jobs:
         env:
           MAVEN_ES_PROP: ${{ matrix.es_version != '' && format('-Dversion.elasticsearch.spark={0}', matrix.es_version) || '' }}
         run: |
-          ./mvnw clean package --batch-mode -Dlicense.skip=true -DskipTests \
+          ./mvnw clean package --batch-mode --no-transfer-progress -Dlicense.skip=true -DskipTests \
             -pl jaeger-spark-dependencies-${{ matrix.storage }} -am \
             $MAVEN_ES_PROP
 
@@ -163,7 +163,7 @@ jobs:
           # The es_spark version is only needed when testing Elasticsearch variants
           MAVEN_ES_PROP: ${{ matrix.es_version != '' && format('-Dversion.elasticsearch.spark={0}', matrix.es_version) || '' }}
         run: |
-          ./mvnw --batch-mode test -am \
+          ./mvnw --batch-mode --no-transfer-progress test -am \
             -pl ${{ matrix.project }} \
             $MAVEN_ES_PROP
 
