@@ -10,6 +10,7 @@ FROM apache/spark:3.5.0
 # Supported values: cassandra, elasticsearch7, elasticsearch8, elasticsearch9
 ARG VARIANT=elasticsearch9
 
+# Switch to root to perform setup, then switch back to spark user
 USER root
 
 ENV APP_HOME=/app/

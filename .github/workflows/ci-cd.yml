@@ -191,7 +191,7 @@ jobs:
             release=$(echo ${{ github.ref }} | sed 's/refs\/tags\///g')
             tags="$prefix:$release-$variant"
             
-            # elasticsearch9 gets the 'latest' tag
+            # elasticsearch9 gets the 'latest' tag as it supports the newest ES version
             if [[ "$variant" == "elasticsearch9" ]]; then
               tags="$tags,$prefix:latest"
             fi
