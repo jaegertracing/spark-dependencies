@@ -172,7 +172,7 @@ The integration tests validate the Spark dependencies job against different stor
 
 Before running integration tests, ensure you have the following installed:
 
-- **Java 11** (Temurin distribution recommended)
+- **Java 21** (Temurin distribution recommended)
 - **Docker** (for building images and running testcontainers)
 - **Maven** (included via `./mvnw` wrapper)
 
@@ -223,7 +223,7 @@ If testcontainers fail to start, ensure:
 
 #### Build Failures
 If you encounter build failures:
-1. Ensure you have Java 11 installed
+1. Ensure you have Java 21 installed
 2. Clean the Maven cache: `./mvnw clean`
 3. Try running with the `-U` flag to force update dependencies: `./mvnw -U clean install`
 
