@@ -5,7 +5,7 @@
 package io.jaegertracing.spark.dependencies.opensearch;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.jaegertracing.spark.dependencies.opensearch.json.JsonHelper;
+import io.jaegertracing.spark.dependencies.json.JsonHelper;
 import io.jaegertracing.spark.dependencies.model.Span;
 import java.util.Map;
 import org.apache.spark.api.java.function.Function;

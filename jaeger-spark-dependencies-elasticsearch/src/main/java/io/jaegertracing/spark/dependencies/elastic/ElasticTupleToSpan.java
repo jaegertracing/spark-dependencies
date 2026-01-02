@@ -5,7 +5,7 @@
 package io.jaegertracing.spark.dependencies.elastic;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.jaegertracing.spark.dependencies.elastic.json.JsonHelper;
+import io.jaegertracing.spark.dependencies.json.JsonHelper;
 import io.jaegertracing.spark.dependencies.model.Span;
 import org.apache.spark.api.java.function.Function;
 import scala.Tuple2;

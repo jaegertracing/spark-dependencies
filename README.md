@@ -174,13 +174,12 @@ To build the job locally and run tests:
 ```bash
 ./mvnw clean install # if failed add SPARK_LOCAL_IP=127.0.0.1
 ```
-
-```bash
-STORAGE=elasticsearch ES_NODES=http://localhost:9200 java -jar jaeger-spark-dependencies/target/jaeger-spark-dependencies-0.0.1-SNAPSHOT.jar
-```
-
 To run the unified jar (includes all):
 ```bash
+STORAGE=cassandra java -jar jaeger-spark-dependencies/target/jaeger-spark-dependencies-0.0.1-SNAPSHOT.jar
+#or
+STORAGE=elasticsearch ES_NODES=http://localhost:9200 java -jar jaeger-spark-dependencies/target/jaeger-spark-dependencies-0.0.1-SNAPSHOT.jar
+#or
 STORAGE=opensearch OS_NODES=http://localhost:9200 java -jar jaeger-spark-dependencies/target/jaeger-spark-dependencies-0.0.1-SNAPSHOT.jar
 ```
 
