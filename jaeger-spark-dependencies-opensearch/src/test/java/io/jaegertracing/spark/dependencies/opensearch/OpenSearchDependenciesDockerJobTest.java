@@ -17,10 +17,10 @@ import static org.awaitility.Awaitility.await;
 
 public class OpenSearchDependenciesDockerJobTest extends OpenSearchDependenciesJobTest {
   private static String dependenciesJobTag() {
-    String tag = System.getenv("SPARK_DEPENDENCIES_JOB_TAG");
+    String tag = System.getenv("SPARK_DEPENDENCIES_JOB_IMAGE_TAG");
     if (tag == null || tag.trim().isEmpty()) {
       throw new IllegalStateException(
-          "SPARK_DEPENDENCIES_JOB_TAG environment variable is required but not set. " +
+          "SPARK_DEPENDENCIES_JOB_IMAGE_TAG environment variable is required but not set. " +
               "This variable must be set to ensure tests use the locally built Docker image.");
     }
     return tag.trim();
