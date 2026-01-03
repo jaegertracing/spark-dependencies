@@ -2,7 +2,7 @@
  * Copyright (c) The Jaeger Authors
  * SPDX-License-Identifier: Apache-2.0
  */
-package io.jaegertracing.spark.dependencies.cassandra;
+package io.jaegertracing.spark.dependencies;
 
 import org.testcontainers.containers.output.OutputFrame;
 

@@ -4,6 +4,7 @@
  */
 package io.jaegertracing.spark.dependencies.cassandra;
 
+import io.jaegertracing.spark.dependencies.LogToConsolePrinter;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.utility.DockerImageName;
 
