@@ -18,7 +18,6 @@
     <module>jaeger-spark-dependencies-common</module>
     <module>jaeger-spark-dependencies-cassandra</module>
     <module>jaeger-spark-dependencies-elasticsearch</module>
-
     <module>jaeger-spark-dependencies-opensearch</module>
     <module>jaeger-spark-dependencies</module>
   </modules>
