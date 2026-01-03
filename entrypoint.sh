@@ -34,6 +34,8 @@ if [ "$VARIANT_TYPE" = "cassandra" ]; then
 elif [ -n "$VARIANT_TYPE" ] && [ "${VARIANT_TYPE#elasticsearch}" != "$VARIANT_TYPE" ]; then
     # VARIANT_TYPE starts with "elasticsearch"
     MAIN_CLASS="io.jaegertracing.spark.dependencies.elastic.ElasticsearchDependenciesJob"
+elif [ "$VARIANT_TYPE" = "opensearch" ]; then
+    MAIN_CLASS="io.jaegertracing.spark.dependencies.opensearch.OpenSearchDependenciesJob"
 else
     # Fallback to unified JAR (for backward compatibility or local builds)
     MAIN_CLASS="io.jaegertracing.spark.dependencies.DependenciesSparkJob"

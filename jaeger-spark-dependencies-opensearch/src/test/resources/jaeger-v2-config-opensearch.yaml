@@ -1,0 +1,81 @@
+#
+# Copyright (c) The Jaeger Authors
+# SPDX-License-Identifier: Apache-2.0
+#
+
+service:
+  extensions: [jaeger_storage, jaeger_query, healthcheckv2]
+  pipelines:
+    traces:
+      receivers: [otlp, jaeger, zipkin]
+      processors: [filter/jaeger, batch]
+      exporters: [jaeger_storage_exporter]
+  telemetry:
+    resource:
+      service.name: jaeger-backend
+    metrics:
+    
+      level: detailed
+      readers:
+        - pull:
+            exporter:
+              prometheus:
+                host: 0.0.0.0
+                port: 8888
+    logs:
+      level: info
+    traces:
+      level: none
+
+extensions:
+  healthcheckv2:
+    use_v2: true
+    http:
+      endpoint: "0.0.0.0:16687"
+      status:
+        enabled: true
+        path: "/"
+
+  jaeger_query:
+    storage:
+      traces: some_storage
+
+  jaeger_storage:
+    backends:
+      some_storage:
+        elasticsearch:
+          server_urls:
+            - http://opensearch:9200
+          service_cache_ttl: 1s
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: "0.0.0.0:4317"
+      http:
+        endpoint: "0.0.0.0:4318"
+
+  jaeger:
+    protocols:
+      grpc:
+      thrift_binary:
+      thrift_compact:
+      thrift_http:
+        endpoint: "0.0.0.0:14268"
+
+  zipkin:
+    endpoint: "0.0.0.0:9411"
+
+processors:
+  filter/jaeger:
+    error_mode: ignore
+    traces:
+      span:
+        - 'resource.attributes["service.name"] == "jaeger"'
+
+  batch:
+
+exporters:
+  jaeger_storage_exporter:
+    trace_storage: some_storage

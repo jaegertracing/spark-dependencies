@@ -2,7 +2,7 @@
  * Copyright (c) The Jaeger Authors
  * SPDX-License-Identifier: Apache-2.0
  */
-package io.jaegertracing.spark.dependencies.elastic.json;
+package io.jaegertracing.spark.dependencies.json;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -24,10 +24,12 @@ import java.util.stream.Collectors;
 
 /**
  * @author Pavol Loffay
+ * @author Danish Siddiqui
  */
 public class SpanDeserializer extends StdDeserializer<Span> {
 
-  // TODO Spark incorrectly serializes object mapper, therefore reinitializing here
+  // TODO Spark incorrectly serializes object mapper, therefore reinitializing
+  // here
   private ObjectMapper objectMapper = JsonHelper.configure(new ObjectMapper());
 
   public SpanDeserializer() {
@@ -38,9 +40,18 @@ public class SpanDeserializer extends StdDeserializer<Span> {
   public Span deserialize(JsonParser jp, DeserializationContext ctxt) throws IOException, JsonProcessingException {
     JsonNode node = objectMapper.getFactory().setCodec(objectMapper).getCodec().readTree(jp);
 
-    String spanIdHex = node.get("spanID").asText();
-    String traceIdHex = node.get("traceID").asText();
-    String startTimeStr = node.get("startTime").asText();
+    JsonNode spanIdNode = node.get("spanID");
+    JsonNode traceIdNode = node.get("traceID");
+    JsonNode startTimeNode = node.get("startTime");
+
+    if (spanIdNode == null || traceIdNode == null) {
+      throw new JsonProcessingException("Missing required fields: spanID or traceID") {
+      };
+    }
+
+    String spanIdHex = spanIdNode.asText();
+    String traceIdHex = traceIdNode.asText();
+    String startTimeStr = startTimeNode != null ? startTimeNode.asText() : null;
 
     JsonNode processNode = node.get("process");
     Process process = objectMapper.treeToValue(processNode, Process.class);
@@ -89,8 +100,8 @@ public class SpanDeserializer extends StdDeserializer<Span> {
 
     JsonNode referencesNode = node.get("references");
     if (!referencesNode.isNull()) {
-        Reference[] referencesArr = objectMapper.treeToValue(referencesNode, Reference[].class);
-        references.addAll(Arrays.asList(referencesArr));
+      Reference[] referencesArr = objectMapper.treeToValue(referencesNode, Reference[].class);
+      references.addAll(Arrays.asList(referencesArr));
     }
 
     return references;
