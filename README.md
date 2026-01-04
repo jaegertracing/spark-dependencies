@@ -21,6 +21,7 @@ The images are named `ghcr.io/jaegertracing/spark-dependencies/spark-dependencie
 - **`VERSION-elasticsearch7`**: For Elasticsearch 7.12-7.16 (uses ElasticsearchDependenciesJob with ES connector 7.17.29)
 - **`VERSION-elasticsearch8`**: For Elasticsearch 7.17+ and 8.x (uses ElasticsearchDependenciesJob with ES connector 8.13.4)
 - **`VERSION-elasticsearch9`**: For Elasticsearch 9.x (uses ElasticsearchDependenciesJob with ES connector 9.1.3) - also tagged as `:latest`
+- **`VERSION-opensearch`**: For OpenSearch 2.x and 3.x (uses OpenSearchDependenciesJob with OpenSearch Java client)
 
 Example for Cassandra:
 ```bash
@@ -34,6 +35,13 @@ Example for Elasticsearch 8.x:
 $ docker run \
   --env ES_NODES=http://elasticsearch:9200 \
   ghcr.io/jaegertracing/spark-dependencies/spark-dependencies:v0.5.3-elasticsearch8
+```
+
+Example for OpenSearch:
+```bash
+$ docker run \
+  --env OS_NODES=http://opensearch:9200 \
+  ghcr.io/jaegertracing/spark-dependencies/spark-dependencies:v0.5.3-opensearch
 ```
 
 Use `--env JAVA_OPTS=-Djavax.net.ssl.` to set trust store and other Java properties.
@@ -121,6 +129,36 @@ Example usage:
 $ STORAGE=elasticsearch ES_NODES=http://localhost:9200 java -jar jaeger-spark-dependencies.jar
 ```
 
+### OpenSearch
+OpenSearch is used when `STORAGE=opensearch`.
+
+**Important**: Use the `:VERSION-opensearch` Docker image variant.
+
+#### Configuration
+
+* `OS_NODES`: A comma separated list of OpenSearch hosts advertising http. Defaults to
+  127.0.0.1. Add port section if not listening on port 9200. Only one of these hosts
+  needs to be available to fetch the remaining nodes in the cluster. It is
+  recommended to set this to all the master nodes of the cluster. Use url format for
+  SSL. For example, "https://yourhost:8888"
+* `OS_NODES_WAN_ONLY`: Set to true to only use the values set in OS_NODES, for example if your
+  OpenSearch cluster is in Docker. If you're using a cloudprovider
+  such as AWS OpenSearch, set this to true. Defaults to false.
+* `OS_USERNAME` and `OS_PASSWORD`: OpenSearch basic authentication. By default no username or password is provided.
+* `OS_INDEX_PREFIX`: index prefix of Jaeger indices. By default unset.
+* `OS_INDEX_DATE_SEPARATOR`: index date separator of Jaeger indices. The default value is `-`.
+  For example `.` will find index "jaeger-span-2020.11.25".
+* `OS_TIME_RANGE`: How far in the past the job should look to for spans, the maximum and default is `24h`.
+  Any value accepted by [date-math](https://www.elastic.co/guide/en/elasticsearch/reference/current/common-options.html#date-math) can be used here, but the anchor is always `now`.
+
+Example usage:
+
+```bash
+$ docker run \
+  --env OS_NODES=http://opensearch:9200 \
+  ghcr.io/jaegertracing/spark-dependencies/spark-dependencies:v0.5.3-opensearch
+```
+
 ## Design
 
 At a high-level, this job does the following:
@@ -136,12 +174,13 @@ To build the job locally and run tests:
 ```bash
 ./mvnw clean install # if failed add SPARK_LOCAL_IP=127.0.0.1
 ```
-
-To run the unified jar (includes both Cassandra and Elasticsearch):
+To run the unified jar (includes all):
 ```bash
 STORAGE=cassandra java -jar jaeger-spark-dependencies/target/jaeger-spark-dependencies-0.0.1-SNAPSHOT.jar
-# or
+#or
 STORAGE=elasticsearch ES_NODES=http://localhost:9200 java -jar jaeger-spark-dependencies/target/jaeger-spark-dependencies-0.0.1-SNAPSHOT.jar
+#or
+STORAGE=opensearch OS_NODES=http://localhost:9200 java -jar jaeger-spark-dependencies/target/jaeger-spark-dependencies-0.0.1-SNAPSHOT.jar
 ```
 
 To run storage-specific jars directly (without STORAGE variable):
@@ -150,6 +189,8 @@ To run storage-specific jars directly (without STORAGE variable):
 java -jar jaeger-spark-dependencies-cassandra/target/jaeger-spark-dependencies-cassandra-0.0.1-SNAPSHOT.jar
 # Elasticsearch
 ES_NODES=http://localhost:9200 java -jar jaeger-spark-dependencies-elasticsearch/target/jaeger-spark-dependencies-elasticsearch-0.0.1-SNAPSHOT.jar
+# OpenSearch
+OS_NODES=http://localhost:9200 java -jar jaeger-spark-dependencies-opensearch/target/jaeger-spark-dependencies-opensearch-0.0.1-SNAPSHOT.jar
 ```
 
 To build Docker image:
