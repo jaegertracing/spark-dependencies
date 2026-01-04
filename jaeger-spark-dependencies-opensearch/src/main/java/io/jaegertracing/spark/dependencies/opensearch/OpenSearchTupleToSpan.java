@@ -2,24 +2,26 @@
  * Copyright (c) The Jaeger Authors
  * SPDX-License-Identifier: Apache-2.0
  */
-package io.jaegertracing.spark.dependencies.elastic;
+package io.jaegertracing.spark.dependencies.opensearch;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jaegertracing.spark.dependencies.json.JsonHelper;
 import io.jaegertracing.spark.dependencies.model.Span;
+import java.util.Map;
 import org.apache.spark.api.java.function.Function;
 import scala.Tuple2;
 
 /**
  * @author Pavol Loffay
+ * @author Danish Siddiqui
  */
-public class ElasticTupleToSpan implements Function<Tuple2<String, String>, Span> {
+public class OpenSearchTupleToSpan implements Function<Tuple2<String, Map<String, Object>>, Span> {
 
   private ObjectMapper objectMapper = JsonHelper.configure(new ObjectMapper());
 
   @Override
-  public Span call(Tuple2<String, String> tuple) throws Exception {
-    Span span = objectMapper.readValue(tuple._2(), Span.class);
+  public Span call(Tuple2<String, Map<String, Object>> tuple) throws Exception {
+    Span span = objectMapper.convertValue(tuple._2(), Span.class);
     String originalTraceId = span.getTraceId();
     span.setTraceId(normalizeTraceId(originalTraceId));
     if (span.getTags() != null) {

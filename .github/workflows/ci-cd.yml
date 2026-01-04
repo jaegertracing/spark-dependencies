@@ -75,6 +75,13 @@ jobs:
                 "es_version": "9.1.3",
                 "image_tag": "test-es9",
                 "es_test_ver": "9.1.3"
+              },
+              {
+                "variant": "opensearch",
+                "storage": "opensearch",
+                "es_version": "",
+                "image_tag": "test-opensearch",
+                "es_test_ver": "2.14.0"
               }
             ]
           }'
@@ -156,6 +163,7 @@ jobs:
         env:
           SPARK_DEPENDENCIES_JOB_IMAGE_TAG: ${{ matrix.image_tag }}
           ELASTICSEARCH_VERSION: ${{ matrix.es_test_ver }}
+          OPENSEARCH_VERSION: ${{ matrix.es_test_ver }}
           # The es_spark version is only needed when testing Elasticsearch variants
           MAVEN_ES_PROP: ${{ matrix.es_version != '' && format('-Dversion.elasticsearch.spark={0}', matrix.es_version) || '' }}
         run: |

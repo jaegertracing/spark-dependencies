@@ -7,6 +7,7 @@ package io.jaegertracing.spark.dependencies.cassandra;
 import static org.awaitility.Awaitility.await;
 
 import com.datastax.oss.driver.api.core.CqlSession;
+import io.jaegertracing.spark.dependencies.LogToConsolePrinter;
 import io.jaegertracing.spark.dependencies.test.DependenciesTest;
 import java.time.LocalDate;
 import java.util.Collections;
@@ -35,10 +36,10 @@ public class CassandraDependenciesJobTest extends DependenciesTest {
   @BeforeClass
   public static void beforeClass() {
     System.out.println("=== Starting CassandraDependenciesJobTest setup ===");
-    
+
     network = Network.newNetwork();
     System.out.println("Created network: " + network.getId());
-    
+
     System.out.println("Starting Cassandra container (cassandra:4.1)...");
     cassandra = new CassandraContainer("cassandra:4.1")
         .withNetwork(network)
@@ -48,7 +49,8 @@ public class CassandraDependenciesJobTest extends DependenciesTest {
     cassandraPort = cassandra.getMappedPort(9042);
     System.out.println("Cassandra started. Mapped port: " + cassandraPort);
 
-    System.out.println("Starting Jaeger Cassandra schema container (jaegertracing/jaeger-cassandra-schema:" + jaegerVersion() + ")...");
+    System.out.println("Starting Jaeger Cassandra schema container (jaegertracing/jaeger-cassandra-schema:"
+        + jaegerVersion() + ")...");
     jaegerCassandraSchema = new GenericContainer<>("jaegertracing/jaeger-cassandra-schema:" + jaegerVersion())
         .withLogConsumer(new LogToConsolePrinter("[jaeger-cassandra-schema] "))
         .withNetwork(network);
@@ -63,16 +65,18 @@ public class CassandraDependenciesJobTest extends DependenciesTest {
     System.out.println("Starting Jaeger v2 unified container (jaegertracing/jaeger:" + jaegerVersion() + ")...");
     jaegerAll = new GenericContainer<>("jaegertracing/jaeger:" + jaegerVersion())
         .withNetwork(network)
-        .withClasspathResourceMapping("jaeger-v2-config-cassandra.yaml", "/etc/jaeger/config.yaml", org.testcontainers.containers.BindMode.READ_ONLY)
+        .withClasspathResourceMapping("jaeger-v2-config-cassandra.yaml", "/etc/jaeger/config.yaml",
+            org.testcontainers.containers.BindMode.READ_ONLY)
         .withCommand("--config", "/etc/jaeger/config.yaml")
-        .waitingFor(new BoundPortHttpWaitStrategy(16687).forStatusCodeMatching(statusCode -> statusCode >= 200 && statusCode < 300))
+        .waitingFor(new BoundPortHttpWaitStrategy(16687)
+            .forStatusCodeMatching(statusCode -> statusCode >= 200 && statusCode < 300))
         .withExposedPorts(16687, 16686, 4317, 4318, 14268, 9411);
     jaegerAll.start();
     System.out.println("Jaeger v2 container started");
 
     queryUrl = String.format("http://127.0.0.1:%d", jaegerAll.getMappedPort(16686));
     collectorUrl = String.format("http://127.0.0.1:%d", jaegerAll.getMappedPort(4317));
-    
+
     System.out.println("=== Container setup complete ===");
     System.out.println("Query URL: " + queryUrl);
     System.out.println("Collector URL: " + collectorUrl);
@@ -89,9 +93,9 @@ public class CassandraDependenciesJobTest extends DependenciesTest {
   @After
   public void after() {
     try (CqlSession session = CqlSession.builder()
-            .addContactPoint(cassandra.getContactPoint())
-            .withLocalDatacenter(cassandra.getLocalDatacenter())
-            .build()) {
+        .addContactPoint(cassandra.getContactPoint())
+        .withLocalDatacenter(cassandra.getLocalDatacenter())
+        .build()) {
       session.execute("TRUNCATE jaeger_v1_dc1.traces");
       session.execute(String.format("TRUNCATE jaeger_v1_dc1.%s", dependenciesTable(session)));
     }
