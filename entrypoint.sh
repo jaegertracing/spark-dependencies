@@ -41,6 +41,10 @@ else
     MAIN_CLASS="io.jaegertracing.spark.dependencies.DependenciesSparkJob"
 fi
 
+# Set default Log4j2 StatusLogger level if not already set
+# This suppresses Log4j2 StatusLogger errors triggered by OpenSearch's programmatic logging configuration
+# Users can override this by setting the LOG4J_STATUS_LOGGER_LEVEL environment variable
+LOG4J_STATUS_LOGGER_LEVEL="${LOG4J_STATUS_LOGGER_LEVEL:-OFF}"
+
 # Execute the job with the determined main class
-# Suppress Log4j2 StatusLogger errors triggered by OpenSearch's programmatic logging configuration
-exec java ${JAVA_OPTS} -Dorg.apache.logging.log4j.simplelog.StatusLogger.level=OFF -cp "$JAR_PATH" "$MAIN_CLASS" "$@"
+exec java ${JAVA_OPTS} -Dorg.apache.logging.log4j.simplelog.StatusLogger.level=${LOG4J_STATUS_LOGGER_LEVEL} -cp "$JAR_PATH" "$MAIN_CLASS" "$@"
