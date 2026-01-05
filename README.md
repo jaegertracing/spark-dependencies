@@ -44,7 +44,33 @@ $ docker run \
   ghcr.io/jaegertracing/spark-dependencies/spark-dependencies:v0.5.3-opensearch
 ```
 
-Use `--env JAVA_OPTS=-Djavax.net.ssl.` to set trust store and other Java properties.
+#### Advanced Configuration
+
+Use `--env JAVA_OPTS` to pass additional Java options such as memory settings, SSL trust store, or other JVM properties:
+
+```bash
+# Example: Configure SSL trust store
+$ docker run \
+  --env ES_NODES=https://elasticsearch:9200 \
+  --env JAVA_OPTS="-Djavax.net.ssl.trustStore=/path/to/truststore -Djavax.net.ssl.trustStorePassword=changeit" \
+  ghcr.io/jaegertracing/spark-dependencies/spark-dependencies:v0.5.3-elasticsearch8
+
+# Example: Increase JVM heap size
+$ docker run \
+  --env OS_NODES=http://opensearch:9200 \
+  --env JAVA_OPTS="-Xmx2g -Xms1g" \
+  ghcr.io/jaegertracing/spark-dependencies/spark-dependencies:v0.5.3-opensearch
+```
+
+Use `--env LOG4J_STATUS_LOGGER_LEVEL` to control Log4j2 internal status messages (defaults to `OFF`):
+
+```bash
+# Example: Enable Log4j2 debug logging for troubleshooting
+$ docker run \
+  --env OS_NODES=http://opensearch:9200 \
+  --env LOG4J_STATUS_LOGGER_LEVEL=DEBUG \
+  ghcr.io/jaegertracing/spark-dependencies/spark-dependencies:v0.5.3-opensearch
+```
 
 Note: the latest versions are hosted on `ghcr.io`, not on Docker Hub.
 
@@ -72,6 +98,8 @@ The following variables are common to all storage layers:
 * `SPARK_MASTER`: Spark master to submit the job to; Defaults to `local[*]`
 * `DATE`: Date in YYYY-mm-dd format. Denotes a day for which dependency links will be created.
 * `PEER_SERVICE_TAG`: Tag name used to identify peer service in spans. Defaults to `peer.service`
+* `JAVA_OPTS`: Additional Java options to pass to the JVM. Use this to configure memory, SSL properties, or other JVM settings. Example: `JAVA_OPTS="-Xmx2g -Djavax.net.ssl.trustStore=/path/to/truststore"`. Note: The required `--add-opens` flags for Spark on Java 21+ are already included in the container image.
+* `LOG4J_STATUS_LOGGER_LEVEL`: Log4j2 StatusLogger level. Defaults to `OFF` to suppress internal Log4j2 status messages. Set to `TRACE`, `DEBUG`, `INFO`, `WARN`, `ERROR`, or `FATAL` if you need to debug logging configuration issues.
 
 ### Cassandra
 Cassandra is used when `STORAGE=cassandra`.
