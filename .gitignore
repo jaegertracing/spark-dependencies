@@ -16,3 +16,4 @@ buildNumber.properties
 
 .testcontainers-tmp-*
 .vscode/
+artifact-target/

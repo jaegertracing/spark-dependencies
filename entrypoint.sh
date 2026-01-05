@@ -42,4 +42,5 @@ else
 fi
 
 # Execute the job with the determined main class
-exec java ${JAVA_OPTS} -cp "$JAR_PATH" "$MAIN_CLASS" "$@"
+# Suppress Log4j2 StatusLogger errors triggered by OpenSearch's programmatic logging configuration
+exec java ${JAVA_OPTS} -Dorg.apache.logging.log4j.simplelog.StatusLogger.level=OFF -cp "$JAR_PATH" "$MAIN_CLASS" "$@"
