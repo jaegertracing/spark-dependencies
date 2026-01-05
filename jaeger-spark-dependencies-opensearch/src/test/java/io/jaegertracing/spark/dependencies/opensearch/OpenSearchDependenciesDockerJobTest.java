@@ -61,8 +61,6 @@ public class OpenSearchDependenciesDockerJobTest extends OpenSearchDependenciesJ
         .withEnv("STORAGE", "opensearch")
         .withEnv("OS_NODES", "http://opensearch:9200")
         .withEnv("DATE", dateStr)
-        .withEnv("JAVA_OPTS",
-            "--add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.invoke=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED --add-opens=java.base/java.io=ALL-UNNAMED --add-opens=java.base/java.net=ALL-UNNAMED --add-opens=java.base/java.nio=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.util.concurrent=ALL-UNNAMED --add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED --add-opens=java.base/sun.nio.ch=ALL-UNNAMED --add-opens=java.base/sun.nio.cs=ALL-UNNAMED --add-opens=java.base/sun.security.action=ALL-UNNAMED --add-opens=java.base/sun.util.calendar=ALL-UNNAMED -Djdk.reflect.useDirectMethodHandle=false")
         .dependsOn(jaegerOpenSearchEnvironment.opensearch, jaegerOpenSearchEnvironment.jaegerAll)) {
       sparkDependenciesJob.start();
       await("spark-dependencies-job execution")

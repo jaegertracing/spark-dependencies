@@ -46,5 +46,10 @@ fi
 # Users can override this by setting the LOG4J_STATUS_LOGGER_LEVEL environment variable
 LOG4J_STATUS_LOGGER_LEVEL="${LOG4J_STATUS_LOGGER_LEVEL:-OFF}"
 
+# Required Java module options for Spark to work with Java 21+
+# These --add-opens flags are necessary for Spark to access internal Java APIs
+SPARK_JAVA_OPTS="--add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.invoke=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED --add-opens=java.base/java.io=ALL-UNNAMED --add-opens=java.base/java.net=ALL-UNNAMED --add-opens=java.base/java.nio=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.util.concurrent=ALL-UNNAMED --add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED --add-opens=java.base/sun.nio.ch=ALL-UNNAMED --add-opens=java.base/sun.nio.cs=ALL-UNNAMED --add-opens=java.base/sun.security.action=ALL-UNNAMED --add-opens=java.base/sun.util.calendar=ALL-UNNAMED -Djdk.reflect.useDirectMethodHandle=false"
+
 # Execute the job with the determined main class
-exec java ${JAVA_OPTS} -Dorg.apache.logging.log4j.simplelog.StatusLogger.level=${LOG4J_STATUS_LOGGER_LEVEL} -cp "$JAR_PATH" "$MAIN_CLASS" "$@"
+# SPARK_JAVA_OPTS come first (required for Spark), then JAVA_OPTS (user customizations), then Log4j config
+exec java ${SPARK_JAVA_OPTS} ${JAVA_OPTS} -Dorg.apache.logging.log4j.simplelog.StatusLogger.level=${LOG4J_STATUS_LOGGER_LEVEL} -cp "$JAR_PATH" "$MAIN_CLASS" "$@"

@@ -98,7 +98,7 @@ The following variables are common to all storage layers:
 * `SPARK_MASTER`: Spark master to submit the job to; Defaults to `local[*]`
 * `DATE`: Date in YYYY-mm-dd format. Denotes a day for which dependency links will be created.
 * `PEER_SERVICE_TAG`: Tag name used to identify peer service in spans. Defaults to `peer.service`
-* `JAVA_OPTS`: Additional Java options to pass to the JVM. Use this to configure memory, SSL properties, or other JVM settings. Example: `JAVA_OPTS="-Xmx2g -Djavax.net.ssl.trustStore=/path/to/truststore"`
+* `JAVA_OPTS`: Additional Java options to pass to the JVM. Use this to configure memory, SSL properties, or other JVM settings. Example: `JAVA_OPTS="-Xmx2g -Djavax.net.ssl.trustStore=/path/to/truststore"`. Note: The required `--add-opens` flags for Spark on Java 21+ are already included in the container image.
 * `LOG4J_STATUS_LOGGER_LEVEL`: Log4j2 StatusLogger level. Defaults to `OFF` to suppress internal Log4j2 status messages. Set to `TRACE`, `DEBUG`, `INFO`, `WARN`, `ERROR`, or `FATAL` if you need to debug logging configuration issues.
 
 ### Cassandra
