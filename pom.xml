@@ -29,7 +29,7 @@
     <project.build.resourceEncoding>UTF-8</project.build.resourceEncoding>
 
     <version.scala.binary>2.12</version.scala.binary>
-    <version.org.apache.spark>3.5.1</version.org.apache.spark>
+    <version.org.apache.spark>3.5.7</version.org.apache.spark>
     <version.io.jaegertracing>0.34.3</version.io.jaegertracing>
     <version.io.opentracing>0.33.0</version.io.opentracing>
     <version.io.opentelemetry>1.57.0</version.io.opentelemetry>
