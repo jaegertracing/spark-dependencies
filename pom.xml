@@ -35,7 +35,7 @@
     <version.io.opentelemetry>1.57.0</version.io.opentelemetry>
     <version.io.opentelemetry.instrumentation>2.10.0</version.io.opentelemetry.instrumentation>
     <version.junit>4.13.2</version.junit>
-    <version.org.assertj>3.27.6</version.org.assertj>
+    <version.org.assertj>3.27.7</version.org.assertj>
     <version.org.testcontainers>1.21.4</version.org.testcontainers>
     <version.com.squareup.okhttp3-okhttp>4.12.0</version.com.squareup.okhttp3-okhttp>
     <version.org.awaitility-awaitility>4.3.0</version.org.awaitility-awaitility>
