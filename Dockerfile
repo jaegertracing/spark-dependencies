@@ -4,7 +4,7 @@
 #
 
 # Simple runtime image that receives a pre-built JAR from the host
-FROM eclipse-temurin:21.0.9_10-jre@sha256:b0f6befb3f2af49704998c4425cb6313c1da505648a8e78cee731531996f735d
+FROM eclipse-temurin:21.0.9_10-jre@sha256:d45e4719da1774b3abde398867f78a6d9b9afe4265f574f3d54062f6daeb00b3
 LABEL org.opencontainers.image.authors="The Jaeger Authors <cncf-jaeger-maintainers@lists.cncf.io>"
 
 # Build argument to specify the variant type
