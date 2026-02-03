@@ -20,11 +20,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@20cf305ff2072d973412fa9b1e3a4f227bda3c76
+        uses: step-security/harden-runner@e3f713f2d8f53843e71c69a996d56f51aa9adfb9
         with:
           egress-policy: audit
 
-      - uses: actions/stale@a21a0816299b11691f9592ef0d63d08e02f06d9d
+      - uses: actions/stale@dcd2b9469d2220b7e8d08aedc00c105d277fd46b
         with:
           # Issues configuration
           days-before-issue-stale: 90
