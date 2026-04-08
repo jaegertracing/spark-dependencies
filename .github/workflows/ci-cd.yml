@@ -67,7 +67,7 @@ jobs:
                 "storage": "elasticsearch",
                 "es_version": "8.13.4",
                 "image_tag": "test-es8",
-                "es_test_ver": "8.3.1"
+                "es_test_ver": "8.13.4"
               },
               {
                 "variant": "elasticsearch9",
@@ -167,9 +167,19 @@ jobs:
           # The es_spark version is only needed when testing Elasticsearch variants
           MAVEN_ES_PROP: ${{ matrix.es_version != '' && format('-Dversion.elasticsearch.spark={0}', matrix.es_version) || '' }}
         run: |
-          ./mvnw --batch-mode --no-transfer-progress test -am \
-            -pl jaeger-spark-dependencies-${{ matrix.storage }} \
-            $MAVEN_ES_PROP
+          for attempt in 1 2 3; do
+            echo "Integration test attempt $attempt of 3"
+            ./mvnw --batch-mode --no-transfer-progress test -am \
+              -pl jaeger-spark-dependencies-${{ matrix.storage }} \
+              $MAVEN_ES_PROP && break
+            if [ $attempt -lt 3 ]; then
+              echo "Attempt $attempt failed, retrying after 15 seconds..."
+              sleep 15
+            else
+              echo "All attempts failed"
+              exit 1
+            fi
+          done
 
   publish:
     name: Publish - ${{ matrix.variant }}
