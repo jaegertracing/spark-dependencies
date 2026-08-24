@@ -11,9 +11,11 @@ import static org.junit.Assert.assertTrue;
 import io.jaegertracing.spark.dependencies.model.Dependency;
 import io.jaegertracing.spark.dependencies.model.KeyValue;
 import io.jaegertracing.spark.dependencies.model.Process;
+import io.jaegertracing.spark.dependencies.model.Reference;
 import io.jaegertracing.spark.dependencies.model.Span;
 import io.opentracing.tag.Tags;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -52,6 +54,36 @@ public class SpansToDependencyLinksTest {
         sharedSpans.add(createSpan("producerName", "tag"));
         Optional<Dependency> result = spansToDependencyLinks.sharedSpanDependency(sharedSpans);
         assertFalse(result.isPresent());
+    }
+
+    @Test
+    public void shouldCountDuplicateParentReferencesOnce() throws Exception {
+        Span parent = spanWithId(1L, "S1");
+        Span child = spanWithId(2L, "S2");
+        Reference first = new Reference();
+        first.setSpanId(1L);
+        Reference duplicate = new Reference();
+        duplicate.setSpanId(1L);
+        child.setRefs(Arrays.asList(first, duplicate));
+
+        List<Dependency> dependencies = new ArrayList<>();
+        new SpansToDependencyLinks("").call(Arrays.asList(parent, child))
+            .forEachRemaining(dependencies::add);
+
+        assertEquals(1, dependencies.size());
+        assertEquals(new Dependency("S1", "S2"), dependencies.get(0));
+    }
+
+    private Span spanWithId(long spanId, String serviceName) {
+        Span span = new Span();
+        span.setTraceId("trace");
+        span.setSpanId(spanId);
+        span.setTags(new ArrayList<>());
+        span.setRefs(new ArrayList<>());
+        Process process = new Process();
+        process.setServiceName(serviceName);
+        span.setProcess(process);
+        return span;
     }
 
     private Span createSpan(String serviceName, String tag) {
