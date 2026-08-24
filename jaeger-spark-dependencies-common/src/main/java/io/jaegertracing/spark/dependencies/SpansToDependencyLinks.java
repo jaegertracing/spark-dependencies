@@ -49,13 +49,18 @@ public class SpansToDependencyLinks implements FlatMapFunction<Iterable<Span>, D
         Map<Long, Set<Span>> spanChildrenMap = new LinkedHashMap<>();
         for (Span span : uniqueSpans) {
             // Map of children
-            for (Reference ref: span.getRefs()){
-              Set <Span> children = spanChildrenMap.get(ref.getSpanId());
-              if (children == null){
-                children = new LinkedHashSet<>();
-                spanChildrenMap.put(ref.getSpanId(), children);
+            if (span.getRefs() != null) {
+              for (Reference ref: span.getRefs()){
+                if (ref == null || ref.getSpanId() == null || ref.getSpanId() == 0L) {
+                  continue;
+                }
+                Set <Span> children = spanChildrenMap.get(ref.getSpanId());
+                if (children == null){
+                  children = new LinkedHashSet<>();
+                  spanChildrenMap.put(ref.getSpanId(), children);
+                }
+                children.add(span);
               }
-              children.add(span);
             }
             // Map of parents
             Set<Span> sharedSpans = spanMap.get(span.getSpanId());
@@ -81,7 +86,12 @@ public class SpansToDependencyLinks implements FlatMapFunction<Iterable<Span>, D
                 continue;
             }
 
+            Set<Long> seenParentSpanIds = new LinkedHashSet<>();
             for (Reference reference: span.getRefs()) {
+                if (reference == null || reference.getSpanId() == null || reference.getSpanId() == 0L
+                    || !seenParentSpanIds.add(reference.getSpanId())) {
+                    continue;
+                }
                 Set<Span> parents = spanMap.get(reference.getSpanId());
                 if (parents != null) {
                     if (parents.size() > 1) {
