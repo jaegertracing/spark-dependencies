@@ -18,8 +18,10 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -89,21 +91,49 @@ public class SpanDeserializer extends StdDeserializer<Span> {
   }
 
   private List<Reference> deserializeReferences(JsonNode node) throws JsonProcessingException {
-    List<Reference> references = new ArrayList<>();
-    JsonNode parentSpanID = node.get("parentSpanID");
-    if (parentSpanID != null) {
-      BigInteger bigInteger = new BigInteger(parentSpanID.asText(), 16);
-      Reference reference = new Reference();
-      reference.setSpanId(bigInteger.longValue());
-      references.add(reference);
-    }
+    // Jaeger ES/OS v2 writes the parent both as parentSpanID and as a CHILD_OF entry in
+    // references (see jaegertracing/jaeger#8859). Counting both doubles call counts.
+    Set<Reference> references = new LinkedHashSet<>();
+    addParentSpanId(references, node.get("parentSpanID"));
 
     JsonNode referencesNode = node.get("references");
-    if (!referencesNode.isNull()) {
+    if (referencesNode != null && !referencesNode.isNull() && referencesNode.isArray()) {
       Reference[] referencesArr = objectMapper.treeToValue(referencesNode, Reference[].class);
-      references.addAll(Arrays.asList(referencesArr));
+      if (referencesArr != null) {
+        for (Reference reference : referencesArr) {
+          if (isUsableSpanId(reference == null ? null : reference.getSpanId())) {
+            references.add(reference);
+          }
+        }
+      }
     }
 
-    return references;
+    return new ArrayList<>(references);
+  }
+
+  private static void addParentSpanId(Set<Reference> references, JsonNode parentSpanID) {
+    if (parentSpanID == null || parentSpanID.isNull()) {
+      return;
+    }
+    String spanIdHex = parentSpanID.asText();
+    if (spanIdHex == null || spanIdHex.isEmpty() || isAllZeroHex(spanIdHex)) {
+      return;
+    }
+    Reference reference = new Reference();
+    reference.setSpanId(new BigInteger(spanIdHex, 16).longValue());
+    references.add(reference);
+  }
+
+  private static boolean isUsableSpanId(Long spanId) {
+    return spanId != null && spanId != 0L;
+  }
+
+  private static boolean isAllZeroHex(String spanIdHex) {
+    for (int i = 0; i < spanIdHex.length(); i++) {
+      if (spanIdHex.charAt(i) != '0') {
+        return false;
+      }
+    }
+    return true;
   }
 }
