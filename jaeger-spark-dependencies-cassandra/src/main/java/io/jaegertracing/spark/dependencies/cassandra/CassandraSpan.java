@@ -7,6 +7,7 @@ package io.jaegertracing.spark.dependencies.cassandra;
 import io.jaegertracing.spark.dependencies.model.Reference;
 import io.jaegertracing.spark.dependencies.model.Span;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -29,10 +30,17 @@ public class CassandraSpan extends Span {
 
   @Override
   public List<Reference> getRefs() {
-    ArrayList<Reference> references = new ArrayList<>(super.getRefs());
-    Reference legacyParent = new Reference();
-    legacyParent.setSpanId(parentId);
-    references.add(legacyParent);
-    return references;
+    List<Reference> existing = super.getRefs();
+    List<Reference> references = existing == null
+        ? new ArrayList<>()
+        : new ArrayList<>(existing);
+    if (parentId != null && parentId != 0L) {
+      Reference legacyParent = new Reference();
+      legacyParent.setSpanId(parentId);
+      if (!references.contains(legacyParent)) {
+        references.add(legacyParent);
+      }
+    }
+    return Collections.unmodifiableList(references);
   }
 }
