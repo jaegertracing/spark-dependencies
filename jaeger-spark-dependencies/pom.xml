@@ -58,6 +58,21 @@
                   </includes>
                 </filter>
                 <filter>
+                  <!-- Keep Hadoop's dnsjava classes, but do not register its JDK
+                       InetAddressResolverProvider. The provider lives only in the
+                       Multi-Release JAR (META-INF/versions/18); shade copies the SPI
+                       file without that class and Java 18+ fails at hostname lookup
+                       (HADOOP-19288, jaegertracing/spark-dependencies#217). -->
+                  <artifact>dnsjava:dnsjava</artifact>
+                  <includes>
+                    <include>**</include>
+                  </includes>
+                  <excludes>
+                    <exclude>META-INF/services/java.net.spi.InetAddressResolverProvider</exclude>
+                    <exclude>META-INF/versions/**</exclude>
+                  </excludes>
+                </filter>
+                <filter>
                   <!-- Keep classes from Cassandra Java Driver -->
                   <artifact>com.datastax.oss:*</artifact>
                   <includes>
@@ -148,6 +163,7 @@
                     <exclude>META-INF/*.SF</exclude>
                     <exclude>META-INF/*.DSA</exclude>
                     <exclude>META-INF/*.RSA</exclude>
+                    <exclude>META-INF/services/java.net.spi.InetAddressResolverProvider</exclude>
                   </excludes>
                 </filter>
               </filters>
