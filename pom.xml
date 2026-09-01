@@ -50,7 +50,7 @@
     <!-- Hadoop 3.4+ pulls dnsjava 3.6, whose JDK InetAddressResolverProvider SPI
          is unsafe to shade (HADOOP-19288). See maven-shade-plugin filters. -->
     <version.hadoop.client>3.5.0</version.hadoop.client>
-    <version.elasticsearch.spark>9.1.3</version.elasticsearch.spark>
+    <version.elasticsearch.spark>9.5.2</version.elasticsearch.spark>
   </properties>
 
   <inceptionYear>2017</inceptionYear>
