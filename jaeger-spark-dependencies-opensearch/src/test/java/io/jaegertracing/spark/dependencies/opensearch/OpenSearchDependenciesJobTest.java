@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -19,6 +20,7 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Test;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
 
 /**
@@ -28,6 +30,7 @@ import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
 public class OpenSearchDependenciesJobTest extends DependenciesTest {
 
   protected OpenSearchDependenciesJob dependenciesJob;
+  protected final LocalDate testDay = LocalDate.now();
   static JaegerOpenSearchEnvironment jaegerOpenSearchEnvironment;
 
   @BeforeClass
@@ -72,11 +75,42 @@ public class OpenSearchDependenciesJobTest extends DependenciesTest {
     jaegerOpenSearchEnvironment.stop();
   }
 
+  @Test
+  public void shouldReplaceDailySnapshotWhenJobRunsTwice() throws Exception {
+    TracersGenerator.Tuple<Tracer, TracersGenerator.Flushable> parentTuple =
+        TracersGenerator.createJaeger("snapshot-parent", collectorUrl);
+    TracersGenerator.Tuple<Tracer, TracersGenerator.Flushable> childTuple =
+        TracersGenerator.createJaeger("snapshot-child", collectorUrl);
+
+    Span parent = parentTuple.getA().spanBuilder("parent").startSpan();
+    Span child = childTuple.getA().spanBuilder("child")
+        .setParent(io.opentelemetry.context.Context.current().with(parent))
+        .startSpan();
+    child.end();
+    parent.end();
+    parentTuple.getB().flush();
+    childTuple.getB().flush();
+
+    waitJaegerQueryContains("snapshot-parent", "parent");
+    waitJaegerQueryContains("snapshot-child", "child");
+
+    deriveDependencies();
+
+    Map<String, Map<String, Long>> expectedDependencies = new HashMap<>();
+    Map<String, Long> children = new HashMap<>();
+    children.put("snapshot-child", 1L);
+    expectedDependencies.put("snapshot-parent", children);
+    assertDependencies(expectedDependencies);
+
+    deriveDependencies();
+    assertDependencies(expectedDependencies);
+  }
+
   @Override
   protected void deriveDependencies() {
     dependenciesJob = OpenSearchDependenciesJob.builder()
         .nodes("http://" + jaegerOpenSearchEnvironment.getOpenSearchIPPort())
-        .day(LocalDate.now())
+        .day(testDay)
         .build();
     try {
       jaegerOpenSearchEnvironment.refresh();

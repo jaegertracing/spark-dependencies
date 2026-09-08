@@ -25,6 +25,7 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -289,10 +290,6 @@ public class OpenSearchDependenciesJob {
   }
 
   private void store(JavaSparkContext javaSparkContext, List<Dependency> dependencyLinks, String resource) {
-    if (dependencyLinks.isEmpty()) {
-      return;
-    }
-
     String json;
     try {
       ObjectMapper objectMapper = new ObjectMapper();
@@ -301,19 +298,30 @@ public class OpenSearchDependenciesJob {
       throw new IllegalStateException("Could not serialize dependencies", e);
     }
 
-    JavaOpenSearchSpark.saveJsonToOpenSearch(javaSparkContext.parallelize(Collections.singletonList(json)), resource);
+    Map<String, String> writeConfiguration = new HashMap<>();
+    // Use the document ID from the JSON payload so retries replace the daily snapshot.
+    writeConfiguration.put("opensearch.mapping.id", "id");
+    writeConfiguration.put("opensearch.write.operation", "index");
+    JavaOpenSearchSpark.saveJsonToOpenSearch(
+        javaSparkContext.parallelize(Collections.singletonList(json)), resource, writeConfiguration);
   }
 
   /**
    * Helper class used to serialize dependencies to JSON.
    */
   public static final class OpenSearchDependencies {
+    private String id;
     private List<Dependency> dependencies;
     private ZonedDateTime ts;
 
     public OpenSearchDependencies(List<Dependency> dependencies, ZonedDateTime ts) {
+      this.id = documentId(ts);
       this.dependencies = dependencies;
       this.ts = ts;
+    }
+
+    public String getId() {
+      return id;
     }
 
     public List<Dependency> getDependencies() {
@@ -323,6 +331,10 @@ public class OpenSearchDependenciesJob {
     public String getTimestamp() {
       // Jaeger OS dependency storage uses RFC3339Nano for timestamp
       return ts.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX"));
+    }
+
+    private static String documentId(ZonedDateTime timestamp) {
+      return "dependencies-" + timestamp.toLocalDate();
     }
   }
 

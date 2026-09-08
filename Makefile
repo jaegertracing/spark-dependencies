@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-.PHONY: e2e-cassandra e2e-es7 e2e-es8 e2e-es9 help
+.PHONY: e2e-cassandra e2e-es7 e2e-es8 e2e-es9 e2e-opensearch help
 
 help:
 	@echo "Available targets:"
@@ -11,6 +11,7 @@ help:
 	@echo "  e2e-es7        - Run Elasticsearch 7 integration tests"
 	@echo "  e2e-es8        - Run Elasticsearch 8 integration tests"
 	@echo "  e2e-es9        - Run Elasticsearch 9 integration tests"
+	@echo "  e2e-opensearch - Run OpenSearch integration tests"
 
 e2e-cassandra:
 	@echo "Building Docker image for Cassandra variant..."
@@ -63,3 +64,15 @@ e2e-es9:
 	./mvnw --batch-mode clean test -am \
 	  -pl jaeger-spark-dependencies-elasticsearch \
 	  -Dversion.elasticsearch.spark=9.1.3
+
+e2e-opensearch:
+	@echo "Building Docker image for OpenSearch variant..."
+	docker build \
+	  --build-arg VARIANT=opensearch \
+	  -t ghcr.io/jaegertracing/spark-dependencies/spark-dependencies:test-opensearch \
+	  .
+	@echo "Running OpenSearch integration tests..."
+	SPARK_DEPENDENCIES_JOB_IMAGE_TAG=test-opensearch \
+	OPENSEARCH_VERSION=2.11.1 \
+	./mvnw --batch-mode clean test -Dlicense.skip=true -am \
+	  -pl jaeger-spark-dependencies-opensearch

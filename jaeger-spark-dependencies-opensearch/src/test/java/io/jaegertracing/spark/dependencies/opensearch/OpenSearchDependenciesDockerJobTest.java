@@ -33,7 +33,7 @@ public class OpenSearchDependenciesDockerJobTest extends OpenSearchDependenciesJ
     // indexDate() on it
     dependenciesJob = OpenSearchDependenciesJob.builder()
         .nodes("http://" + jaegerOpenSearchEnvironment.getOpenSearchIPPort())
-        .day(java.time.LocalDate.now())
+        .day(testDay)
         .build();
 
     try {
@@ -49,7 +49,7 @@ public class OpenSearchDependenciesDockerJobTest extends OpenSearchDependenciesJ
 
     // Use the same date as the test - format it as ISO-8601 date string for the
     // DATE env var
-    String dateStr = java.time.LocalDate.now().toString();
+    String dateStr = testDay.toString();
 
     System.out
         .println("Running Docker spark-dependencies job with DATE=" + dateStr + ", OS_NODES=http://opensearch:9200");
