@@ -43,6 +43,9 @@ import org.slf4j.LoggerFactory;
  */
 public class OpenSearchDependenciesJob {
   private static final Logger log = LoggerFactory.getLogger(OpenSearchDependenciesJob.class);
+  // OpenSearch-Hadoop's FieldFilter evaluates nested property paths; wildcard suffixes (e.g. process.*, tags.*, references.*)
+  // are required so nested fields such as process.serviceName and tag keys are not dropped during schema mapping.
+  public static final String DEFAULT_READ_FIELD_INCLUDE = "traceID,spanID,parentSpanID,startTime,process,process.*,tags,tags.*,tag,tag.*,references,references.*";
   private static final Pattern PORT_PATTERN = Pattern.compile(":\\d+");
 
   public static Builder builder() {
@@ -61,6 +64,7 @@ public class OpenSearchDependenciesJob {
     String spanRange = Utils.getEnv("OS_TIME_RANGE", "24h");
     Boolean useAliases = Boolean.parseBoolean(Utils.getEnv("OS_USE_ALIASES", "false"));
     Boolean allowSelfSigned = Boolean.parseBoolean(Utils.getEnv("OS_SSL_CERT_ALLOW_SELF_SIGNED", "false"));
+    String readFieldInclude = Utils.getEnv("OS_READ_FIELD_INCLUDE", DEFAULT_READ_FIELD_INCLUDE);
 
     final Map<String, String> sparkProperties = new LinkedHashMap<>();
 
@@ -68,6 +72,11 @@ public class OpenSearchDependenciesJob {
       sparkProperties.put("spark.ui.enabled", "false");
       // don't die if there are no spans
       sparkProperties.put("opensearch.index.read.missing.as.empty", "true");
+      if (readFieldInclude != null && !readFieldInclude.isEmpty()) {
+        // OpenSearchDependenciesJob reads spans via JavaOpenSearchSpark.opensearchRDD into Map<String, Object>.
+        // opensearch.read.field.include configures connector-side FieldFilter schema mapping without conflicting with source filtering.
+        sparkProperties.put("opensearch.read.field.include", readFieldInclude);
+      }
       sparkProperties.put("opensearch.net.ssl.keystore.location",
           getSystemPropertyAsFileResource("javax.net.ssl.keyStore"));
       sparkProperties.put("opensearch.net.ssl.keystore.pass",
@@ -149,6 +158,17 @@ public class OpenSearchDependenciesJob {
       return this;
     }
 
+    /** Comma-separated list of fields to include when reading spans from OpenSearch. */
+    public Builder readFieldInclude(String readFieldInclude) {
+      this.readFieldInclude = readFieldInclude;
+      if (readFieldInclude != null && !readFieldInclude.isEmpty()) {
+        sparkProperties.put("opensearch.read.field.include", readFieldInclude);
+      } else {
+        sparkProperties.remove("opensearch.read.field.include");
+      }
+      return this;
+    }
+
     private static void logIfNoPort(String hosts) {
       if (!PORT_PATTERN.matcher(hosts).find()) {
         log.warn("Port is not specified, default port 9200 will be used");
@@ -178,6 +198,7 @@ public class OpenSearchDependenciesJob {
   private final String indexDatePattern;
   private final String spanRange;
   private final Boolean useAliases;
+  private final String readFieldInclude;
 
   OpenSearchDependenciesJob(Builder builder) {
     this.day = builder.day;
@@ -209,6 +230,15 @@ public class OpenSearchDependenciesJob {
     this.indexDatePattern = builder.indexDatePattern;
     this.spanRange = builder.spanRange;
     this.useAliases = builder.useAliases;
+    this.readFieldInclude = builder.readFieldInclude;
+  }
+
+  public String getReadFieldInclude() {
+    return readFieldInclude;
+  }
+
+  SparkConf getConf() {
+    return conf;
   }
 
   /**
