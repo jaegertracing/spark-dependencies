@@ -21,6 +21,8 @@ import io.jaegertracing.spark.dependencies.test.tree.TracingWrapper.OpenTelemetr
 import io.jaegertracing.spark.dependencies.test.tree.Traversals;
 import io.jaegertracing.spark.dependencies.test.tree.TreeGenerator;
 import java.io.IOException;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -188,7 +190,10 @@ public abstract class DependenciesTest {
   }
 
   protected void waitJaegerQueryContains(String service, String spanContainsThis) {
-    String url = String.format("%s/api/traces?service=%s", queryUrl, service);
+    // Jaeger v2.21.0 removed the v1 trace search endpoint (GET /api/traces); search via API v3.
+    Instant now = Instant.now();
+    String url = String.format("%s/api/v3/traces?query.service_name=%s&query.start_time_min=%s&query.start_time_max=%s",
+        queryUrl, service, now.minus(1, ChronoUnit.HOURS), now.plus(1, ChronoUnit.HOURS));
     System.out.println("Waiting for trace in Jaeger Query. Service: " + service + ", looking for: " + spanContainsThis);
     System.out.println("Query URL: " + url);
     
