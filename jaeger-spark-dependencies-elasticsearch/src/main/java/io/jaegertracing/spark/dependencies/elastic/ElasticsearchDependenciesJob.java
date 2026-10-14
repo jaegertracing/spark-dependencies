@@ -36,6 +36,7 @@ import org.slf4j.LoggerFactory;
  */
 public class ElasticsearchDependenciesJob {
   private static final Logger log = LoggerFactory.getLogger(ElasticsearchDependenciesJob.class);
+  public static final String DEFAULT_READ_FIELD_INCLUDE = "traceID,spanID,parentSpanID,startTime,process,tags,tag,references";
   private static final Pattern PORT_PATTERN = Pattern.compile(":\\d+");
 
   public static Builder builder() {
@@ -53,6 +54,7 @@ public class ElasticsearchDependenciesJob {
     String indexDatePattern = datePattern(Utils.getEnv("ES_INDEX_DATE_SEPARATOR", "-"));
     String spanRange = Utils.getEnv("ES_TIME_RANGE", "24h");
     Boolean useAliases = Boolean.parseBoolean(Utils.getEnv("ES_USE_ALIASES", "false"));
+    String readFieldInclude = Utils.getEnv("ES_READ_FIELD_INCLUDE", DEFAULT_READ_FIELD_INCLUDE);
 
     final Map<String, String> sparkProperties = new LinkedHashMap<>();
 
@@ -60,6 +62,11 @@ public class ElasticsearchDependenciesJob {
       sparkProperties.put("spark.ui.enabled", "false");
       // don't die if there are no spans
       sparkProperties.put("es.index.read.missing.as.empty", "true");
+      if (readFieldInclude != null && !readFieldInclude.isEmpty()) {
+        // ElasticsearchDependenciesJob reads spans as raw JSON via JavaEsSpark.esJsonRDD.
+        // For raw JSON RDD reads, es.read.source.filter trims the _source fields on the server.
+        sparkProperties.put("es.read.source.filter", readFieldInclude);
+      }
       sparkProperties.put("es.net.ssl.keystore.location",
           getSystemPropertyAsFileResource("javax.net.ssl.keyStore"));
       sparkProperties.put("es.net.ssl.keystore.pass",
@@ -138,6 +145,17 @@ public class ElasticsearchDependenciesJob {
       return this;
     }
 
+    /** Comma-separated list of fields to include when reading spans from Elasticsearch. */
+    public Builder readFieldInclude(String readFieldInclude) {
+      this.readFieldInclude = readFieldInclude;
+      if (readFieldInclude != null && !readFieldInclude.isEmpty()) {
+        sparkProperties.put("es.read.source.filter", readFieldInclude);
+      } else {
+        sparkProperties.remove("es.read.source.filter");
+      }
+      return this;
+    }
+
     private static void logIfNoPort(String hosts) {
       if (!PORT_PATTERN.matcher(hosts).find()) {
         log.warn("Port is not specified, default port 9200 will be used");
@@ -167,6 +185,7 @@ public class ElasticsearchDependenciesJob {
   private final String indexDatePattern;
   private final String spanRange;
   private final Boolean useAliases;
+  private final String readFieldInclude;
 
   ElasticsearchDependenciesJob(Builder builder) {
     this.day = builder.day;
@@ -198,6 +217,15 @@ public class ElasticsearchDependenciesJob {
     this.indexDatePattern = builder.indexDatePattern;
     this.spanRange = builder.spanRange;
     this.useAliases = builder.useAliases;
+    this.readFieldInclude = builder.readFieldInclude;
+  }
+
+  public String getReadFieldInclude() {
+    return readFieldInclude;
+  }
+
+  SparkConf getConf() {
+    return conf;
   }
 
   /**

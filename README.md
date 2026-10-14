@@ -150,6 +150,8 @@ Elasticsearch is used when `STORAGE=elasticsearch`.
   Any value accepted by [date-math](https://www.elastic.co/guide/en/elasticsearch/reference/current/common-options.html#date-math) can be used here, but the anchor is always `now`.
 * `ES_USE_ALIASES`: Set to true to use index alias names to read from and write to.
   Usually required when using rollover indices.
+* `ES_READ_FIELD_INCLUDE`: Comma-separated list of span fields to retrieve from Elasticsearch.
+  Defaults to `traceID,spanID,parentSpanID,startTime,process,tags,tag,references`. An empty string disables field filtering and reads complete span documents.
 
 Example usage:
 
@@ -178,6 +180,8 @@ OpenSearch is used when `STORAGE=opensearch`.
   For example `.` will find index "jaeger-span-2020.11.25".
 * `OS_TIME_RANGE`: How far in the past the job should look to for spans, the maximum and default is `24h`.
   Any value accepted by [date-math](https://www.elastic.co/guide/en/elasticsearch/reference/current/common-options.html#date-math) can be used here, but the anchor is always `now`.
+* `OS_READ_FIELD_INCLUDE`: Comma-separated list of span fields to retrieve from OpenSearch.
+  Defaults to `traceID,spanID,parentSpanID,startTime,process,process.*,tags,tags.*,tag,tag.*,references,references.*`. An empty string disables field filtering and reads complete span documents.
 
 Example usage:
 
