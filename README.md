@@ -157,6 +157,35 @@ Example usage:
 $ STORAGE=elasticsearch ES_NODES=http://localhost:9200 java -jar jaeger-spark-dependencies.jar
 ```
 
+#### Large Index Tuning ("The number of slices is too large")
+
+When processing large Elasticsearch indices, the Elasticsearch-Hadoop connector may generate more scroll slices than Elasticsearch's default limit of 1024 (`index.max_slices_per_scroll`), causing:
+
+```
+org.elasticsearch.hadoop.rest.EsHadoopInvalidRequest: The number of slices [...] is too large. It must be less than [1024].
+```
+
+Raising `index.max_slices_per_scroll` on the Elasticsearch cluster can overwhelm cluster scroll contexts and lead to read timeouts. Instead, you can increase the target maximum number of documents per input partition by setting `es.input.max.docs.per.partition`.
+
+**Docker example (use the image variant matching your Elasticsearch version):**
+```bash
+docker run \
+  --env ES_NODES=http://elasticsearch:9200 \
+  --env JAVA_OPTS="-Dspark.es.input.max.docs.per.partition=1000000" \
+  ghcr.io/jaegertracing/spark-dependencies/spark-dependencies:v0.7.2-elasticsearch8
+```
+
+**JAR execution example:**
+```bash
+STORAGE=elasticsearch ES_NODES=http://localhost:9200 \
+  java -Dspark.es.input.max.docs.per.partition=1000000 -jar jaeger-spark-dependencies.jar
+```
+
+**Effect:**
+* **Reduces the number of scroll slices**: Setting `es.input.max.docs.per.partition` increases the target maximum number of documents per input partition, which typically reduces the total number of generated scroll slices, helping stay under the 1024 limit. However, because this property is an advisory guideline rather than a hard guarantee, staying under the limit is not guaranteed, and extremely large indices may require tuning this value higher.
+* **Spark configuration pass-through**: The `spark.` prefix is required when passing JVM options (`-Dspark.es...`) so Apache Spark propagates the setting to the underlying `elasticsearch-spark` connector.
+
+
 ### OpenSearch
 OpenSearch is used when `STORAGE=opensearch`.
 
