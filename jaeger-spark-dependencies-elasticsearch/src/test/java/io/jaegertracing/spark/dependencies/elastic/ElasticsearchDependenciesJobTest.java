@@ -4,23 +4,34 @@
  */
 package io.jaegertracing.spark.dependencies.elastic;
 
-
-import io.opentelemetry.api.trace.Span;
-import io.opentelemetry.api.trace.Tracer;
 import io.jaegertracing.spark.dependencies.test.DependenciesTest;
 import io.jaegertracing.spark.dependencies.test.TracersGenerator;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.Tracer;
 import java.io.IOException;
 import java.time.LocalDate;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import okhttp3.MediaType;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
+import org.apache.spark.api.java.JavaSparkContext;
+import org.elasticsearch.spark.rdd.api.java.JavaEsSpark;
 import org.junit.After;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Test;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
+import scala.Tuple2;
 
 /**
  * @author Pavol Loffay
@@ -73,7 +84,7 @@ public class ElasticsearchDependenciesJobTest extends DependenciesTest {
   protected void deriveDependencies() {
     dependenciesJob = ElasticsearchDependenciesJob.builder()
         .nodes("http://" + jaegerElasticsearchEnvironment.getElasticsearchIPPort())
-        .day(LocalDate.now())
+        .day(LocalDate.now(ZoneOffset.UTC))
         .build();
     try {
       jaegerElasticsearchEnvironment.refresh();
@@ -94,6 +105,156 @@ public class ElasticsearchDependenciesJobTest extends DependenciesTest {
       jaegerElasticsearchEnvironment.refresh();
     } catch (IOException e) {
       throw new RuntimeException("Could not refresh Elasticsearch", e);
+    }
+  }
+
+  @Test
+  public void testReadFilteredFieldsExcludesLogs() throws Exception {
+    String serviceName = "verify-projection-" + UUID.randomUUID().toString();
+    TracersGenerator.Tuple<Tracer, TracersGenerator.Flushable> tuple = TracersGenerator.createJaeger(serviceName, collectorUrl);
+    Tracer tracer = tuple.getA();
+    Span span = tracer.spanBuilder("test-operation").startSpan();
+    span.setAttribute("peer.service", "backend");
+    span.setAttribute("test.custom.tag", "custom-value");
+    span.addEvent("exception-event-log-message");
+    span.end();
+    tuple.getB().flush();
+    try {
+      TimeUnit.SECONDS.sleep(2);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+    }
+    waitJaegerQueryContains(serviceName, "backend");
+    jaegerElasticsearchEnvironment.refresh();
+
+    ElasticsearchDependenciesJob job = ElasticsearchDependenciesJob.builder()
+        .nodes("http://" + jaegerElasticsearchEnvironment.getElasticsearchIPPort())
+        .day(LocalDate.now(ZoneOffset.UTC))
+        .build();
+    this.dependenciesJob = job;
+
+    JavaSparkContext sc = new JavaSparkContext(job.getConf());
+    try {
+      String spanIndex = job.indexDate("jaeger-span")[0];
+      String esQuery = "{\"match_all\": {}}";
+      List<Tuple2<String, String>> docs = JavaEsSpark.esJsonRDD(sc, spanIndex, esQuery).collect();
+      Assert.assertFalse("Should find documents in index", docs.isEmpty());
+
+      boolean found = false;
+      for (Tuple2<String, String> t : docs) {
+        String json = t._2();
+        if (json.contains(serviceName)) {
+          found = true;
+          Assert.assertTrue("Should include traceID", json.contains("traceID"));
+          Assert.assertTrue("Should include spanID", json.contains("spanID"));
+          Assert.assertTrue("Should include startTime", json.contains("startTime"));
+          Assert.assertTrue("Should include process", json.contains("process"));
+          Assert.assertFalse("Logs must be excluded by es.read.source.filter",
+              json.contains("logs") || json.contains("exception-event-log-message"));
+        }
+      }
+      Assert.assertTrue("Our indexed span should be present in results", found);
+    } finally {
+      sc.stop();
+      this.dependenciesJob = null;
+    }
+  }
+
+  @Test
+  public void testFilteredAndUnfilteredProduceIdenticalDependencyLinks() throws Exception {
+    String date = LocalDate.now(ZoneOffset.UTC).format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+    String spanIndex = "jaeger-span-" + date;
+    String depIndex = "jaeger-dependencies-" + date;
+
+    StringBuilder bulkBody = new StringBuilder();
+    for (int i = 0; i < 20; i++) {
+      String traceId = String.format("%032x", (i / 4) + 1);
+      String spanId = String.format("%016x", i + 1);
+      String parentSpanId = (i % 4 == 0) ? "" : String.format("%016x", i);
+      String caller = "service-" + (i % 4);
+      String callee = "service-" + ((i % 4) + 1);
+
+      String spanDoc = "{"
+          + "\"traceID\":\"" + traceId + "\","
+          + "\"spanID\":\"" + spanId + "\","
+          + (parentSpanId.isEmpty() ? "" : "\"parentSpanID\":\"" + parentSpanId + "\",")
+          + "\"startTime\":1000000,"
+          + "\"startTimeMillis\":" + System.currentTimeMillis() + ","
+          + "\"process\":{\"serviceName\":\"" + caller + "\"},"
+          + "\"tags\":[{\"key\":\"span.kind\",\"value\":\"client\"},{\"key\":\"peer.service\",\"value\":\"" + callee + "\"}],"
+          + "\"tag\":{\"span.kind\":\"client\",\"peer.service\":\"" + callee + "\"},"
+          + (parentSpanId.isEmpty() ? "" : "\"references\":[{\"refType\":\"CHILD_OF\",\"traceID\":\"" + traceId + "\",\"spanID\":\"" + parentSpanId + "\"}],")
+          + "\"logs\":[{\"timestamp\":1000000,\"fields\":[{\"key\":\"message\",\"value\":\"log payload\"}]}],"
+          + "\"unrelatedMetadata\":\"payload padding\""
+          + "}\n";
+
+      bulkBody.append("{\"index\":{\"_index\":\"").append(spanIndex).append("\"}}\n");
+      bulkBody.append(spanDoc);
+    }
+
+    Request bulkRequest = new Request.Builder()
+        .url(String.format("http://%s/_bulk?refresh=true", jaegerElasticsearchEnvironment.getElasticsearchIPPort()))
+        .post(RequestBody.create(MediaType.parse("application/x-ndjson"), bulkBody.toString()))
+        .build();
+
+    try (Response response = okHttpClient.newCall(bulkRequest).execute()) {
+      Assert.assertTrue("Bulk indexing should succeed", response.isSuccessful());
+    }
+    jaegerElasticsearchEnvironment.refresh();
+
+    try {
+      // 1. Run baseline without field filtering
+      ElasticsearchDependenciesJob baselineJob = ElasticsearchDependenciesJob.builder()
+          .nodes("http://" + jaegerElasticsearchEnvironment.getElasticsearchIPPort())
+          .day(LocalDate.now(ZoneOffset.UTC))
+          .readFieldInclude(null)
+          .build();
+      this.dependenciesJob = baselineJob;
+      baselineJob.run(new String[]{spanIndex}, new String[]{depIndex}, "peer.service");
+      jaegerElasticsearchEnvironment.refresh();
+      String baselineDeps = getDependenciesJson(depIndex);
+
+      cleanIndex(depIndex);
+      jaegerElasticsearchEnvironment.refresh();
+
+      // 2. Run with default field filtering
+      ElasticsearchDependenciesJob filteredJob = ElasticsearchDependenciesJob.builder()
+          .nodes("http://" + jaegerElasticsearchEnvironment.getElasticsearchIPPort())
+          .day(LocalDate.now(ZoneOffset.UTC))
+          .build();
+      this.dependenciesJob = filteredJob;
+      filteredJob.run(new String[]{spanIndex}, new String[]{depIndex}, "peer.service");
+      jaegerElasticsearchEnvironment.refresh();
+      String filteredDeps = getDependenciesJson(depIndex);
+
+      Assert.assertFalse("Dependency links should not be empty", baselineDeps.isEmpty());
+      Assert.assertEquals("Filtered and unfiltered jobs must produce identical dependency links",
+          baselineDeps, filteredDeps);
+    } finally {
+      cleanIndex(spanIndex);
+      cleanIndex(depIndex);
+      jaegerElasticsearchEnvironment.refresh();
+      this.dependenciesJob = null;
+    }
+  }
+
+  private String getDependenciesJson(String depIndex) throws IOException {
+    Request request = new Request.Builder()
+        .url(String.format("http://%s/%s/_search?size=100", jaegerElasticsearchEnvironment.getElasticsearchIPPort(), depIndex))
+        .get()
+        .build();
+    try (Response response = okHttpClient.newCall(request).execute()) {
+      return response.body() != null ? response.body().string() : "";
+    }
+  }
+
+  private void cleanIndex(String index) throws IOException {
+    Request request = new Request.Builder()
+        .url(String.format("http://%s/%s", jaegerElasticsearchEnvironment.getElasticsearchIPPort(), index))
+        .delete()
+        .build();
+    try (Response response = okHttpClient.newCall(request).execute()) {
+      // ignore
     }
   }
 
