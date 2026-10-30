@@ -157,6 +157,35 @@ Example usage:
 $ STORAGE=elasticsearch ES_NODES=http://localhost:9200 java -jar jaeger-spark-dependencies.jar
 ```
 
+#### Large Index Tuning ("The number of slices is too large")
+
+When processing large Elasticsearch indices, the Elasticsearch-Hadoop connector may generate more scroll slices than Elasticsearch's default limit of 1024 (`index.max_slices_per_scroll`), causing:
+
+```
+org.elasticsearch.hadoop.rest.EsHadoopInvalidRequest: The number of slices [...] is too large. It must be less than [1024].
+```
+
+Raising `index.max_slices_per_scroll` on the Elasticsearch cluster can overwhelm cluster scroll contexts and lead to read timeouts. Instead, you can increase the target maximum number of documents per input partition by setting `es.input.max.docs.per.partition`.
+
+**Docker example (use the image variant matching your Elasticsearch version):**
+```bash
+docker run \
+  --env ES_NODES=http://elasticsearch:9200 \
+  --env JAVA_OPTS="-Dspark.es.input.max.docs.per.partition=1000000" \
+  ghcr.io/jaegertracing/spark-dependencies/spark-dependencies:v0.7.2-elasticsearch8
+```
+
+**JAR execution example:**
+```bash
+STORAGE=elasticsearch ES_NODES=http://localhost:9200 \
+  java -Dspark.es.input.max.docs.per.partition=1000000 -jar jaeger-spark-dependencies.jar
+```
+
+**Effect:**
+* **Effect depends on the existing configuration**: Increasing an existing finite `es.input.max.docs.per.partition` value typically reduces the number of scroll slices, but does not guarantee staying under the 1024 limit. Connector 8.13.4, used by the Elasticsearch 8 image above, defaults to unsliced, per-shard input when this property is unset; setting a finite value enables slicing and can itself cause the slice-limit error on large shards. Leave the property unset to avoid sliced input on that connector, or use the examples above only when sliced input is required and tune the value for your shard sizes.
+* **Spark configuration pass-through**: The `spark.` prefix is required when passing JVM options (`-Dspark.es...`) so Apache Spark propagates the setting to the underlying `elasticsearch-spark` connector.
+
+
 ### OpenSearch
 OpenSearch is used when `STORAGE=opensearch`.
 
