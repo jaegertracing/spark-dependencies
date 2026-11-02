@@ -163,7 +163,7 @@
       <dependency>
         <groupId>com.google.guava</groupId>
         <artifactId>guava</artifactId>
-        <version>32.1.3-jre</version>
+        <version>33.7.2-jre</version>
       </dependency>
       <!-- Forcibly bump Commons Collection version to avoid CVE-2015-7501 -->
       <dependency>
