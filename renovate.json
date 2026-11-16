@@ -7,7 +7,9 @@
   "schedule": [
     "on the first day of the month"
   ],
-  "dependencyDashboard": true,
+  "dependencyDashboard": {
+    "enabled": true
+  },
   "labels": [
     "changelog:dependencies"
   ],
